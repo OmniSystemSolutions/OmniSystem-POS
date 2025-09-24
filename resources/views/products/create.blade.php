@@ -376,13 +376,14 @@
 
          <div class="col-md-12 mt-4">
                <!-- Recipe Table -->
-               <h5>Recipes</h5>
+               <h5>Ingredients</h5>
                <table class="table table-bordered" id="recipeTable">
                   <thead>
                      <tr>
                            <th>Component</th>
                            <th>Quantity</th>
                            <th>Unit</th>
+                           <th>Cost</th>
                            <th><button type="button" class="btn btn-success btn-sm" onclick="addRecipeRow()">+</button></th>
                      </tr>
                   </thead>
@@ -390,10 +391,19 @@
                      <!-- Dynamic rows here -->
                   </tbody>
                </table>
+
+               <!-- 🔥 Total Cost Row -->
+               <div class="row mt-2">
+                  <div class="col-md-9 text-right">
+                     <label><strong>Total Cost:</strong></label>
+                  </div>
+                  <div class="col-md-2">
+                     <input type="text" id="totalCost" class="form-control" value="0.00" readonly>
+                  </div>
+               </div>
          </div>
       </div>
 
-   
 
             <div class="mt-3 col-md-12">
                   <div class="mr-2">
@@ -405,39 +415,75 @@
             </div>
 </form>
 
-<script>
-let components = @json(App\Models\Component::all()); // Load all components for dropdown
+   <script>
+   let components = @json(App\Models\Component::all()); // Load all components for dropdown
 
-function addRecipeRow() {
-    const tbody = document.querySelector('#recipeTable tbody');
-    const tr = document.createElement('tr');
+   function addRecipeRow() {
+         const tbody = document.querySelector('#recipeTable tbody');
+         const tr = document.createElement('tr');
 
-    const componentOptions = components.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+         const componentOptions = components.map(c =>
+            `<option value="${c.id}" data-cost="${c.cost}">${c.name}</option>`
+         ).join('');
 
-    tr.innerHTML = `
-        <td>
-            <select name="recipes[component_id][]" class="form-control" required>
-                <option value="">Select Component</option>
-                ${componentOptions}
-            </select>
-        </td>
-        <td><input type="number" name="recipes[quantity][]" class="form-control" step="0.01" required></td>
-        <td><input type="text" name="recipes[unit][]" class="form-control" required></td>
-        <td><button type="button" class="btn btn-danger btn-sm" onclick="this.closest('tr').remove()">x</button></td>
-    `;
+         tr.innerHTML = `
+            <td>
+                  <select name="recipes[component_id][]" class="form-control component-select" required>
+                     ${componentOptions}
+                  </select>
+            </td>
+            <td><input type="number" name="recipes[quantity][]" class="form-control recipe-quantity" step="0.01" required></td>
+            <td><input type="text" name="recipes[unit][]" class="form-control" required></td>
+            <td><input type="text" name="recipes[cost][]" class="form-control component-cost" readonly></td>
+            <td><button type="button" class="btn btn-danger btn-sm remove-row">x</button></td>
+         `;
 
-    tbody.appendChild(tr);
-}
+         tbody.appendChild(tr);
 
-// Add one default row
-document.addEventListener('DOMContentLoaded', addRecipeRow);
-</script>
+         // 🔍 turn the new select into a Select2 searchable dropdown
+         $(tr).find('.component-select').select2({
+            width: '100%'
+         });
 
+         const select = tr.querySelector('.component-select');
+         const quantityInput = tr.querySelector('.recipe-quantity');
+         const costInput = tr.querySelector('.component-cost');
+         const removeBtn = tr.querySelector('.remove-row');
 
-                        <!----> 
-                        <div class="row">
-         </form>
-      </span>
-   </div>
+         function updateCost() {
+            const selectedOption = select.options[select.selectedIndex];
+            const baseCost = parseFloat(selectedOption.getAttribute('data-cost')) || 0;
+            const qty = parseFloat(quantityInput.value) || 0;
+            costInput.value = qty > 0 ? (baseCost * qty).toFixed(2) : '';
+            updateTotalCost(); // 🔥 recalc total every time
+         }
+
+         select.addEventListener('change', updateCost);
+         quantityInput.addEventListener('input', updateCost);
+
+         // remove row + recalc total
+         removeBtn.addEventListener('click', function () {
+            tr.remove();
+            updateTotalCost();
+         });
+   }
+
+   // 🔥 Function to calculate grand total
+   function updateTotalCost() {
+         let total = 0;
+         document.querySelectorAll('.component-cost').forEach(input => {
+            total += parseFloat(input.value) || 0;
+         });
+         document.querySelector('#totalCost').value = total.toFixed(2); // ✅ fixed
+   }
+
+   // Add one default row
+   document.addEventListener('DOMContentLoaded', addRecipeRow);
+   </script>
+
+      <div class="row">
+   </form>
+</span>
+</div>
 </div>
 @endsection

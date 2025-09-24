@@ -302,7 +302,7 @@
             <li class="nav-item"><a href="/app/people/suppliers" class=""><i class="nav-icon i-Business-Mens"></i> <span class="item-name">Suppliers</span></a></li>
          </ul>
          <ul data-parent="settings" class="childNav d-none">
-            <ul class="submenu">
+            <ul class="submenu" style="text-align: left; padding-left: 0;">
                <li class="nav-item">
                   <a href="{{ route('settings.create') }}" class="">
                      <i class="nav-icon i-Library"></i>
