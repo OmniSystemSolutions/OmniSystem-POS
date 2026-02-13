@@ -83,6 +83,23 @@
             <li><hr class="dropdown-divider"></li>
         @endif --}}
 
+        @isset($deleteRoute)
+            <li role="presentation">
+                <form action="{{ $deleteRoute }}" method="POST" class="swal-confirm"
+                    data-title="Permanently Delete Permission?"
+                    data-text="This action will permanently remove this permission and cannot be undone."
+                    data-confirm-button="Yes, Delete Permanently"
+                    style="display:inline;">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="dropdown-item text-danger">
+                        <i class="nav-icon i-Letter-Close font-weight-bold mr-2"></i>
+                         Delete
+                    </button>
+                </form>
+            </li>
+        @endisset
+
         @isset($branchEditRoute)
         <li role="presentation">
             <a class="dropdown-item"

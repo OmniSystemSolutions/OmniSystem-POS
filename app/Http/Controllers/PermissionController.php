@@ -21,7 +21,7 @@ class PermissionController extends Controller
     public function create()
     {
         $permissions = Permission::all();
-        return view('settings.permission.create', compact('permissions'));
+        return view('settings.permission.form', compact('permissions'));
     }
 
     // Store new role with permissions
@@ -46,12 +46,12 @@ class PermissionController extends Controller
 
 
     // Edit role
-    public function edit(Role $role)
+    public function edit($id)
     {
+        $role = Role::with('permissions')->findOrFail($id);
         $permissions = Permission::all();
-        $rolePermissions = $role->permissions->pluck('name')->toArray();
 
-        return view('permissions.edit', compact('role', 'permissions', 'rolePermissions'));
+        return view('settings.permission.form', compact('role', 'permissions'));
     }
 
     // Update role and permissions
@@ -74,22 +74,38 @@ class PermissionController extends Controller
 }
 
     // Delete role
-    public function destroy(Role $role)
-    {
-        try {
-            // Detach related models to avoid constraint issues
-            $role->permissions()->detach();
-            $role->users()->detach();
+    public function destroy(Role $role, Request $request)
+{
+    try {
+        // Detach related models to avoid constraint issues
+        $role->permissions()->detach();
+        $role->users()->detach();
 
-            $role->delete();
+        $role->delete();
 
-            return redirect()
-                ->route('permissions.index')
-                ->with('success', 'Role deleted successfully.');
-        } catch (\Exception $e) {
-            return redirect()
-                ->route('permissions.index')
-                ->with('error', 'Failed to delete role: ' . $e->getMessage());
+        // Check if the request expects JSON (AJAX)
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Role deleted successfully.'
+            ]);
         }
+
+        // Fallback for normal form submission
+        return redirect()
+            ->route('permissions.index')
+            ->with('success', 'Role deleted successfully.');
+
+    } catch (\Exception $e) {
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Failed to delete role: ' . $e->getMessage()
+            ], 500);
+        }
+
+        return redirect()
+            ->route('permissions.index')
+            ->with('error', 'Failed to delete role: ' . $e->getMessage());
     }
+}
+
 }

@@ -78,7 +78,7 @@
                     <td class="text-right">
                         @include('layouts.actions-dropdown', [
                             'id' => $role->id,
-                            'editRoute' => '#',
+                            'editRoute' => route('permissions.edit', $role->id),
                             'deleteRoute' => route('permissions.delete', $role->id),
                             'logsRoute' => '#',
                             'remarksRoute' => '#',
@@ -132,3 +132,56 @@
 </div>
 </div>
 @endsection
+
+@section('scripts')
+<script>
+document.querySelectorAll('.swal-confirm').forEach(function(form) {
+    form.addEventListener('submit', function(e) {
+        e.preventDefault(); // prevent normal form submit
+
+        Swal.fire({
+            title: form.dataset.title || 'Are you sure?',
+            text: form.dataset.text || '',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: form.dataset.confirmButton || 'Yes, delete!',
+        }).then((result) => {
+            if (result.isConfirmed) {
+
+                // Use AJAX to submit form
+                fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': form.querySelector('input[name="_token"]').value,
+                        'Accept': 'application/json'
+                    },
+                    body: new FormData(form)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // ✅ Show success alert
+                    Swal.fire({
+                        title: 'Deleted!',
+                        text: data.message || 'Record has been deleted.',
+                        icon: 'success',
+                        timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => {
+                        // Optional: remove row from table without reload
+                        form.closest('tr')?.remove();
+                    });
+                })
+                .catch(error => {
+                    console.error(error);
+                    Swal.fire('Error', 'Something went wrong!', 'error');
+                });
+
+            }
+        });
+    });
+});
+</script>
+@endsection
+
