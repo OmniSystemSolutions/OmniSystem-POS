@@ -253,47 +253,6 @@ class OrderController extends Controller
     ]);
     }
 
-    // public function billout(Request $request, $orderId)
-    // {
-    //     $order = Order::findOrFail($orderId);
-
-    //     // Update order with computed totals
-    //     $order->update([
-    //         'gross_amount' => $request->input('gross_amount', 0),
-    //         'sr_pwd_discount' => $request->input('discount20', 0),
-    //         'other_discounts' => $request->input('otherDiscount', 0),
-    //         'net_amount' => $request->input('netBill', 0),
-    //         'vatable' => $request->input('vatable', 0),
-    //         'vat_12' => $request->input('vat12', 0),
-    //         'vat_exempt_12' => $request->input('vat_exempt_12', 0),
-    //         'total_charge' => $request->input('totalCharge', 0),
-    //         'charges_description' => $request->input('charges_description'),
-    //         'status'           => 'billout', // ✅ change order status,
-    //         'cashier_id' => auth()->user()->id, // <-- save user id here
-    //     ]);
-
-    //     // Save discount entries
-    //     if ($request->filled('persons')) {
-    //         $persons = json_decode($request->persons, true);
-
-    //         foreach ($persons as $person) {
-    //             if (!empty($person['discount_id']) && !empty($person['name'])) {
-    //                 DiscountEntry::create([
-    //                     'order_id' => $order->id,
-    //                     'discount_id' => $person['discount_id'],
-    //                     'person_name' => $person['name'] ?? null,
-    //                     'person_id_number' => $person['id_number'] ?? null,
-    //                 ]);
-    //             }
-    //         }
-    //     }
-
-    //     return response()->json([
-    //         'success' => true,
-    //         'order' => $order
-    //     ]);
-    // }
-
     public function billout(Request $request, $orderId)
 {
     $order = Order::findOrFail($orderId);

@@ -1104,23 +1104,30 @@ function updateSelectedDiscounts(orderId) {
                 ₱{{ number_format($order->details->sum(fn($d) => $d->quantity * $d->price - ($d->discount ?? 0)), 2) }}
             </td>
         </tr>
-   <tr>
-    <td>Less Discount</td>
-    <td class="text-right less-discount">
-        @php
-            // VAT Exempt 12% (already stored in database)
-            $vatExempt12 = $order->vat_exempt_12 ?? 0;
+        <tr>
+                <td>Less Discount</td>
+                <td class="text-right less-discount">
+                    @php
+                        // Prefer stored SR/PWD discount (matches receipt modal). If not present,
+                        // fall back to computing from vat_exempt_12 + 20% of that portion.
+                        $storedSrPwd = $order->sr_pwd_discount ?? null;
 
-            // 20% Discount should be computed from the VAT-exempt portion (default 20%)
-            // If you have a stored discount percentage field in the future, use that instead.
-            $discount20 = ($vatExempt12) * 0.20;
+                        if (!is_null($storedSrPwd) && $storedSrPwd != 0) {
+                            $lessDiscount = $storedSrPwd;
+                        } else {
+                            // VAT Exempt 12% (already stored in database)
+                            $vatExempt12 = $order->vat_exempt_12 ?? 0;
 
-            // Less Discount = VAT Exempt 12% + 20% Discount
-            $lessDiscount = $vatExempt12 + $discount20;
-        @endphp
-        ₱{{ number_format($lessDiscount, 2) }}
-    </td>
-</tr>
+                            // 20% Discount should be computed from the VAT-exempt portion (default 20%)
+                            $discount20 = $order->discount20 ?? ($vatExempt12 * 0.20);
+
+                            // Less Discount = VAT Exempt 12% + 20% Discount
+                            $lessDiscount = $vatExempt12 + $discount20;
+                        }
+                    @endphp
+                    ₱{{ number_format($lessDiscount, 2) }}
+                </td>
+        </tr>
 
         <tr>
             <td>Vatable</td>
@@ -1242,19 +1249,22 @@ function calculateChargesAndDiscounts(orderId, grossAmount, pax) {
     const vatable = regBill / (1 + vatRate);
     const vat12 = regBill - vatable;
 
-    // ✅ SR/PWD 20% discount (non-VAT portion)
+    // Calculate VAT-exempt portion for SR/PWD and 20% discount on that portion
     const srPwdVatable = srPwdBill / (1 + vatRate);
-    const discount20 = srPwdVatable * (discountPercent / 100);
+    const vatExempt12 = srPwdBill - srPwdVatable; // srPwdBill - (srPwdBill / 1.12)
+    const vatExempt12Rounded = Number(vatExempt12.toFixed(2));
 
-    // ✅ NET BILL for SR/PWD
+    // Use provided discountPercent if any; default to 20% for SR/PWD cases
+    const effectiveDiscountPercent = (discountPercent && discountPercent > 0) ? discountPercent : 20;
+
+    // Only apply the privileged discount if there are qualifying SR/PWD pax
+    const discount20 = qualifiedCount > 0 ? Number((vatExempt12Rounded * (effectiveDiscountPercent / 100)).toFixed(2)) : 0;
+
+    // ✅ NET BILL for SR/PWD (vatable portion minus discount)
     const netBill = srPwdVatable - discount20;
 
-    // ✅ TOTAL CHARGE
-    const totalCharge = ((grossAmount - otherDiscountTotal) - ((srPwdBill / (1 + vatRate)) * vatRate) - ((srPwdBill / (1 + vatRate)) * (discountPercent / 100)));
-
-    // Calculate vat_exempt_12
-    const vatExempt12 = srPwdBill / (1 + vatRate);
-    const vatExempt12Rounded = Number(vatExempt12.toFixed(2));
+    // ✅ TOTAL CHARGE = gross minus other discounts minus privileged discounts (vat exempt + 20% on exempt)
+    const totalCharge = Number(((grossAmount - otherDiscountTotal) - (vatExempt12Rounded + discount20)).toFixed(2));
 
     // Store in hidden input
     let vatExemptInput = document.getElementById('vat_exempt_12_' + orderId);
@@ -1286,6 +1296,36 @@ function calculateChargesAndDiscounts(orderId, grossAmount, pax) {
     setVal('netBill', netBill);
     setVal('otherDiscount', otherDiscountTotal);
     setVal('totalCharge', totalCharge);
+
+    // --- Update visible Less Discount in invoice/preview modals and details rows
+    try {
+        const lessDiscountComputed = Number((vatExempt12Rounded || 0) + (discount20 || 0));
+        const lessFormatted = '₱' + lessDiscountComputed.toFixed(2);
+
+        // Update any matching elements in the invoice/preview modals and details section
+        const selectors = `#pos-invoice-${orderId} .less-discount, #billOutPreviewModal${orderId} .less-discount, #details-${orderId} .less-discount`;
+        document.querySelectorAll(selectors).forEach(el => {
+            // If element is a TD, set textContent; if input, set value
+            if (el.tagName === 'TD' || el.tagName === 'DIV' || el.tagName === 'SPAN') {
+                el.textContent = lessFormatted;
+            } else if (el.tagName === 'INPUT') {
+                el.value = lessDiscountComputed.toFixed(2);
+            }
+        });
+
+        // Also update SR/PWD displayed amounts if present in preview/invoice
+        const srFormatted = '₱' + Number(srPwdBill || 0).toFixed(2);
+        const srSelectors = `#pos-invoice-${orderId} .sr-pwd-bill, #billOutPreviewModal${orderId} .sr-pwd-bill, #details-${orderId} .sr-pwd-bill`;
+        document.querySelectorAll(srSelectors).forEach(el => {
+            if (el.tagName === 'TD' || el.tagName === 'DIV' || el.tagName === 'SPAN') {
+                el.textContent = srFormatted;
+            } else if (el.tagName === 'INPUT') {
+                el.value = Number(srPwdBill || 0).toFixed(2);
+            }
+        });
+    } catch (e) {
+        console.debug('Could not update preview less-discount element', e);
+    }
 
     // ✅ NEW: Mark that calculation has been performed
     hasCalculatedCharges[orderId] = true;
@@ -2180,6 +2220,14 @@ function updateDestOptions(orderId, rowId, paymentMethodId) {
                   </table>
 
                   {{-- Summary Table --}}
+                  @php
+                      // Compute Less Discount (match bill-out preview logic):
+                      // Prefer stored SR/PWD discount if present; otherwise compute from
+                      // vat_exempt_12 + discount20 (fallback to 20% of vat_exempt_12).
+                      $vatExemptCalc = $order->vat_exempt_12 ?? 0;
+                      $discount20Calc = $order->discount20 ?? ($vatExemptCalc * 0.20);
+                      $lessDiscountDisplay = $vatExemptCalc + $discount20Calc;
+                  @endphp
                   <table class="table table-invoice-data" style="width:100%; font-size:13px;">
                      <tbody>
                         <tr>
@@ -2187,8 +2235,8 @@ function updateDestOptions(orderId, rowId, paymentMethodId) {
                            <td class="text-right">₱{{ number_format($order->details->sum(fn($d) => ($d->price * $d->quantity) - ($d->discount ?? 0)), 2) }}</td>
                         </tr>
                         <tr>
-                           <td>Less Discount</td>
-                           <td class="text-right">₱{{ number_format($order->sr_pwd_discount ?? 0,2) }}</td>
+                            <td>Less Discount</td>
+                            <td class="text-right">₱{{ number_format($lessDiscountDisplay ?? 0, 2) }}</td>
                         </tr>
                         <tr>
                            <td>Vatable</td>
@@ -2446,6 +2494,23 @@ window.openInvoiceModalFromResponse = function(orderData) {
                           return sum + (Number(d.price || 0) * Number(d.quantity || 0) - Number(d.discount || 0));
                       }, 0);
 
+        // Compute Less Discount to match bill-out preview logic: vat_exempt_12 + discount20 (fallback to 20% of vat_exempt)
+        const vatExempt = Number(orderData.vat_exempt_12 || 0) || 0;
+        let discount20Val = 0;
+        try {
+            // Prefer explicit discount20 if present on the order
+            if (orderData.discount20 != null && !isNaN(Number(orderData.discount20))) {
+                discount20Val = Number(orderData.discount20 || 0);
+            } else {
+                // Fallback: 20% of the vat_exempt portion
+                discount20Val = Number((vatExempt * 0.20) || 0);
+            }
+        } catch (e) {
+            discount20Val = Number((vatExempt * 0.20) || 0);
+        }
+
+        const lessDiscountComputed = Number(vatExempt + discount20Val) || 0;
+
         const isPaymentComplete = hasPayments;
 
         // Build acknowledgement slip HTML
@@ -2613,7 +2678,7 @@ window.openInvoiceModalFromResponse = function(orderData) {
                                 </tr>
                                 <tr>
                                     <td>Less Discount</td>
-                                    <td style="text-align:right">₱${Number(orderData.discount_total || orderData.sr_pwd_discount || 0).toFixed(2)}</td>
+                                    <td style="text-align:right">₱${lessDiscountComputed.toFixed(2)}</td>
                                 </tr>
                                 <tr>
                                     <td>Vatable</td>
