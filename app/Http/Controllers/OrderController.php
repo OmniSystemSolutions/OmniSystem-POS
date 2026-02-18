@@ -284,6 +284,7 @@ class OrderController extends Controller
         'vat_exempt_12'    => $request->input('vat_exempt_12', 0),  // from your previous update
         'total_charge'     => $request->input('totalCharge', 0),
         'charges_description' => $request->input('charges_description'),
+        'discount20'       => $request->input('discount20', 0),
         'status'           => 'billout',
         'cashier_id'       => auth()->id(),
     ]);

@@ -1077,90 +1077,81 @@ function updateSelectedDiscounts(orderId) {
 
                     <hr style="margin:8px 0;">
 
-                    
-
                     <!-- Summary - matched order & labels from receipt -->
                    @php
-                                                 // Compute reg bill server-side so it matches the JS calculation
-                                                 $payGross = $order->gross_amount ?? $order->details->sum(fn($d) => ($d->price * $d->quantity) - ($d->discount ?? 0));
-                                                 $payPax = max(1, (int)($order->number_pax ?? 1));
-                                                 $payPerPax = $payGross / $payPax;
-                                                 $payQualified = 0;
-                                                 foreach ($order->discountEntries ?? [] as $de) {
-                                                      $dname = strtolower(optional($de->discount)->name ?? '');
-                                                      if (str_contains($dname, 'senior') || str_contains($dname, 'pwd')) {
-                                                            $payQualified += $de->quantity ?? 1;
-                                                      }
-                                                 }
-                                                 $payQualified = min($payQualified, $payPax);
-                                                 $payRegBill = $payPerPax * ($payPax - $payQualified);
-                                            @endphp
+                        // Compute reg bill server-side so it matches the JS calculation
+                        $payGross = $order->gross_amount ?? $order->details->sum(fn($d) => ($d->price * $d->quantity) - ($d->discount ?? 0));
+                        $payPax = max(1, (int)($order->number_pax ?? 1));
+                        $payPerPax = $payGross / $payPax;
+                        $payQualified = 0;
+                        foreach ($order->discountEntries ?? [] as $de) {
+                            $dname = strtolower(optional($de->discount)->name ?? '');
+                            if (str_contains($dname, 'senior') || str_contains($dname, 'pwd')) {
+                                $payQualified += $de->quantity ?? 1;
+                            }
+                        }
+                        $payQualified = min($payQualified, $payPax);
+                        $payRegBill = $payPerPax * ($payPax - $payQualified);
+                @endphp
 
                    <table class="table table-invoice-data m-0" style="width:100%; font-size:13px;">
-    <tbody>
-        <tr>
-            <td>Gross Charge</td>
-            <td class="text-right gross-charge">
-                ₱{{ number_format($order->details->sum(fn($d) => $d->quantity * $d->price - ($d->discount ?? 0)), 2) }}
-            </td>
-        </tr>
-        <tr>
-                <td>Less Discount</td>
-                <td class="text-right less-discount">
-                    @php
-                        // Prefer stored SR/PWD discount (matches receipt modal). If not present,
-                        // fall back to computing from vat_exempt_12 + 20% of that portion.
-                        $storedSrPwd = $order->sr_pwd_discount ?? null;
-
-                        if (!is_null($storedSrPwd) && $storedSrPwd != 0) {
-                            $lessDiscount = $storedSrPwd;
-                        } else {
+                    <tbody>
+                        <tr>
+                            <td>Gross Charge</td>
+                            <td class="text-right gross-charge">
+                                ₱{{ number_format($order->details->sum(fn($d) => $d->quantity * $d->price - ($d->discount ?? 0)), 2) }}
+                            </td>
+                        </tr>
+                <tr>
+                    <td>Less Discount</td>
+                    <td class="text-right less-discount">
+                        @php
                             // VAT Exempt 12% (already stored in database)
                             $vatExempt12 = $order->vat_exempt_12 ?? 0;
 
                             // 20% Discount should be computed from the VAT-exempt portion (default 20%)
-                            $discount20 = $order->discount20 ?? ($vatExempt12 * 0.20);
+                            // If you have a stored discount percentage field in the future, use that instead.
+                            $discount20 = ($vatExempt12) * 0.20;
 
                             // Less Discount = VAT Exempt 12% + 20% Discount
                             $lessDiscount = $vatExempt12 + $discount20;
-                        }
-                    @endphp
-                    ₱{{ number_format($lessDiscount, 2) }}
-                </td>
-        </tr>
+                        @endphp
+                        ₱{{ number_format($lessDiscount, 2) }}
+                    </td>
+                </tr>
 
-        <tr>
-            <td>Vatable</td>
-            <td class="text-right vatable">
-                ₱{{ number_format($order->vatable ?? 0, 2) }}
-            </td>
-        </tr>
-        <tr>
-            <td>Vat 12%</td>
-            <td class="text-right vat-12">
-                ₱{{ number_format($order->vat_12 ?? 0, 2) }}
-            </td>
-        </tr>
-        <tr>
-            <td>Reg Bill</td>
-            <td class="text-right reg-bill">
-                ₱{{ number_format($payRegBill ?? 0, 2) }}
-            </td>
-        </tr>
-        <tr>
-            <td>SR/PWD Bill</td>
-            <td class="text-right sr-pwd-bill">
-                ₱{{ number_format($order->sr_pwd_discount ?? 0, 2) }}
-            </td>
-        </tr>
-        <tr>
-            <td><strong>Total</strong></td>
-            <td class="text-right total-due">
-                <strong>₱{{ number_format($order->total_charge ?? $order->gross_amount ?? 0, 2) }}</strong>
-            </td>
-        </tr>
-    </tbody>
-</table>
+                        <tr>
+                            <td>Vatable</td>
+                            <td class="text-right vatable">
+                                ₱{{ number_format($order->vatable ?? 0, 2) }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Vat 12%</td>
+                            <td class="text-right vat-12">
+                                ₱{{ number_format($order->vat_12 ?? 0, 2) }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Reg Bill</td>
+                            <td class="text-right reg-bill">
+                                ₱{{ number_format($payRegBill ?? 0, 2) }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>SR/PWD Bill</td>
+                            <td class="text-right sr-pwd-bill">
+                                ₱{{ number_format($order->sr_pwd_discount ?? 0, 2) }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Total</strong></td>
+                            <td class="text-right total-due">
+                                <strong>₱{{ number_format($order->total_charge ?? $order->gross_amount ?? 0, 2) }}</strong>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
 
                     <div class="text-center mt-4" style="border:1px dashed #666; padding:10px; font-size:14px; font-weight:bold;">
                         PAYMENT PENDING<br>
@@ -1249,22 +1240,19 @@ function calculateChargesAndDiscounts(orderId, grossAmount, pax) {
     const vatable = regBill / (1 + vatRate);
     const vat12 = regBill - vatable;
 
-    // Calculate VAT-exempt portion for SR/PWD and 20% discount on that portion
+    // ✅ SR/PWD 20% discount (non-VAT portion)
     const srPwdVatable = srPwdBill / (1 + vatRate);
-    const vatExempt12 = srPwdBill - srPwdVatable; // srPwdBill - (srPwdBill / 1.12)
-    const vatExempt12Rounded = Number(vatExempt12.toFixed(2));
+    const discount20 = srPwdVatable * (discountPercent / 100);
 
-    // Use provided discountPercent if any; default to 20% for SR/PWD cases
-    const effectiveDiscountPercent = (discountPercent && discountPercent > 0) ? discountPercent : 20;
-
-    // Only apply the privileged discount if there are qualifying SR/PWD pax
-    const discount20 = qualifiedCount > 0 ? Number((vatExempt12Rounded * (effectiveDiscountPercent / 100)).toFixed(2)) : 0;
-
-    // ✅ NET BILL for SR/PWD (vatable portion minus discount)
+    // ✅ NET BILL for SR/PWD
     const netBill = srPwdVatable - discount20;
 
-    // ✅ TOTAL CHARGE = gross minus other discounts minus privileged discounts (vat exempt + 20% on exempt)
-    const totalCharge = Number(((grossAmount - otherDiscountTotal) - (vatExempt12Rounded + discount20)).toFixed(2));
+    // ✅ TOTAL CHARGE
+    const totalCharge = ((grossAmount - otherDiscountTotal) - ((srPwdBill / (1 + vatRate)) * vatRate) - ((srPwdBill / (1 + vatRate)) * (discountPercent / 100)));
+
+    // Calculate vat_exempt_12
+    const vatExempt12 = srPwdBill - srPwdVatable; // srPwdBill
+    const vatExempt12Rounded = Number(vatExempt12.toFixed(2));
 
     // Store in hidden input
     let vatExemptInput = document.getElementById('vat_exempt_12_' + orderId);
@@ -1296,36 +1284,6 @@ function calculateChargesAndDiscounts(orderId, grossAmount, pax) {
     setVal('netBill', netBill);
     setVal('otherDiscount', otherDiscountTotal);
     setVal('totalCharge', totalCharge);
-
-    // --- Update visible Less Discount in invoice/preview modals and details rows
-    try {
-        const lessDiscountComputed = Number((vatExempt12Rounded || 0) + (discount20 || 0));
-        const lessFormatted = '₱' + lessDiscountComputed.toFixed(2);
-
-        // Update any matching elements in the invoice/preview modals and details section
-        const selectors = `#pos-invoice-${orderId} .less-discount, #billOutPreviewModal${orderId} .less-discount, #details-${orderId} .less-discount`;
-        document.querySelectorAll(selectors).forEach(el => {
-            // If element is a TD, set textContent; if input, set value
-            if (el.tagName === 'TD' || el.tagName === 'DIV' || el.tagName === 'SPAN') {
-                el.textContent = lessFormatted;
-            } else if (el.tagName === 'INPUT') {
-                el.value = lessDiscountComputed.toFixed(2);
-            }
-        });
-
-        // Also update SR/PWD displayed amounts if present in preview/invoice
-        const srFormatted = '₱' + Number(srPwdBill || 0).toFixed(2);
-        const srSelectors = `#pos-invoice-${orderId} .sr-pwd-bill, #billOutPreviewModal${orderId} .sr-pwd-bill, #details-${orderId} .sr-pwd-bill`;
-        document.querySelectorAll(srSelectors).forEach(el => {
-            if (el.tagName === 'TD' || el.tagName === 'DIV' || el.tagName === 'SPAN') {
-                el.textContent = srFormatted;
-            } else if (el.tagName === 'INPUT') {
-                el.value = Number(srPwdBill || 0).toFixed(2);
-            }
-        });
-    } catch (e) {
-        console.debug('Could not update preview less-discount element', e);
-    }
 
     // ✅ NEW: Mark that calculation has been performed
     hasCalculatedCharges[orderId] = true;
@@ -2220,14 +2178,6 @@ function updateDestOptions(orderId, rowId, paymentMethodId) {
                   </table>
 
                   {{-- Summary Table --}}
-                  @php
-                      // Compute Less Discount (match bill-out preview logic):
-                      // Prefer stored SR/PWD discount if present; otherwise compute from
-                      // vat_exempt_12 + discount20 (fallback to 20% of vat_exempt_12).
-                      $vatExemptCalc = $order->vat_exempt_12 ?? 0;
-                      $discount20Calc = $order->discount20 ?? ($vatExemptCalc * 0.20);
-                      $lessDiscountDisplay = $vatExemptCalc + $discount20Calc;
-                  @endphp
                   <table class="table table-invoice-data" style="width:100%; font-size:13px;">
                      <tbody>
                         <tr>
@@ -2236,7 +2186,14 @@ function updateDestOptions(orderId, rowId, paymentMethodId) {
                         </tr>
                         <tr>
                             <td>Less Discount</td>
-                            <td class="text-right">₱{{ number_format($lessDiscountDisplay ?? 0, 2) }}</td>
+                            <td class="text-right">
+                                @php
+                                    $grossCharge = $order->details->sum(fn($d) => ($d->price * $d->quantity) - ($d->discount ?? 0));
+                                    $totalCharge = $order->total_charge ?? $order->net_amount ?? 0;
+                                    $lessDiscount = $grossCharge - $totalCharge;
+                                @endphp
+                                ₱{{ number_format($lessDiscount, 2) }}
+                            </td>
                         </tr>
                         <tr>
                            <td>Vatable</td>
@@ -2332,34 +2289,34 @@ function updateDestOptions(orderId, rowId, paymentMethodId) {
                   @endif
 
                   {{-- ACKNOWLEDGEMENT SLIP - Display below "Thank you" message --}}
-                  @php
-                      $srpwdEntries = $order->discountEntries?->filter(function($de) {
-                           $name = strtolower($de->name ?? '');
-                           return str_contains($name, 'senior') || str_contains($name, 'sr') || str_contains($name, 'pwd');
-                      }) ?? collect();
+            @php
+    $srpwdEntries = $order->discountEntries?->filter(function($de) {
+        $name = strtolower($de->name ?? '');
+        return str_contains($name, 'senior') || str_contains($name, 'sr') || str_contains($name, 'pwd');
+    }) ?? collect();
 
-                      $hasSrpwd = $srpwdEntries->isNotEmpty();
-                      $totalBill = $order->total_charge ?? $order->net_amount ?? 0;
-                      $lessVatExempt = $order->vat_exempt_12 ?? 0;
-                      $discount20 = $order->discount20 ?? ($lessVatExempt * 0.20);
-                      $totalPrivDiscount = $lessVatExempt + $discount20;
-                      $netSrBill = $totalBill - $totalPrivDiscount;
-                      // other discount check (numeric field on order if present)
-                      $otherDiscount = $order->other_discounts ?? 0;
-                  @endphp
+    $hasSrpwd = $srpwdEntries->isNotEmpty();
+    $totalBill = $order->sr_pwd_discount ?? 0;
+    $lessVatExempt = $order->vat_exempt_12 ?? 0;
+    $srPwdVatable = $totalBill / 1.12; 
+    $discount20 = $srPwdVatable * 0.20;  // ← update this
+    $totalPrivDiscount = $lessVatExempt + $discount20;
+    $netSrBill = $totalBill - $totalPrivDiscount;
+    $otherDiscount = $order->other_discounts ?? 0;
+@endphp
 
-                  @if($hasSrpwd || (float)($totalPrivDiscount ?? 0) > 0 || (float)($otherDiscount ?? 0) > 0)
+                @if($hasSrpwd || (float)($totalPrivDiscount ?? 0) > 0 || (float)($otherDiscount ?? 0) > 0)
 
-                      <hr style="border-top: 2px dashed #333; margin: 20px 0;">
-                      
-                      <div style="border: 2px solid #333; padding: 15px; margin-top: 15px;">
-                          <div class="text-center fw-bold mb-3" style="font-size: 14px;">ACKNOWLEDGEMENT SLIP</div>
-                          
-                          <div class="small mb-2" style="text-align: center;">
-                              <div>OR #: {{ sprintf('%08d', $order->id) }}</div>
-                              <div>Date: {{ $order->created_at->format('Y-m-d H:i') }}</div>
-                              <div class="mt-2">MEAL FOR (1) SENIOR</div>
-                          </div>
+                    <hr style="border-top: 2px dashed #333; margin: 20px 0;">
+                    
+                    <div style="border: 2px solid #333; padding: 15px; margin-top: 15px;">
+                        <div class="text-center fw-bold mb-3" style="font-size: 14px;">ACKNOWLEDGEMENT SLIP</div>
+                        
+                        <div class="small mb-2" style="text-align: center;">
+                            <div>OR #: {{ sprintf('%08d', $order->id) }}</div>
+                            <div>Date: {{ $order->created_at->format('Y-m-d H:i') }}</div>
+                            <div class="mt-2">MEAL FOR (1) SENIOR</div>
+                        </div>
 
                           <hr style="border-top: 1px solid #333; margin: 10px 0;">
 
@@ -2494,23 +2451,6 @@ window.openInvoiceModalFromResponse = function(orderData) {
                           return sum + (Number(d.price || 0) * Number(d.quantity || 0) - Number(d.discount || 0));
                       }, 0);
 
-        // Compute Less Discount to match bill-out preview logic: vat_exempt_12 + discount20 (fallback to 20% of vat_exempt)
-        const vatExempt = Number(orderData.vat_exempt_12 || 0) || 0;
-        let discount20Val = 0;
-        try {
-            // Prefer explicit discount20 if present on the order
-            if (orderData.discount20 != null && !isNaN(Number(orderData.discount20))) {
-                discount20Val = Number(orderData.discount20 || 0);
-            } else {
-                // Fallback: 20% of the vat_exempt portion
-                discount20Val = Number((vatExempt * 0.20) || 0);
-            }
-        } catch (e) {
-            discount20Val = Number((vatExempt * 0.20) || 0);
-        }
-
-        const lessDiscountComputed = Number(vatExempt + discount20Val) || 0;
-
         const isPaymentComplete = hasPayments;
 
         // Build acknowledgement slip HTML
@@ -2525,9 +2465,10 @@ window.openInvoiceModalFromResponse = function(orderData) {
 
         if (hasAckCondition && hasPayments) {
             const nf = new Intl.NumberFormat('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            const totalBill = Number(orderData.total_charge || orderData.net_amount || 0) || 0;
+            const totalBill = Number(orderData.sr_pwd_discount || 0) || 0;   // ← changed: use sr_pwd_discount
             const lessVatExempt = Number(orderData.vat_exempt_12 || 0) || 0;
-            const discount20 = Number(orderData.discount20 ?? (lessVatExempt * 0.20)) || 0;
+            const srPwdVatable = totalBill / 1.12;
+            const discount20 = srPwdVatable * 0.20; 
             const totalPrivDiscount = lessVatExempt + discount20;
             const netSrBill = totalBill - totalPrivDiscount;
 
@@ -2678,7 +2619,7 @@ window.openInvoiceModalFromResponse = function(orderData) {
                                 </tr>
                                 <tr>
                                     <td>Less Discount</td>
-                                    <td style="text-align:right">₱${lessDiscountComputed.toFixed(2)}</td>
+                                    <td style="text-align:right">₱${(gross - Number(orderData.total_charge || orderData.net_amount || 0)).toFixed(2)}</td>
                                 </tr>
                                 <tr>
                                     <td>Vatable</td>
