@@ -135,6 +135,7 @@ Route::get('/kitchen/fetch-items', [KitchenController::class, 'fetchItems']);
 Route::get('/kitchen/served', [KitchenController::class, 'showServed'])->name('kitchen.served');
 Route::get('/kitchen/walked', [KitchenController::class, 'showWalked'])->name('kitchen.walked');
 Route::post('/order-items/update-or-create', [KitchenController::class, 'updateOrCreate']);
+Route::post('/kitchen/push-item', [KitchenController::class, 'pushItem']);
 // Route::post('/inventory/update-stock-bulk', [KitchenController::class, 'updateStockBulk']);
 
 

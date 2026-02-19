@@ -106,7 +106,8 @@ tr:hover {
 
         <!-- Header -->
         <div class="modal-header">
-          <h5 class="modal-title">Update Status - Order #@{{ selectedOrder.order_no  }}</h5>
+          <h5 class="modal-title">@{{ modalMode === 'push' ? 'Push Item' : 'Update Status' }}
+  - Order #@{{ selectedOrder.order_no }}</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal">x</button>
         </div>
 
@@ -119,8 +120,29 @@ tr:hover {
               <div class="row g-2">
                 <div class="col-md-3">
                   <label class="form-label">Order No</label>
-                  <input type="text" class="form-control" v-model="selectedOrder.order_no" readonly>
+                  <template v-if="modalMode === 'push'">
+                  <!-- Push Mode -->
+                  <v-select
+                    
+                    :options="availableOrders"
+                    label="order_no"
+                    :reduce="o => o.id"
+                    v-model="selectedOrder.new_order_id"
+                    placeholder="Select Order"
+                    :clearable="false"
+                  />
+                  </template>
+                  <template v-else>
+                  <!-- Update Mode -->
+                  <input
+                    type="text"
+                    class="form-control"
+                    :value="selectedOrder.order_no"
+                    readonly
+                  >
+                  </template>
                 </div>
+
                 <div class="col-md-3">
                   <label class="form-label">Time Ordered</label>
                   <input type="text" class="form-control" :value="formatTime(selectedOrder.time_submitted)" readonly>
@@ -151,21 +173,33 @@ tr:hover {
 
 
               <div class="col-md-4">
-                <label class="form-label">Status</label>
+  <label class="form-label">Status</label>
 
-                <v-select
-                  :options="[
-                    { label: 'Served', value: 'served' },
-                    { label: 'Walked', value: 'walked' },
-                    { label: 'Cancelled', value: 'cancelled' }
-                  ]"
-                  label="label"
-                  :reduce="s => s.value"
-                  v-model="selectedOrder.status"
-                  placeholder="Select Status"
-                  :clearable="false"
-                />
-              </div>
+  <!-- Push Mode -->
+  <input
+    v-if="modalMode === 'push'"
+    type="text"
+    class="form-control"
+    value="Served"
+    readonly
+  >
+
+  <!-- Update Mode -->
+  <v-select
+    v-else
+    :options="[
+      { label: 'Served', value: 'served' },
+      { label: 'Walked', value: 'walked' },
+      { label: 'Cancelled', value: 'cancelled' }
+    ]"
+    label="label"
+    :reduce="s => s.value"
+    v-model="selectedOrder.status"
+    placeholder="Select Status"
+    :clearable="false"
+  />
+</div>
+
 
               <div class="col-md-4">
                 <label class="form-label">Station</label>
@@ -174,7 +208,7 @@ tr:hover {
 
               </div>
 
-              <div v-if="selectedOrder" class="mt-3">
+              <div v-if="selectedOrder && modalMode !== 'push'" class="mt-3">
               <h5>Ingredients for @{{ selectedOrder.name }}</h5>
 
               <div class="mb-2">
@@ -222,7 +256,7 @@ tr:hover {
 
               
             {{-- </div> --}}
-
+            <br>
             <!-- Buttons -->
             <div class="text-center">
               <button type="submit" class="btn btn-primary px-4 me-2">
@@ -384,7 +418,10 @@ tr:hover {
                                 <span>Recipe</span>
                               </th>
 
-                              <th v-if="statusFilter == 'serving'" scope="col" class="vgt-left-align text-left">
+                              <th 
+                                v-if="statusFilter === 'serving' || statusFilter === 'walked'" 
+                                scope="col" 
+                                class="vgt-left-align text-left">
                                 <span>Action</span>
                               </th>
                             </tr>
@@ -449,7 +486,7 @@ tr:hover {
 
 
 
-                                <td class="text-left" v-if="statusFilter == 'serving'">
+                                <td class="text-left" v-if="statusFilter === 'serving' || statusFilter === 'walked'">
                                   <div class="dropdown b-dropdown btn-group">
                                     <button id="dropdownMenu{{ $id ?? uniqid() }}"
                                         type="button"
@@ -463,23 +500,37 @@ tr:hover {
                                     </button>
 
                                     <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenu">
-                                      <!-- Update Status -->
-                                      <li role="presentation">
-                                      <a
-                                          class="dropdown-item"
-                                          href="#"
-                                          @click="openUpdateModal(item)"
-                                      >
-                                          <i class="nav-icon i-Edit font-weight-bold mr-2"></i>
-                                        Update Status
-                                      </a>
-                                      </li>
-
-                                      <li role="presentation">
-                                          <a class="dropdown-item" href="#">
-                                              <i class="nav-icon i-Mail-Attachement font-weight-bold mr-2"></i> Remarks
+                                       <!-- Update Status (only serving) -->
+                                        <li v-if="statusFilter === 'serving'" role="presentation">
+                                          <a
+                                            class="dropdown-item"
+                                            href="#"
+                                            @click="openUpdateModal(item)"
+                                          >
+                                            <i class="nav-icon i-Edit font-weight-bold mr-2"></i>
+                                            Update Status
                                           </a>
-                                      </li>
+                                        </li>
+
+                                        <!-- Remarks (only serving) -->
+                                        <li v-if="statusFilter === 'serving'" role="presentation">
+                                          <a class="dropdown-item" href="#">
+                                            <i class="nav-icon i-Mail-Attachement font-weight-bold mr-2"></i>
+                                            Remarks
+                                          </a>
+                                        </li>
+
+                                        <!-- Push Item (only walked) -->
+                                        <li v-if="statusFilter === 'walked'" role="presentation">
+                                          <a
+                                            class="dropdown-item"
+                                            href="#"
+                                            @click="pushItem(item)"
+                                          >
+                                            <i class="nav-icon i-Upload font-weight-bold mr-2"></i>
+                                            Push Item
+                                          </a>
+                                        </li>
                                     </ul>
                                   </div>
                                 </td>
@@ -502,9 +553,11 @@ new Vue({
   data: {
     now: new Date(), // reactive timestamp that updates every second
     selectedOrder: null,
+    modalMode: null,
     orderItems: [],
     expandedOrderId: null,
     chefs: [],
+    availableOrders: [],
     headerLabelMap: {
         pending: 'Running Time',
         served: 'Time Served',
@@ -623,6 +676,9 @@ console.log('RAW:', this.orderItems);
   },
 
   watch: {
+    'selectedOrder.new_order_id'(val) {
+    console.log('New Order Selected:', val);
+  },
   statusFilter() {
     this.fetchItems()
   },
@@ -670,9 +726,9 @@ console.log('RAW:', this.orderItems);
     }
   }).then(res => {
     this.orderItems = res.data.orderItems;
+    this.availableOrders = res.data.availableOrders;
     this.chefs = res.data.chefs;
-    console.log('res', res.data)
-
+    console.log('availableOrders:', this.availableOrders);
     // Restore expanded recipe if it still exists
     if (currentExpandedId && this.orderItems.some(i => i.order_detail_id === currentExpandedId)) {
       this.expandedOrderId = currentExpandedId;
@@ -736,25 +792,26 @@ setStatus(status) {
       });
     },
 
-    openUpdateModal(item) {
-  // Deep copy to avoid reference bugs
-  this.selectedOrder = JSON.parse(JSON.stringify(item));
+    openUpdateModal(item, mode = 'update') {
+  this.modalMode = mode;
 
-  // 👇 allow placeholder to show
-  this.selectedOrder.status = null;
+  // Deep copy
+  this.selectedOrder = JSON.parse(JSON.stringify(item || {}));
 
   // Defaults
   this.selectedOrder.showLoss = false;
+  this.selectedOrder.recipe = this.selectedOrder.recipe || [];
 
-  console.log('data', this.selectedOrder);
+  // 🔥 If Push Mode
+  if (this.modalMode === 'push') {
+    this.selectedOrder.status = 'served';
+    this.selectedOrder.order_no = null; // force select
+  } else {
+    this.selectedOrder.status = null; // allow placeholder
+  }
 
   this.$nextTick(() => {
     const modalEl = document.getElementById('updateModal');
-
-    if (!modalEl) {
-      console.error('❌ updateModal element not found');
-      return;
-    }
 
     let modal = bootstrap.Modal.getInstance(modalEl);
 
@@ -768,9 +825,14 @@ setStatus(status) {
     modal.show();
   });
 },
+pushItem(item) {
+  this.openUpdateModal(item, 'push');
+},
+
 
 resetUpdateModal() {
   this.selectedOrder = null;
+  this.modalMode = null;
 },
 
     sortTable(key) {
@@ -794,7 +856,7 @@ resetUpdateModal() {
     //     .catch(err => console.error("❌ Failed to reload orders:", err));
     // },
 
-    async submitUpdateStatus() {
+    async submitUpdate() {
   // 🔒 Show loader immediately
   Swal.fire({
     title: 'Updating order...',
@@ -931,13 +993,61 @@ if (modal) modal.hide();
     Swal.fire('Error', message, 'error');
   }
 
+  },
+  submitPush() {
+  const modal = bootstrap.Modal.getInstance(document.getElementById("updateModal"));
 
-
+  if (!this.selectedOrder.order_id) {
+    // SweetAlert for validation
+    Swal.fire({
+      icon: 'warning',
+      title: 'Oops!',
+      text: 'Please select an Order No',
+    });
+    return;
   }
+
+  axios.post('/kitchen/push-item', {
+    order_detail_id: this.selectedOrder.order_detail_id,
+    new_order_id: this.selectedOrder.new_order_id,
+    status: 'served'
+  })
+  .then(res => {
+    console.log('Push success');
+
+    modal.hide();
+    this.fetchItems(); // refresh list
+
+    // SweetAlert success
+    Swal.fire({
+      icon: 'success',
+      title: 'Order Pushed!',
+      text: 'The order has been successfully updated.',
+      timer: 1500,
+      showConfirmButton: false
+    });
+  })
+  .catch(err => {
+    console.error(err);
+
+    // SweetAlert error
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: 'Something went wrong while pushing the order.'
+    });
+  });
+},
+
+  submitUpdateStatus() {
+  if (this.modalMode === 'push') {
+    this.submitPush();
+  } else {
+    this.submitUpdate();
+  }
+}
 }
 });
 </script>
-
-
 
 @endsection
