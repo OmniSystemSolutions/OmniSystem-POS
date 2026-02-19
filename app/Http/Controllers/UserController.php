@@ -700,6 +700,46 @@ if (!empty($validated['salary_method'])) {
         ]);
     }
 
+    public function leaveHistory(User $user, $leaveId)
+    {
+        $leave = $user->leaves()
+            ->wherePivot('leave_id', $leaveId)
+            ->withPivot('assigned_days', 'earn', 'used', 'balance', 'effective_date')
+            ->first();
+
+        if (!$leave) {
+            return response()->json(['credits' => [], 'usages' => [], 'balance' => 0]);
+        }
+
+        $pivot   = $leave->pivot;
+        $credits = [];
+
+        if (!empty($pivot->assigned_days)) {
+            $credits[] = [
+                'assigned_days'  => (int) $pivot->assigned_days,
+                'effective_date' => $pivot->effective_date,
+                'reference'      => 'LC-' . str_pad($leaveId, 2, '0', STR_PAD_LEFT) . '-001',
+            ];
+        }
+
+        if (!empty($pivot->earn)) {
+            $credits[] = [
+                'assigned_days'  => (int) $pivot->earn,
+                'effective_date' => null,
+                'reference'      => 'LC-' . str_pad($leaveId, 2, '0', STR_PAD_LEFT) . '-002',
+            ];
+        }
+
+        $balance = (int) ($pivot->balance
+            ?? (((int)($pivot->assigned_days ?? 0) + (int)($pivot->earn ?? 0)) - (int)($pivot->used ?? 0)));
+
+        return response()->json([
+            'credits' => $credits,
+            'usages'  => [],   // plug in LeaveRequest query here when ready
+            'balance' => $balance,
+        ]);
+    }
+
     // PUT/PATCH: Save the updated data
     public function update(Request $request, $id)
     {

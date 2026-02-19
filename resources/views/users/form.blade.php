@@ -683,17 +683,23 @@
         <div class="col-md-5">
             <div class="form-check">
                 <input class="form-check-input leave-checkbox" type="checkbox"
-                       name="leaves[{{ $i }}][leave_id]" value="{{ $lv->id }}" id="leave_{{ $lv->id }}"
-                       {{ old("leaves.$i.assigned_days") ? 'checked' : '' }}>
+                        name="leaves[{{ $i }}][leave_id]" value="{{ $lv->id }}" id="leave_{{ $lv->id }}"
+                        {{ old("leaves.$i.assigned_days") ? 'checked' : '' }}>
                 <label class="form-check-label" for="leave_{{ $lv->id }}">{{ $lv->name }}</label>
             </div>
         </div>
 
         <!-- Credits -->
-        <div class="col-md-2 text-center">
-            <input type="number" name="leaves[{{ $i }}][assigned_days]"
-                   class="form-control form-control-sm leave-days text-center leave-credits"
-                   min="0" step="1" value="{{ old("leaves.$i.assigned_days", 0) }}" disabled>
+        {{-- <div class="col-md-2 text-center text-muted">
+            <span class="leave-credits">0</span>
+            <input type="hidden" name="leaves[{{ $i }}][assigned_days]"
+                class="leave-days leave-credits-input"
+                value="{{ old("leaves.$i.assigned_days", 0) }}">
+        </div> --}}
+
+        <div class="col-md-2 text-center text-muted">
+            <span class="leave-credits">0</span>
+            {{-- No hidden input here at all — JS adds it dynamically only when assigned --}}
         </div>
 
         <!-- Used -->
@@ -721,13 +727,18 @@
                             Assign Leave
                         </a>
                     </li>
+                     <li>
+    <a class="dropdown-item" href="javascript:void(0)"
+       onclick="openLeaveHistory('{{ $lv->id }}', '{{ addslashes($lv->name) }}')">
+        Leave History
+    </a>
+</li>
                     <!-- You can add Leave History here later -->
                 </ul>
             </div>
         </div>
     </div>
 
-    <!-- Inline assign form (hidden by default) -->
     <!-- Inline assign form (hidden by default) -->
 <div id="assign-form-{{ $lv->id }}"
      class="assign-leave-form row bg-white border border-secondary-subtle p-3 rounded-3 shadow-sm d-none"
@@ -775,6 +786,111 @@
 </div>
     @endforeach
 </div>
+
+<!-- ===================== LEAVE HISTORY MODAL ===================== -->
+<div class="modal fade" id="leaveHistoryModal" tabindex="-1" role="dialog" aria-labelledby="leaveHistoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content border-0 shadow">
+
+            <div class="modal-header" style="background:#f8f9fa; border-bottom:2px solid #dee2e6;">
+                <h5 class="modal-title fw-bold text-dark" id="leaveHistoryModalLabel">
+                    <i class="fas fa-history me-2 text-primary"></i>
+                    Leave History &mdash; <span id="lh-leave-name" class="text-primary"></span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
+                        data-dismiss="modal">&times;</button>
+            </div>
+
+            <div class="modal-body px-4 py-3">
+
+                <!-- Loading spinner -->
+                <div id="lh-loading" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="text-muted mt-2">Loading leave history...</p>
+                </div>
+
+                <!-- Content (shown after load) -->
+                <div id="lh-content" style="display:none;">
+
+                    <!-- ── Leave Credit ── -->
+                    <h6 class="fw-bold text-uppercase text-dark mb-2" style="letter-spacing:.5px;">
+                        Leave Credit
+                    </h6>
+                    <div class="table-responsive mb-1">
+                        <table class="table table-sm table-bordered mb-0" id="lh-credit-table">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Date Assigned</th>
+                                    <th class="text-center">Assigned Leaves</th>
+                                    <th>Reference #</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lh-credit-body">
+                                <!-- JS fills this -->
+                            </tbody>
+                            <tfoot>
+                                <tr class="fw-bold">
+                                    <td>Total</td>
+                                    <td class="text-center" id="lh-credit-total">0</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <!-- ── Leave Usage ── -->
+                    <h6 class="fw-bold text-uppercase text-dark mb-2 mt-4" style="letter-spacing:.5px;">
+                        Leave Usage
+                    </h6>
+                    <div class="table-responsive mb-1">
+                        <table class="table table-sm table-bordered mb-0" id="lh-usage-table">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Date of Leave</th>
+                                    <th class="text-center">No of Days</th>
+                                    <th>Reference #</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lh-usage-body">
+                                <!-- JS fills this -->
+                            </tbody>
+                            <tfoot>
+                                <tr class="fw-bold">
+                                    <td>Total</td>
+                                    <td class="text-center" id="lh-usage-total">0</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <!-- ── Leave Balance ── -->
+                    <div class="mt-3 ps-1">
+                        <span class="fw-bold text-danger fs-6">Leave Balance &nbsp;&nbsp;
+                            <span id="lh-balance" class="fw-bold">0</span>
+                        </span>
+                    </div>
+
+                </div><!-- /#lh-content -->
+
+                <!-- Empty state -->
+                <div id="lh-empty" style="display:none;" class="text-center text-muted py-4">
+                    <i class="fas fa-folder-open fa-2x mb-2"></i>
+                    <p>No leave history found for this employee.</p>
+                </div>
+
+            </div><!-- /.modal-body -->
+
+            <div class="modal-footer" style="background:#f8f9fa;">
+                <button type="button" class="btn btn-secondary btn-sm"
+                        data-bs-dismiss="modal" data-dismiss="modal">Close</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+<!-- =================== END LEAVE HISTORY MODAL =================== -->
+
 
                             </div>
                         </div>
@@ -1018,20 +1134,22 @@ document.getElementById('avatar')?.addEventListener('change', function(e){
 
 document.querySelector('form').addEventListener('submit', function () {
 
-    // Ensure any edits inside the Shift modal are aggregated into the hidden
-    // inputs before the form is submitted (saves per-date open times/work days)
     try { aggregateShiftModalAndPopulateHidden(); } catch (e) { /* ignore */ }
 
+    // Allowances: enable checked rows
     document.querySelectorAll('.allowance-checkbox:checked').forEach(cb => {
         const row = cb.closest('.allowance-row');
         row.querySelector('.allowance-amount').disabled = false;
-        row.querySelector('.allowance-count').disabled = false;
     });
 
-    document.querySelectorAll('.leave-checkbox:checked').forEach(cb => {
-        const row = cb.closest('.leave-row');
-        row.querySelector('.leave-days').disabled = false;
-        row.querySelector('.leave-effective').disabled = false;
+    // Leaves: ONLY enable hidden credits input for checked rows
+    // Unchecked rows stay disabled → won't submit → no validation error
+    document.querySelectorAll('#leaves-list .leave-row').forEach(row => {
+        const checkbox    = row.querySelector('.leave-checkbox');
+        const creditInput = row.querySelector('.leave-credits-input');
+        if (creditInput) {
+            creditInput.disabled = !checkbox?.checked;
+        }
     });
 
 });
@@ -1879,6 +1997,123 @@ window.updateSelectedPermissions = function(index) {
     }
 };
 
+// ── Leave History Modal ──────────────────────────────────────────
+function openLeaveHistory(leaveId, leaveName) {
+    // Update modal title
+    document.getElementById('lh-leave-name').textContent = leaveName;
+
+    // Reset state
+    document.getElementById('lh-loading').style.display = '';
+    document.getElementById('lh-content').style.display = 'none';
+    document.getElementById('lh-empty').style.display   = 'none';
+
+    // Open modal — Bootstrap 4 (jQuery)
+    if (window.jQuery && typeof window.jQuery.fn.modal === 'function') {
+        window.jQuery('#leaveHistoryModal').modal('show');
+    } else if (window.bootstrap) {
+        bootstrap.Modal.getOrCreateInstance(
+            document.getElementById('leaveHistoryModal')
+        ).show();
+    }
+
+    const userId = document.getElementById('lh-user-id')?.value || null;
+
+    function fmtDate(str) {
+        if (!str) return '—';
+        try { return new Date(str).toLocaleDateString(); } catch (e) { return str; }
+    }
+    function makeRef(prefix, id, idx) {
+        return `${prefix}-${String(id).padStart(2,'0')}-${String(idx+1).padStart(3,'0')}`;
+    }
+
+    // AFTER
+    if (!userId) {
+        document.getElementById('lh-loading').style.display = 'none';
+
+        const leaveRow   = document.querySelector(`.leave-row[data-leave-id="${leaveId}"]`);
+        const creditsSpan = leaveRow?.querySelector('.leave-credits');
+        const credits    = parseInt(creditsSpan?.textContent) || 0;
+
+        // ← Read the date stored by save-assign-leave
+        const assignedDate = creditsSpan?.dataset.assignedDate || '—';
+
+        if (credits > 0) {
+            document.getElementById('lh-credit-body').innerHTML = `
+                <tr>
+                    <td>${assignedDate}</td>
+                    <td class="text-center">${credits}</td>
+                    <td>${makeRef('LC', leaveId, 0)}</td>
+                </tr>`;
+            document.getElementById('lh-credit-total').textContent = credits;
+            document.getElementById('lh-usage-body').innerHTML = '<tr><td colspan="3" class="text-center text-muted">No usage yet</td></tr>';
+            document.getElementById('lh-usage-total').textContent = 0;
+            document.getElementById('lh-balance').textContent = credits;
+            document.getElementById('lh-content').style.display = '';
+        } else {
+            document.getElementById('lh-empty').style.display = '';
+        }
+        return;
+    }
+
+    // ── EDIT form: fetch from server ──
+    fetch(`/users/${userId}/leave-history/${leaveId}`, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        document.getElementById('lh-loading').style.display = 'none';
+
+        const credits = data.credits || [];
+        const usages  = data.usages  || [];
+
+        if (!credits.length && !usages.length) {
+            document.getElementById('lh-empty').style.display = '';
+            return;
+        }
+
+        // Credits
+        const creditBody = document.getElementById('lh-credit-body');
+        creditBody.innerHTML = '';
+        let creditTotal = 0;
+        credits.forEach((row, i) => {
+            creditTotal += Number(row.assigned_days || 0);
+            creditBody.insertAdjacentHTML('beforeend', `
+                <tr>
+                    <td>${fmtDate(row.effective_date || row.created_at)}</td>
+                    <td class="text-center">${row.assigned_days || 0}</td>
+                    <td>${row.reference || makeRef('LC', leaveId, i)}</td>
+                </tr>`);
+        });
+        document.getElementById('lh-credit-total').textContent = creditTotal;
+
+        // Usages
+        const usageBody = document.getElementById('lh-usage-body');
+        usageBody.innerHTML = '';
+        let usageTotal = 0;
+        usages.forEach((row, i) => {
+            usageTotal += Number(row.days_used || 0);
+            usageBody.insertAdjacentHTML('beforeend', `
+                <tr>
+                    <td>${fmtDate(row.date_of_leave || row.created_at)}</td>
+                    <td class="text-center">${row.days_used || 0}</td>
+                    <td>${row.reference || makeRef('LU', leaveId, i)}</td>
+                </tr>`);
+        });
+
+        if (!usages.length) {
+            usageBody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">No usage records yet</td></tr>';
+        }
+
+        document.getElementById('lh-usage-total').textContent = usageTotal;
+        document.getElementById('lh-balance').textContent = data.balance ?? (creditTotal - usageTotal);
+        document.getElementById('lh-content').style.display = '';
+    })
+    .catch(() => {
+        document.getElementById('lh-loading').style.display = 'none';
+        document.getElementById('lh-empty').style.display = '';
+    });
+}
+
 // Add new branch row
 document.getElementById('add-branch-permission')?.addEventListener('click', function() {
     const list = document.getElementById('branch-permissions-list');
@@ -1940,93 +2175,85 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// Enable/disable credits when checkbox is toggled
-document.getElementById('leaves-list')?.addEventListener('change', function(e) {
-    if (e.target.classList.contains('leave-checkbox')) {
-        const row = e.target.closest('.leave-row');
-        const creditsInput = row?.querySelector('.leave-credits');
-        if (creditsInput) {
-            creditsInput.disabled = !e.target.checked;
-            if (!e.target.checked) {
-                creditsInput.value = '0';
-            }
-        }
-    }
-});
-
-// Show inline form when clicking "Assign Leave"
-// document.addEventListener('click', function(e) {
-//     if (e.target.classList.contains('assign-leave-inline')) {
-//         e.preventDefault();
-
-//         const leaveId = e.target.dataset.leaveId;
-
-//         // Hide any other open forms
-//         document.querySelectorAll('.assign-leave-form').forEach(form => {
-//             form.classList.add('d-none');
-//         });
-
-//         // Show the form for this leave
-//         const form = document.getElementById(`assign-form-${leaveId}`);
-//         if (form) {
-//             form.classList.remove('d-none');
-//             // Optional: focus on days input
-//             form.querySelector(`#assign-days-${leaveId}`).focus();
-//         }
-//     }
-// });
-
-// document.addEventListener('click', function(e) {
-//     if (e.target.classList.contains('assign-leave-inline')) {
-//         e.preventDefault();
-
-//         const leaveId = e.target.dataset.leaveId;
-
-//         // Hide all assign rows
-//         document.querySelectorAll('.assign-row').forEach(row => {
-//             row.classList.add('d-none');
-//         });
-
-//         // Show this leave's row
-//         const assignRow = document.getElementById(`assign-form-${leaveId}`);
-//         if (assignRow) {
-//             assignRow.classList.remove('d-none');
-//             assignRow.querySelector(`#assign-days-${leaveId}`)?.focus();
-//         }
-//     }
-// });
-
-// Save button – update UI (and later can be AJAX)
+// Save Assign Leave
 document.addEventListener('click', function(e) {
-    if (e.target.classList.contains('save-assign-leave')) {
-        const leaveId = e.target.dataset.leaveId;
-        const daysInput = document.getElementById(`assign-days-${leaveId}`);
-        const dateInput = document.getElementById(`assign-date-${leaveId}`);
+    if (!e.target.classList.contains('save-assign-leave')) return;
 
-        const days = parseInt(daysInput.value) || 0;
-        if (days < 1) {
-            alert('Please enter at least 1 day');
-            return;
+    const leaveId   = e.target.dataset.leaveId;
+    const daysInput = document.getElementById(`assign-days-${leaveId}`);
+    const dateInput = document.getElementById(`assign-date-${leaveId}`);
+    const days      = parseInt(daysInput.value) || 0;
+
+    if (days < 1) {
+        alert('Please enter at least 1 day.');
+        return;
+    }
+
+    const leaveRow      = document.querySelector(`.leave-row[data-leave-id="${leaveId}"]`);
+    const creditsSpan   = leaveRow?.querySelector('.leave-credits');
+    const creditsHidden = leaveRow?.querySelector('.leave-credits-input');
+    const balanceEl     = leaveRow?.querySelector('.leave-balance');
+    const usedEl        = leaveRow?.querySelector('.leave-used');
+
+    // Read current credits from the <span> textContent
+    const currentCredits = parseInt(creditsSpan?.textContent) || 0;
+    const newCredits     = currentCredits + days;
+
+    const userId = document.getElementById('lh-user-id')?.value || null;
+
+    if (!userId) {
+        // CREATE form: store everything in the DOM for Leave History to read back
+        const assignedDate = dateInput.value || '—';
+
+        if (creditsSpan) {
+            creditsSpan.textContent = newCredits;
+            creditsSpan.dataset.assignedDate = assignedDate; // ← key fix: store date
         }
+        if (creditsHidden) creditsHidden.value = newCredits;
 
-        const row = document.querySelector(`.leave-row[data-leave-id="${leaveId}"]`);
-        if (row) {
-            const creditsInput = row.querySelector('.leave-credits');
-            if (creditsInput) {
-                let current = parseInt(creditsInput.value) || 0;
-                creditsInput.value = current + days;
-            }
-        }
+        // Update balance
+        const used = parseInt(usedEl?.textContent) || 0;
+        if (balanceEl) balanceEl.textContent = newCredits - used;
 
-        alert(`Successfully assigned ${days} day(s) to this leave (effective: ${dateInput.value || 'immediately'})`);
-
-        // Hide form
         document.getElementById(`assign-form-${leaveId}`).classList.add('d-none');
-
-        // Reset values
         daysInput.value = '1';
         dateInput.value = '';
+        return;
     }
+
+    // EDIT form: AJAX
+    const btn = e.target;
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+
+    const formData = new FormData();
+    formData.append('_method', 'PUT');
+    formData.append(`leaves[0][leave_id]`, leaveId);
+    formData.append(`leaves[0][assigned_days]`, newCredits);
+    formData.append(`leaves[0][effective_date]`, dateInput.value || '');
+
+    fetch(`/users/${userId}`, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content
+                            || document.querySelector('input[name="_token"]')?.value || '',
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: formData,
+    })
+    .then(r => { if (!r.ok) throw new Error('Server error: ' + r.status); return r; })
+    .then(() => {
+        if (creditsSpan) creditsSpan.textContent = newCredits;
+        if (creditsHidden) creditsHidden.value = newCredits;
+        const used = parseInt(usedEl?.textContent) || 0;
+        if (balanceEl) balanceEl.textContent = newCredits - used;
+        alert(`Successfully assigned ${days} day(s).`);
+        document.getElementById(`assign-form-${leaveId}`).classList.add('d-none');
+        daysInput.value = '1';
+        dateInput.value = '';
+    })
+    .catch(err => alert('Failed to save. Please try again.\n' + err.message))
+    .finally(() => { btn.disabled = false; btn.textContent = 'Save'; });
 });
 
 // Cancel button
