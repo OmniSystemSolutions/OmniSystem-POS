@@ -402,9 +402,10 @@ if ($status === 'serving') {
          // serving => 'Bill out' (opens billOut modal)
          // billout  => 'Payment' (opens payment modal)
          // payments => 'View Receipt' (opens invoice modal)
-      'viewLabel' => ($status === 'serving') ? 'Bill out' : (($status === 'billout') ? 'Payment' : (($status === 'payments') ? 'View Receipt' : 'View')),
+        'viewLabel' => ($status === 'serving') ? 'Bill out' : (($status === 'billout') ? 'Payment' : (($status === 'payments') ? 'View Receipt' : 'View')),
          // target appropriate modal depending on page status
          'viewModalId' => ($status === 'serving') ? "billOutModal{$order->id}" : (($status === 'billout') ? "paymentModal{$order->id}" : (($status === 'payments') ? "invoiceModal{$order->id}" : null)),
+         'billOutPreviewModalId' => ($status === 'billout') ? "billOutPreviewModal{$order->id}" : null,
          'deleteLabel' => 'Cancel',
       ])
       </td>
@@ -1078,7 +1079,7 @@ function updateSelectedDiscounts(orderId) {
                     <hr style="margin:8px 0;">
 
                     <!-- Summary - matched order & labels from receipt -->
-                   @php
+                    @php
                         // Compute reg bill server-side so it matches the JS calculation
                         $payGross = $order->gross_amount ?? $order->details->sum(fn($d) => ($d->price * $d->quantity) - ($d->discount ?? 0));
                         $payPax = max(1, (int)($order->number_pax ?? 1));
@@ -1092,9 +1093,9 @@ function updateSelectedDiscounts(orderId) {
                         }
                         $payQualified = min($payQualified, $payPax);
                         $payRegBill = $payPerPax * ($payPax - $payQualified);
-                @endphp
+                    @endphp
 
-                   <table class="table table-invoice-data m-0" style="width:100%; font-size:13px;">
+                <table class="table table-invoice-data m-0" style="width:100%; font-size:13px;">
                     <tbody>
                         <tr>
                             <td>Gross Charge</td>
@@ -1135,7 +1136,7 @@ function updateSelectedDiscounts(orderId) {
                         <tr>
                             <td>Reg Bill</td>
                             <td class="text-right reg-bill">
-                                ₱{{ number_format($payRegBill ?? 0, 2) }}
+                                ₱{{ number_format(($order->vatable ?? 0) * 1.12, 2) }}
                             </td>
                         </tr>
                         <tr>
@@ -2118,9 +2119,6 @@ function updateDestOptions(orderId, rowId, paymentMethodId) {
 <div class="modal fade" id="invoiceModal{{ $order->id }}" tabindex="-1" aria-labelledby="invoiceLabel{{ $order->id }}" aria-hidden="true">
    <div class="modal-dialog modal-sm modal-dialog-scrollable">
       <div class="modal-content">
-        <div class="modal-header">
-            <h5 class="modal-title">POS Receipt</h5>
-         </div>
          <div class="modal-body">
             <div id="pos-invoice-{{ $order->id }}">
                <div style="max-width: 400px; margin: 0px auto; font-family: Arial, Helvetica, sans-serif;">
@@ -2204,8 +2202,9 @@ function updateDestOptions(orderId, rowId, paymentMethodId) {
                            <td class="text-right">₱{{ number_format($order->vat_12 ?? 0,2) }}</td>
                         </tr>
                         <tr>
-                           <td>Reg Bill</td>
-                           <td class="text-right">₱{{ number_format($order->vatable ?? 0,2) }}</td>
+                        <td>Reg Bill</td>
+                            <td class="text-right">₱{{ number_format(($order->vatable ?? 0) * 1.12, 2) }}</td>
+                        </tr>
                         </tr>
                         <tr>
                            <td>SR/PWD Bill</td>
@@ -2554,9 +2553,6 @@ window.openInvoiceModalFromResponse = function(orderData) {
         modalEl.innerHTML = `
             <div class="modal-dialog modal-sm modal-dialog-scrollable">
                 <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">POS Receipt</h5>
-                    </div>
                     <div class="modal-body" style="max-height:80vh; overflow-y:auto;">
                         <div style="max-width:400px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;font-size:13px;">
                             
@@ -2631,7 +2627,7 @@ window.openInvoiceModalFromResponse = function(orderData) {
                                 </tr>
                                 <tr>
                                     <td>Reg Bill</td>
-                                    <td style="text-align:right">₱${Number(orderData.vatable || 0).toFixed(2)}</td>
+                                    <td style="text-align:right">₱${(Number(orderData.vatable || 0) * 1.12).toFixed(2)}</td>
                                 </tr>
                                 <tr>
                                     <td>SR/PWD Bill</td>

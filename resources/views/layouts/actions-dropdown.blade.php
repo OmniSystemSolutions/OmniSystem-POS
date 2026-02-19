@@ -25,13 +25,15 @@
 
     <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenu{{ $id ?? uniqid() }}">
         <!-- Edit -->
-        @isset($editRoute)
+    @isset($editRoute)
+        @if(request()->query('status') !== 'payments')
         <li role="presentation">
             <a class="dropdown-item" href="{{ $editRoute }}">
                 <i class="nav-icon i-Edit font-weight-bold mr-2"></i> {{ $editLabel ?? 'Edit' }}
             </a>
         </li>
-        @endisset
+        @endif
+    @endisset
 
         @isset($userEditRoute)
                 <li role="presentation">
@@ -259,12 +261,25 @@
         @endif
 
         <!-- Cancel Static-->
-        @isset($cancelRoute)
+        {{-- @isset($cancelRoute)
             <li role="presentation">
             <a class="dropdown-item" href="{{ $cancelRoute }}">
-                <i class="nav-icon i-Letter-Close font-weight-bold mr-2"></i> {{ $cancelLabel ?? 'Cancel' }}
+                <i class="nav-icon i-Letter-Close font-weight-bold mr-2"></i> {{ $cancelLabel ?? 'Print Bill Out' }}
             </a>
         </li>
+        @endisset --}}
+
+        {{-- AFTER --}}
+        @isset($cancelRoute)
+            @if(isset($billOutPreviewModalId))
+                <li role="presentation">
+                    <a class="dropdown-item" href="javascript:void(0);"
+                        data-bs-toggle="modal"
+                        data-bs-target="#{{ $billOutPreviewModalId }}">
+                        <i class="nav-icon i-Receipt font-weight-bold mr-2"></i> {{ $cancelLabel ?? 'Print Bill Out' }}
+                    </a>
+                </li>
+            @endif
         @endisset
 
 

@@ -181,8 +181,6 @@ Route::prefix('pos/session')->group(function () {
     Route::post('/close', [PosSessionController::class, 'closeSession']);
 });
 
-
-
 Route::get('/users', [UserController::class, 'index'])->name('users.index');
 Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
 Route::post('/users', [UserController::class, 'store'])->name('users.store');
@@ -195,8 +193,7 @@ Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.e
 Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
 Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
 Route::put('/users/{user}/status/{status}', [UserController::class, 'updateStatus'])->name('users.updateStatus');
-
-
+Route::get('/users/{user}/leave-history/{leaveId}', [UserController::class, 'leaveHistory'])->name('users.leave-history');
 
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
 Route::get('/products/fetch', [ProductController::class, 'fetchProducts'])
