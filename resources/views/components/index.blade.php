@@ -892,6 +892,7 @@ Vue.component("actions-dropdown", {
          types: [
          { label: 'Products', value: 'products', url: '/products' },
          { label: 'Components', value: 'components', url: '/components' },
+         { label: 'Bundled Items', value: 'bundled_items', url: '/bundled-items' },
          ],
          showColumnDropdown: false,
          showFilterSidebar: false,

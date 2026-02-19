@@ -19,6 +19,7 @@ class BranchProduct extends Model
         'quantity',
         'price',
         'status',
+        'type', // simple | bundle
     ];
 
     protected $casts = [
