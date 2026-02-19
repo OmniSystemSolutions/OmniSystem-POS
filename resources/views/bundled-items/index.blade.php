@@ -1,17 +1,9 @@
 @extends('layouts.app')
 @section('content')
-<style>
-       .modal-dialog {
-         max-width: 90%;
-       }
-</style>
 <div class="main-content" id="app">
    <div>
       <div class="breadcrumb">
-         <h1 class="mr-3">Products and Components</h1>
-         <ul>
-            <li><a href=""> Inventory </a></li>
-         </ul>
+         <h1 class="mr-3">Bundled Items</h1>
          <div class="breadcrumb-action"></div>
       </div>
       <div class="separator-breadcrumb border-top"></div>
@@ -129,466 +121,462 @@
          </div>
       </div>
    </div>
-
    <div class="wrapper">
-      <div class="row">
-         <div class="col-md-4">
-            <label class="col-form-label pt-0">Select Type</label>
-            <v-select 
-               :options="types" 
-               label="label" 
-               :reduce="type => type.value" 
-               v-model="selectedType" 
-               @input="goToPage" 
-               placeholder="Select type" 
-               />
-         </div>
+   <div class="row">
+      <div class="col-md-4">
+         <label class="col-form-label pt-0">Select Type</label>
+         <v-select 
+            :options="types" 
+            label="label" 
+            :reduce="type => type.value" 
+            v-model="selectedType" 
+            @input="goToPage" 
+            placeholder="Select type" 
+            />
       </div>
-      <div class="card mt-4">
+   </div>
+   <div class="card mt-4">
+      <div class="card-body">
+         <nav class="card-header">
+            <ul class="nav nav-tabs card-header-tabs">
+               <li class="nav-item">
+                  <a href="#" 
+                     class="nav-link"
+                     :class="{ active: statusFilter === 'active' }"
+                     @click.prevent="setStatus('active')">
+                  Active
+                  </a>
+               </li>
+               <li class="nav-item">
+                  <a href="#"
+                     class="nav-link"
+                     :class="{ active: statusFilter === 'archived' }"
+                     @click.prevent="setStatus('archived')">
+                  Archived
+                  </a>
+               </li>
+            </ul>
+         </nav>
          <div class="card-body">
-            <nav class="card-header">
-               <ul class="nav nav-tabs card-header-tabs">
-                  <li class="nav-item">
-                     <a href="#" 
-                        class="nav-link"
-                        :class="{ active: statusFilter === 'active' }"
-                        @click.prevent="setStatus('active')">
-                     Active
-                     </a>
-                  </li>
-                  <li class="nav-item">
-                     <a href="#"
-                        class="nav-link"
-                        :class="{ active: statusFilter === 'archived' }"
-                        @click.prevent="setStatus('archived')">
-                     Archived
-                     </a>
-                  </li>
-               </ul>
-            </nav>
-            <div class="card-body">
-               <div class="vgt-wrap">
-                  <div class="vgt-inner-wrap">
-                     <div class="vgt-global-search vgt-clearfix">
-                        <div class="vgt-global-search__input vgt-pull-left">
-                           <span aria-hidden="true" class="input__icon">
-                              <div class="magnifying-glass"></div>
-                           </span>
-                           <form role="search" method="GET" action="{{ route('products.index') }}" class="mb-3" style="position: relative;">
-                              <label for="tableSearch" style="cursor: pointer;" onclick="this.closest('form').submit()">
-                              <span class="sr-only">Search</span>
-                              </label>
-                              <input 
-                                 id="tableSearch" 
-                                 name="search" 
-                                 type="text" 
-                                 value="{{ request('search') }}" 
-                                 placeholder="Search this table" 
-                                 class="vgt-input vgt-pull-left" 
-                                 onkeydown="if(event.key === 'Enter') this.form.submit()"
-                                 >
-                           </form>
-                        </div>
-                        <div class="vgt-global-search__actions vgt-pull-right">
-                           <div>
-                              <div id="dropdown-form" class="dropdown b-dropdown mx-1 btn-group" :class="{ show: showColumnDropdown }">
-                                 <button 
-                                    type="button" 
-                                    class="btn dropdown-toggle btn-light dropdown-toggle-no-caret" 
-                                    @click="toggleDropdown" 
-                                    aria-haspopup="menu">
-                                 <i class="i-Gear"></i>
-                                 </button>
-                                 <ul class="dropdown-menu dropdown-menu-right" v-show="showColumnDropdown" role="menu" style="display: block;">
-                                    <li role="presentation">
-                                       <header class="dropdown-header">Columns</header>
-                                    </li>
-                                    <li role="presentation" style="width: 220px;">
-                                       <form class="b-dropdown-form p-0">
-                                          <section>
-                                             <div class="px-4" style="max-height: 400px; overflow:auto;">
-                                                <ul class="list-unstyled">
-                                                   <li v-for="col in columns" :key="col.field">
-                                                      <div class="my-1 custom-control custom-checkbox">
-                                                         <input 
-                                                            type="checkbox" 
-                                                            class="custom-control-input" 
-                                                            :id="`col-${col.field}`" 
-                                                            :checked="!col.hidden" 
-                                                            @change="toggleColumn(col.field)"
-                                                            >
-                                                         <label class="custom-control-label" :for="`col-${col.field}`">
-                                                         @{{ col.label }}
-                                                         </label>
-                                                      </div>
-                                                   </li>
-                                                </ul>
-                                             </div>
-                                          </section>
-                                       </form>
-                                    </li>
-                                 </ul>
-                              </div>
-                              <button
-                                 type="button"
-                                 class="btn mx-1 btn-outline-info btn-sm"
-                                 @click="showFilterSidebar = true"
-                                 >
-                              <i class="i-Filter-2"></i> Filter
+            <div class="vgt-wrap">
+               <div class="vgt-inner-wrap">
+                  <div class="vgt-global-search vgt-clearfix">
+                     <div class="vgt-global-search__input vgt-pull-left">
+                        <span aria-hidden="true" class="input__icon">
+                           <div class="magnifying-glass"></div>
+                        </span>
+                        <form role="search" method="GET" action="{{ route('bundled-items.index') }}" class="mb-3" style="position: relative;">
+                           <label for="tableSearch" style="cursor: pointer;" onclick="this.closest('form').submit()">
+                           <span class="sr-only">Search</span>
+                           </label>
+                           <input 
+                              id="tableSearch" 
+                              name="search" 
+                              type="text" 
+                              value="{{ request('search') }}" 
+                              placeholder="Search this table" 
+                              class="vgt-input vgt-pull-left" 
+                              onkeydown="if(event.key === 'Enter') this.form.submit()"
+                              >
+                        </form>
+                     </div>
+                     <div class="vgt-global-search__actions vgt-pull-right">
+                        <div>
+                           <div id="dropdown-form" class="dropdown b-dropdown mx-1 btn-group" :class="{ show: showColumnDropdown }">
+                              <button 
+                                 type="button" 
+                                 class="btn dropdown-toggle btn-light dropdown-toggle-no-caret" 
+                                 @click="toggleDropdown" 
+                                 aria-haspopup="menu">
+                              <i class="i-Gear"></i>
                               </button>
-                              <button
-                                 class="btn btn-sm btn-outline-danger ripple mx-1"
-                                 @click="exportExcel"
-                                 >
-                              <i class="i-File-Excel"></i> Export
-                              </button>
-                              {{-- Import button: hide if archived --}}
-                              {{-- @if ($status !== 'archived')
-                              <button
-                                 type="button"
-                                 class="btn btn-info m-1 btn-sm"
-                                 @click="openImportModal"
-                                 >
-                              <i class="i-Upload"></i> Import
-                              </button>
-                              @endif --}}
-                              {{-- Add button: hide if archived --}}
-                              {{-- @if ($status !== 'archived') --}}
-                              <button type="button" class="btn mx-1 btn-btn btn-primary btn-icon" onclick="window.location='{{ url('products/create') }}'">
+                              <ul class="dropdown-menu dropdown-menu-right" v-show="showColumnDropdown" role="menu" style="display: block;">
+                                 <li role="presentation">
+                                    <header class="dropdown-header">Columns</header>
+                                 </li>
+                                 <li role="presentation" style="width: 220px;">
+                                    <form class="b-dropdown-form p-0">
+                                       <section>
+                                          <div class="px-4" style="max-height: 400px; overflow:auto;">
+                                             <ul class="list-unstyled">
+                                                <li v-for="col in columns" :key="col.field">
+                                                   <div class="my-1 custom-control custom-checkbox">
+                                                      <input 
+                                                         type="checkbox" 
+                                                         class="custom-control-input" 
+                                                         :id="`col-${col.field}`" 
+                                                         :checked="!col.hidden" 
+                                                         @change="toggleColumn(col.field)"
+                                                         >
+                                                      <label class="custom-control-label" :for="`col-${col.field}`">
+                                                      @{{ col.label }}
+                                                      </label>
+                                                   </div>
+                                                </li>
+                                             </ul>
+                                          </div>
+                                       </section>
+                                    </form>
+                                 </li>
+                              </ul>
+                           </div>
+                           <button
+                              type="button"
+                              class="btn mx-1 btn-outline-info btn-sm"
+                              @click="showFilterSidebar = true"
+                              >
+                           <i class="i-Filter-2"></i> Filter
+                           </button>
+                           <button
+                              class="btn btn-sm btn-outline-danger ripple mx-1"
+                              @click="exportExcel"
+                              >
+                           <i class="i-File-Excel"></i> Export
+                           </button>
+                           {{-- Import button: hide if archived --}}
+                           {{-- @if ($status !== 'archived')
+                           <button
+                              type="button"
+                              class="btn btn-info m-1 btn-sm"
+                              @click="openImportModal"
+                              >
+                           <i class="i-Upload"></i> Import
+                           </button>
+                           @endif --}}
+                           {{-- Add button: hide if archived --}}
+                           {{-- @if ($status !== 'archived') --}}
+                           <button type="button" class="btn mx-1 btn-btn btn-primary btn-icon" onclick="window.location='{{ url('bundled-items/create') }}'">
                               <i class="i-Add"></i> Add
                               </button>
-                              {{-- @endif --}}
-                              {{-- Stock Alert Summary: show only if not active and not archived --}}
-                              {{-- @if ($status !== 'active' && $status !== 'archived')
-                              <button type="button" class="btn mx-1 btn-btn btn-primary">
-                              Stock Alert Summary
-                              </button>
-                              @endif --}}
-                           </div>
+                           {{-- @endif --}}
+                           {{-- Stock Alert Summary: show only if not active and not archived --}}
+                           {{-- @if ($status !== 'active' && $status !== 'archived')
+                           <button type="button" class="btn mx-1 btn-btn btn-primary">
+                           Stock Alert Summary
+                           </button>
+                           @endif --}}
                         </div>
                      </div>
                   </div>
                </div>
             </div>
-            <div class="vgt-fixed-header"></div>
-            <div class="vgt-responsive" style="max-height: 400px; overflow-y: auto;">
-               <table id="vgt-table" class="table-hover tableOne vgt-table custom-vgt-table">
-                  <colgroup>
-                     <col v-for="(col, i) in visibleColumns" :key="i">
-                  </colgroup>
-                  <thead>
-                     <tr>
-                        <th v-for="col in visibleColumns" 
-                           :key="col.field" 
-                           class="vgt-left-align text-left sortable" 
-                           :data-column="col.field">
-                           <span>@{{ col.label }}</span>
-                        </th>
-                     </tr>
-                  </thead>
-                  <tbody>
-                     <tr v-for="row in filteredRows" :key="row.id">
-                        <td v-for="col in visibleColumns" :key="col.field" :data-column="col.field">
-                           <template v-if="col.field === 'product_sku'">
-                              @{{ row.code }}
-                           </template>
-                           <template v-else-if="col.field === 'product_name'">
-                              @{{ row.name }}
-                           </template>
-                           <template v-else-if="col.field === 'category'">
-                              @{{ row.category?.name || 'N/A' }}
-                           </template>
-                           <template v-else-if="col.field === 'subcategory'">
-                              @{{ row.subcategory?.name || 'N/A' }}
-                           </template>
-                           <template v-else-if="col.field === 'product_quantity'">
-                              @{{ Number(row.quantity).toFixed(2) }}
-                           </template>
-                           <template v-else-if="col.field === 'product_price'">
-                              @{{ Number(row.price).toFixed(2) }}
-                           </template>
-                           <template v-else-if="col.field === 'product_unit'">
-                              @{{ row.unit?.name || 'N/A' }}
-                           </template>
-                           <template v-else-if="col.field === 'action'">
-                              <actions-dropdown 
-                              :row="row" 
-                              @edit-route="editRoute"
-                              @delete-route="deleteRoute"
-                              @archive-route="archiveRoute"
-                              @restore-route="restoreRoute"
-                              @stock-card-route="stockCardRoute"
-                              @logs-route="logsRoute"
-                              @remarks-route="remarksRoute"
-                              @open-remarks-modal="openRemarksModal"
-                              >
-                              </actions-dropdown>
-                           </template>
-                        </td>
-                     </tr>
-                     <tr v-if="!filteredRows.length">
-                        <td :colspan="visibleColumns.length" class="vgt-center-align vgt-text-disabled">
-                           No data for table
-                        </td>
-                     </tr>
-                  </tbody>
-               </table>
-            </div>
-            <div class="modal fade" id="remarksModal" tabindex="-1" role="dialog" aria-labelledby="remarksModalLabel" aria-hidden="true">
-               <div class="modal-dialog" role="document">
-                  <div class="modal-content">
-                     <header class="modal-header">
-                        <h5 class="modal-title" id="remarksModalLabel">Remarks</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                        </button>
-                     </header>
-                     <div class="modal-body">
-                        <form id="remarksForm">
-                           @csrf
-                           <input type="hidden" id="remarksItemId" value="{{ $product->id ?? '' }}">
-                           <fieldset class="form-group">
-                              <textarea 
-                                 name="remarks" 
-                                 id="remarksText"
-                                 placeholder="Type your message" 
-                                 rows="3" 
-                                 class="form-control" 
-                                 cols="30">
-                                 </textarea>
-                              <div class="invalid-feedback">This field is required</div>
-                           </fieldset>
-                           <div class="d-flex justify-content-end">
-                              <button type="submit" class="btn btn-primary btn-icon btn-rounded">
-                              <i class="i-Yes me-2 font-weight-bold"></i> Submit
-                              </button>
-                           </div>
-                        </form>
-                        <hr>
-                        <div class="remarks-history">
-                           <div class="mb-3">
-                              <div class="d-flex align-items-center">
-                                 <i class="i-User me-2"></i>
-                                 <span class="text-primary fw-bold">
-                                 {{ Auth::check() ? Auth::user()->name : 'Guest User' }}
-                                 </span>
-                              </div>
-                           </div>
-                           <ul class="timeline" id="remarksTimeline"></ul>
-                        </div>
-                     </div>
-                  </div>
-               </div>
-            </div>
-            <div class="vgt-wrap__footer vgt-clearfix mt-3">
-               <div class="footer__row-count vgt-pull-left">
-                  <label class="footer__row-count__label">Rows per page:</label>
-                  <select v-model="perPage" @change="fetchProducts(1)">
-                     <option v-for="size in [10,20,30,40,50]" :key="size" :value="size">
-                        @{{ size }}
-                     </option>
-                  </select>
-               </div>
-               <div class="footer__navigation vgt-pull-right">
-                  <div class="footer__navigation__page-info me-3">
-                     <div>@{{ pageFrom }} - @{{ pageTo }} of @{{ pagination.total }}</div>
-                  </div>
-                  <button 
-                     class="footer__navigation__page-btn" 
-                     :class="{ disabled: pagination.current_page === 1 }" 
-                     @click="fetchProducts(pagination.current_page - 1)" 
-                     :disabled="pagination.current_page === 1">
-                  <span class="chevron left"></span>
-                  <span>prev</span>
-                  </button>
-                  <button 
-                     class="footer__navigation__page-btn" 
-                     :class="{ disabled: pagination.current_page === pagination.last_page }" 
-                     @click="fetchProducts(pagination.current_page + 1)" 
-                     :disabled="pagination.current_page === pagination.last_page">
-                  <span>next</span>
-                  <span class="chevron right"></span>
-                  </button>
-               </div>
-            </div>
-            <div tabindex="-1" class="b-sidebar-outer">
-               <!-- Sidebar -->
-               <div
-                  id="sidebar-right"
-                  tabindex="-1"
-                  class="b-sidebar shadow b-sidebar-right bg-white text-dark sidebar-open"
-                  v-show="showFilterSidebar"
-                  >
-                  <!-- Header -->
-                  <header class="b-sidebar-header">
-                     <button
-                        type="button"
-                        aria-label="Close"
-                        class="close text-dark"
-                        @click="showFilterSidebar = false"
-                        >
-                     ✕
-                     </button>
-                     <strong id="sidebar-right___title__">Filter</strong>
-                  </header>
-                  <!-- Body -->
-                  <div class="b-sidebar-body">
-                     <div class="px-3 py-2">
-                        <div class="row">
-                           <!-- Product SKU -->
-                           <div class="col-md-12">
-                              <fieldset class="form-group">
-                                 <legend class="col-form-label pt-0">
-                                    Product SKU
-                                 </legend>
-                                 <input
-                                    type="text"
-                                    class="form-control"
-                                    placeholder="Search by product code"
-                                    v-model="filters.code"
-                                    >
-                              </fieldset>
-                           </div>
-                           <!-- Product Name -->
-                           <div class="col-md-12">
-                              <fieldset class="form-group">
-                                 <legend class="col-form-label pt-0">
-                                    Product Name
-                                 </legend>
-                                 <input
-                                    type="text"
-                                    class="form-control"
-                                    placeholder="Search by product name"
-                                    v-model="filters.name"
-                                    >
-                              </fieldset>
-                           </div>
-                           <!-- Category -->
-                           <div class="col-md-12">
-                              <fieldset class="form-group">
-                                 <legend class="col-form-label pt-0">
-                                    Category
-                                 </legend>
-                                 <v-select
-                                    :options="categories"
-                                    label="name"
-                                    :reduce="c => c.id"
-                                    v-model="filters.category"
-                                    placeholder="Select category"
-                                    clearable
-                                    />
-                              </fieldset>
-                           </div>
-                           <!-- Subcategory -->
-                           <div class="col-md-12">
-                              <fieldset class="form-group">
-                                 <legend class="col-form-label pt-0">
-                                    Subcategory
-                                 </legend>
-                                 <v-select
-                                    :options="filteredSubcategories"
-                                    label="name"
-                                    :reduce="s => s.id"
-                                    v-model="filters.subcategory"
-                                    placeholder="Select subcategory"
-                                    :disabled="!filters.category"
-                                    clearable
-                                    />
-                              </fieldset>
-                           </div>
-                           <!-- Quantity Range -->
-                           <div class="col-md-12">
-                              <fieldset class="form-group">
-                                 <legend class="col-form-label pt-0">
-                                    Quantity Range
-                                 </legend>
-                                 <div class="d-flex gap-2">
-                                    <input
-                                       type="number"
-                                       class="form-control"
-                                       placeholder="From"
-                                       v-model.number="filters.quantity_from"
-                                       >
-                                    <input
-                                       class="form-control"
-                                       placeholder="To"
-                                       v-model.number="filters.quantity_to"
-                                       >
-                                 </div>
-                              </fieldset>
-                           </div>
-                           <!-- Price Range -->
-                           <div class="col-md-12">
-                              <fieldset class="form-group">
-                                 <legend class="col-form-label pt-0">
-                                    Price Range
-                                 </legend>
-                                 <div class="d-flex gap-2">
-                                    <input
-                                       type="number"
-                                       class="form-control"
-                                       placeholder="From"
-                                       v-model.number="filters.price_from"
-                                       >
-                                    <input
-                                       type="number"
-                                       class="form-control"
-                                       placeholder="To"
-                                       v-model.number="filters.price_to"
-                                       >
-                                 </div>
-                              </fieldset>
-                           </div>
-                           <!-- Unit -->
-                           <div class="col-md-12">
-                              <fieldset class="form-group">
-                                 <legend class="col-form-label pt-0">
-                                    Product Unit
-                                 </legend>
-                                 <input
-                                    type="text"
-                                    class="form-control"
-                                    placeholder="Search by product unit"
-                                    v-model="filters.unit"
-                                    >
-                              </fieldset>
-                           </div>
-                           <!-- Buttons -->
-                           <div class="col-sm-12 col-md-6">
-                              <button
-                                 type="button"
-                                 class="btn btn-primary btn-sm btn-block"
-                                 @click="applyFilter"
-                                 >
-                              <i class="i-Filter-2"></i>
-                              Filter
-                              </button>
-                           </div>
-                           <div class="col-sm-12 col-md-6">
-                              <button
-                                 type="button"
-                                 class="btn btn-danger btn-sm btn-block"
-                                 @click="resetFilter"
-                                 >
-                              <i class="i-Power-2"></i>
-                              Reset
-                              </button>
-                           </div>
-                        </div>
-                     </div>
-                  </div>
-               </div>
-            </div>
-            <span data-v-03022ced="">
-               <!---->
-            </span>
          </div>
+         <div class="vgt-fixed-header"></div>
+         <div class="vgt-responsive" style="max-height: 400px; overflow-y: auto;">
+            <table id="vgt-table" class="table-hover tableOne vgt-table custom-vgt-table">
+               <colgroup>
+                  <col v-for="(col, i) in visibleColumns" :key="i">
+               </colgroup>
+               <thead>
+                  <tr>
+                     <th v-for="col in visibleColumns" 
+                        :key="col.field" 
+                        class="vgt-left-align text-left sortable" 
+                        :data-column="col.field">
+                        <span>@{{ col.label }}</span>
+                     </th>
+                  </tr>
+               </thead>
+               <tbody>
+                  <tr v-for="row in filteredRows" :key="row.id">
+                     <td v-for="col in visibleColumns" :key="col.field" :data-column="col.field">
+                        <template v-if="col.field === 'product_sku'">
+                           @{{ row.code }}
+                        </template>
+                        <template v-else-if="col.field === 'product_name'">
+                           @{{ row.name }}
+                        </template>
+                        <template v-else-if="col.field === 'category'">
+                           @{{ row.category?.name || 'N/A' }}
+                        </template>
+                        <template v-else-if="col.field === 'subcategory'">
+                           @{{ row.subcategory?.name || 'N/A' }}
+                        </template>
+                        <template v-else-if="col.field === 'product_quantity'">
+                           @{{ Number(row.quantity).toFixed(2) }}
+                        </template>
+                        <template v-else-if="col.field === 'product_price'">
+                           @{{ Number(row.price).toFixed(2) }}
+                        </template>
+                        <template v-else-if="col.field === 'product_unit'">
+                           @{{ row.unit?.name || 'N/A' }}
+                        </template>
+                        <template v-else-if="col.field === 'action'">
+                           <actions-dropdown 
+                           :row="row" 
+                           @edit-route="editRoute"
+                           @delete-route="deleteRoute"
+                           @archive-route="archiveRoute"
+                           @restore-route="restoreRoute"
+                           @stock-card-route="stockCardRoute"
+                           @logs-route="logsRoute"
+                           @remarks-route="remarksRoute"
+                           @open-remarks-modal="openRemarksModal"
+                           >
+                           </actions-dropdown>
+                        </template>
+                     </td>
+                  </tr>
+                  <tr v-if="!filteredRows.length">
+                     <td :colspan="visibleColumns.length" class="vgt-center-align vgt-text-disabled">
+                        No data for table
+                     </td>
+                  </tr>
+               </tbody>
+            </table>
+         </div>
+         <div class="modal fade" id="remarksModal" tabindex="-1" role="dialog" aria-labelledby="remarksModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+               <div class="modal-content">
+                  <header class="modal-header">
+                     <h5 class="modal-title" id="remarksModalLabel">Remarks</h5>
+                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                     <span aria-hidden="true">&times;</span>
+                     </button>
+                  </header>
+                  <div class="modal-body">
+                     <form id="remarksForm">
+                        @csrf
+                        <input type="hidden" id="remarksItemId" value="{{ $product->id ?? '' }}">
+                        <fieldset class="form-group">
+                           <textarea 
+                              name="remarks" 
+                              id="remarksText"
+                              placeholder="Type your message" 
+                              rows="3" 
+                              class="form-control" 
+                              cols="30">
+                              </textarea>
+                           <div class="invalid-feedback">This field is required</div>
+                        </fieldset>
+                        <div class="d-flex justify-content-end">
+                           <button type="submit" class="btn btn-primary btn-icon btn-rounded">
+                           <i class="i-Yes me-2 font-weight-bold"></i> Submit
+                           </button>
+                        </div>
+                     </form>
+                     <hr>
+                     <div class="remarks-history">
+                        <div class="mb-3">
+                           <div class="d-flex align-items-center">
+                              <i class="i-User me-2"></i>
+                              <span class="text-primary fw-bold">
+                              {{ Auth::check() ? Auth::user()->name : 'Guest User' }}
+                              </span>
+                           </div>
+                        </div>
+                        <ul class="timeline" id="remarksTimeline"></ul>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </div>
+         <div class="vgt-wrap__footer vgt-clearfix mt-3">
+            <div class="footer__row-count vgt-pull-left">
+               <label class="footer__row-count__label">Rows per page:</label>
+               <select v-model="perPage" @change="fetchItems(1)">
+                  <option v-for="size in [10,20,30,40,50]" :key="size" :value="size">
+                     @{{ size }}
+                  </option>
+               </select>
+            </div>
+            <div class="footer__navigation vgt-pull-right">
+               <div class="footer__navigation__page-info me-3">
+                  <div>@{{ pageFrom }} - @{{ pageTo }} of @{{ pagination.total }}</div>
+               </div>
+               <button 
+                  class="footer__navigation__page-btn" 
+                  :class="{ disabled: pagination.current_page === 1 }" 
+                  @click="fetchItems(pagination.current_page - 1)" 
+                  :disabled="pagination.current_page === 1">
+               <span class="chevron left"></span>
+               <span>prev</span>
+               </button>
+               <button 
+                  class="footer__navigation__page-btn" 
+                  :class="{ disabled: pagination.current_page === pagination.last_page }" 
+                  @click="fetchItems(pagination.current_page + 1)" 
+                  :disabled="pagination.current_page === pagination.last_page">
+               <span>next</span>
+               <span class="chevron right"></span>
+               </button>
+            </div>
+         </div>
+         <div tabindex="-1" class="b-sidebar-outer">
+            <!-- Sidebar -->
+            <div
+               id="sidebar-right"
+               tabindex="-1"
+               class="b-sidebar shadow b-sidebar-right bg-white text-dark sidebar-open"
+               v-show="showFilterSidebar"
+               >
+               <!-- Header -->
+               <header class="b-sidebar-header">
+                  <button
+                     type="button"
+                     aria-label="Close"
+                     class="close text-dark"
+                     @click="showFilterSidebar = false"
+                     >
+                  ✕
+                  </button>
+                  <strong id="sidebar-right___title__">Filter</strong>
+               </header>
+               <!-- Body -->
+               <div class="b-sidebar-body">
+                  <div class="px-3 py-2">
+                     <div class="row">
+                        <!-- Product SKU -->
+                        <div class="col-md-12">
+                           <fieldset class="form-group">
+                              <legend class="col-form-label pt-0">
+                                 Product SKU
+                              </legend>
+                              <input
+                                 type="text"
+                                 class="form-control"
+                                 placeholder="Search by product code"
+                                 v-model="filters.code"
+                                 >
+                           </fieldset>
+                        </div>
+                        <!-- Product Name -->
+                        <div class="col-md-12">
+                           <fieldset class="form-group">
+                              <legend class="col-form-label pt-0">
+                                 Product Name
+                              </legend>
+                              <input
+                                 type="text"
+                                 class="form-control"
+                                 placeholder="Search by product name"
+                                 v-model="filters.name"
+                                 >
+                           </fieldset>
+                        </div>
+                        <!-- Category -->
+                        <div class="col-md-12">
+                           <fieldset class="form-group">
+                              <legend class="col-form-label pt-0">
+                                 Category
+                              </legend>
+                              <v-select
+                                 :options="categories"
+                                 label="name"
+                                 :reduce="c => c.id"
+                                 v-model="filters.category"
+                                 placeholder="Select category"
+                                 clearable
+                                 />
+                           </fieldset>
+                        </div>
+                        <!-- Subcategory -->
+                        <div class="col-md-12">
+                           <fieldset class="form-group">
+                              <legend class="col-form-label pt-0">
+                                 Subcategory
+                              </legend>
+                              <v-select
+                                 :options="filteredSubcategories"
+                                 label="name"
+                                 :reduce="s => s.id"
+                                 v-model="filters.subcategory"
+                                 placeholder="Select subcategory"
+                                 :disabled="!filters.category"
+                                 clearable
+                                 />
+                           </fieldset>
+                        </div>
+                        <!-- Quantity Range -->
+                        <div class="col-md-12">
+                           <fieldset class="form-group">
+                              <legend class="col-form-label pt-0">
+                                 Quantity Range
+                              </legend>
+                              <div class="d-flex gap-2">
+                                 <input
+                                    type="number"
+                                    class="form-control"
+                                    placeholder="From"
+                                    v-model.number="filters.quantity_from"
+                                    >
+                                 <input
+                                    class="form-control"
+                                    placeholder="To"
+                                    v-model.number="filters.quantity_to"
+                                    >
+                              </div>
+                           </fieldset>
+                        </div>
+                        <!-- Price Range -->
+                        <div class="col-md-12">
+                           <fieldset class="form-group">
+                              <legend class="col-form-label pt-0">
+                                 Price Range
+                              </legend>
+                              <div class="d-flex gap-2">
+                                 <input
+                                    type="number"
+                                    class="form-control"
+                                    placeholder="From"
+                                    v-model.number="filters.price_from"
+                                    >
+                                 <input
+                                    type="number"
+                                    class="form-control"
+                                    placeholder="To"
+                                    v-model.number="filters.price_to"
+                                    >
+                              </div>
+                           </fieldset>
+                        </div>
+                        <!-- Unit -->
+                        <div class="col-md-12">
+                           <fieldset class="form-group">
+                              <legend class="col-form-label pt-0">
+                                 Product Unit
+                              </legend>
+                              <input
+                                 type="text"
+                                 class="form-control"
+                                 placeholder="Search by product unit"
+                                 v-model="filters.unit"
+                                 >
+                           </fieldset>
+                        </div>
+                        <!-- Buttons -->
+                        <div class="col-sm-12 col-md-6">
+                           <button
+                              type="button"
+                              class="btn btn-primary btn-sm btn-block"
+                              @click="applyFilter"
+                              >
+                           <i class="i-Filter-2"></i>
+                           Filter
+                           </button>
+                        </div>
+                        <div class="col-sm-12 col-md-6">
+                           <button
+                              type="button"
+                              class="btn btn-danger btn-sm btn-block"
+                              @click="resetFilter"
+                              >
+                           <i class="i-Power-2"></i>
+                           Reset
+                           </button>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </div>
+         <span data-v-03022ced="">
+            <!---->
+         </span>
       </div>
    </div>
 </div>
 @endsection
-
-
 @section('scripts')
 <script type="text/x-template" id="actions-dropdown-template">
 <div class="dropdown btn-group" ref="dropdown">
@@ -617,7 +605,7 @@
 
         <!-- Edit -->
            <li v-if="row.status == 'active'">
-               <a class="dropdown-item" :href="`/products/${row.id}/edit`">
+               <a class="dropdown-item" :href="`/bundled-items/${row.id}/edit`">
                    <i class="nav-icon i-Edit font-weight-bold mr-2"></i>
                    Edit
                </a>
@@ -638,14 +626,14 @@
            </li>
 
            <li v-if="row.status == 'active'">
-               <a class="dropdown-item" :href="`/products/${row.id}/stock-card`">
+               <a class="dropdown-item" :href="`/bundled-items/${row.id}/stock-card`">
                    <i class="nav-icon i-Receipt font-weight-bold mr-2"></i>
                    View Stock Card
                </a>
            </li>
 
              <li v-if="row.status == 'active'">
-                <a class="dropdown-item" :href="`/products/${row.id}/logs`">
+                <a class="dropdown-item" :href="`/bundled-items/${row.id}/logs`">
                       <i class="nav-icon i-Computer-Secure font-weight-bold mr-2"></i>
                       Logs
                 </a>
@@ -685,7 +673,7 @@ Vue.component("actions-dropdown", {
                 confirmButtonText: 'Yes, archive it!',
             }).then((result) => {
                if (result.isConfirmed) {
-                     axios.put(`/products/${productId}/archive`)
+                     axios.put(`/bundled-items/${productId}/archive`)
                         .then(res => {
                            Swal.fire('Archived!', res.data.message, 'success')
                                  .then(() => {
@@ -709,7 +697,7 @@ Vue.component("actions-dropdown", {
                 confirmButtonText: 'Yes, restore it!',
             }).then((result) => {
                if (result.isConfirmed) {
-                     axios.put(`/products/${productId}/restore`)
+                     axios.put(`/bundled-items/${productId}/restore`)
                         .then(res => {
                            Swal.fire('Restored!', res.data.message, 'success')
                                  .then(() => {
@@ -893,7 +881,7 @@ function markAsUnread(remarkId, productId) {
             fetch('/remarks')
                .then(res => res.json())
                .then(data => {
-                     // only show badge for products that have UNREAD remarks
+                     // only show badge for bundled-items that have UNREAD remarks
                      const unreadRemarks = data.filter(r => r.status === 'unread');
                      unreadRemarks.forEach(remark => {
                         if (remark.product_id) {
@@ -998,11 +986,11 @@ function markAsUnread(remarkId, productId) {
             { label: 'Archived', value: 'archived' }
         ],
          statusFilter: 'active',
-         selectedType: 'products',
+         selectedType: 'bundled-items',
          types: [
          { label: 'Products', value: 'products', url: '/products' },
          { label: 'Components', value: 'components', url: '/components' },
-         { label: 'Bundled Items', value: 'bundled_items', url: '/bundled-items' },
+         { label: 'Bundled Items', value: 'bundled-items', url: '/bundled-items' },
          ],
          showColumnDropdown: false,
          showFilterSidebar: false,
@@ -1115,7 +1103,7 @@ function markAsUnread(remarkId, productId) {
    },
 },
    mounted() {
-      this.fetchProducts();
+      this.fetchItems();
       document.addEventListener('click', this.handleClickOutside);
      document.addEventListener('click', this.handleOutside)
    },
@@ -1182,7 +1170,7 @@ function markAsUnread(remarkId, productId) {
     })
 
     // 🔎 CHECK DUPLICATES FROM SERVER
-    const res = await axios.post('/products/import/check', {
+    const res = await axios.post('/bundled-items/import/check', {
       rows: parsedRows
     })
 
@@ -1232,7 +1220,7 @@ function markAsUnread(remarkId, productId) {
       setStatus(status) {
          console.log("Status filter changed to:", status);
             this.statusFilter = status;
-            this.fetchProducts();
+            this.fetchItems();
         },
       getCellValue(row, field) {
     switch (field) {
@@ -1360,20 +1348,20 @@ function markAsUnread(remarkId, productId) {
   },
 
   applyFilter() {
-  this.fetchProducts(1);
+  this.fetchItems(1);
   this.showFilterSidebar = false;
 },
     
-    fetchProducts(page = 1) {
+    fetchItems(page = 1) {
    this.loading = true;
 
-   axios.get('/products/fetch', {
+   axios.get('/bundled-items/fetch', {
       params: {
          search: this.search,
          perPage: this.perPage,
          status: this.statusFilter,
+         type: 'bundle',
          page: page,
-         type: 'simple',
 
          // 🔹 filters
          category: this.filters.category,

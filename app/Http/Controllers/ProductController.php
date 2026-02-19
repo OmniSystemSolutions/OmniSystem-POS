@@ -33,6 +33,7 @@ public function fetchProducts(Request $request)
     $search      = $request->get('search');
     $category    = $request->get('category');
     $subcategory = $request->get('subcategory');
+    $type       = $request->get('type');
 
     $branchId = current_branch_id();
 
@@ -40,6 +41,9 @@ public function fetchProducts(Request $request)
 
         $products = Product::with(['category', 'subcategory', 'unit', 'station'])
             ->where('status', $status)
+            ->when($type, fn ($q) =>
+                $q->where('type', $type)
+            )
             ->when($search, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('products.name', 'like', "%{$search}%")
@@ -73,6 +77,9 @@ public function fetchProducts(Request $request)
             ->where('bc.branch_id', $branchId)
             ->where('products.status', $status)
             ->with(['category', 'subcategory', 'unit', 'station'])
+            ->when($type, fn ($q) =>
+                    $q->where('products.type', $type)
+                )
             ->when($search, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('products.name', 'like', "%{$search}%")
