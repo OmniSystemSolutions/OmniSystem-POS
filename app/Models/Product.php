@@ -10,7 +10,7 @@ class Product extends Model
     use HasFactory;
     
     protected $fillable = [
-        'code', 'name', 'price', 'status', 'image', 'category_id', 'subcategory_id', 'quantity', 'unit_id', 'station_id'
+        'code', 'name', 'price', 'status', 'image', 'category_id', 'subcategory_id', 'quantity', 'unit_id', 'station_id', 'type',
     ];
 
     protected $casts = [
@@ -51,6 +51,29 @@ class Product extends Model
     public function unit()
     {
         return $this->belongsTo(Unit::class);
+    }
+
+    public function bundleItems()
+    {
+        return $this->hasMany(BundleItem::class, 'bundle_id');
+    }
+
+    /**
+     * Get only products from the bundle items
+     */
+    public function bundledProducts()
+    {
+        return $this->hasMany(BundleItem::class, 'bundle_id')
+                    ->where('item_type', 'product');
+    }
+
+    /**
+     * Get only components from the bundle items
+     */
+    public function bundledComponents()
+    {
+        return $this->hasMany(BundleItem::class, 'bundle_id')
+                    ->where('item_type', 'component');
     }
 
     

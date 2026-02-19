@@ -49,6 +49,7 @@ use App\Http\Controllers\ShiftsController;
 use App\Http\Controllers\DailyTimeRecordController;
 use App\Http\Controllers\TableLayoutController;
 use App\Http\Controllers\StationController;
+use App\Http\Controllers\BundledItemController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -662,4 +663,17 @@ Route::prefix('settings/stations')->name('stations.')->group(function () {
     Route::patch('/{id}/archive', [StationController::class, 'archive'])->name('archive');
     Route::patch('/{id}/restore', [StationController::class, 'restore'])->name('restore');
 });
+
+Route::prefix('/bundled-items')->name('bundled-items.')->group(function () {
+    Route::get('/', [BundledItemController::class, 'index'])->name('index');
+    Route::get('/fetch', [BundledItemController::class, 'fetchItems'])->name('fetch');
+    Route::get('/create', [BundledItemController::class, 'create'])->name('create');
+    Route::post('/', [BundledItemController::class, 'store'])->name('store');
+    Route::get('/{id}/edit', [BundledItemController::class, 'edit'])->name('edit');
+    Route::put('/{id}', [BundledItemController::class, 'update'])->name('update');
+    // Route::delete('/{id}', [BundledItemController::class, 'destroy'])->name('destroy');
+    Route::put('/{id}/archive', [BundledItemController::class, 'archive'])->name('archive');
+    Route::put('/{id}/restore', [BundledItemController::class, 'restore'])->name('restore');
+});
+
 
