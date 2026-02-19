@@ -117,9 +117,23 @@ public function fetchItems(Request $request)
         ->orderBy('name')
         ->get();
 
+    $availableOrders = Order::where('status', '!=', 'payments')
+    ->orderBy('created_at', 'asc')
+    ->get()
+    ->map(function ($order) {
+        return [
+            'id' => $order->id,
+            'order_no' => $order->order_no ?? 'ORD-' . $order->id,
+        ];
+    });
+
+
+
+
     return response()->json([
         'orderItems' => $orderItems,
         'chefs'      => $chefs,
+        'availableOrders'=> $availableOrders,
     ]);
 }
 
@@ -242,35 +256,20 @@ public function fetchItems(Request $request)
     return true;
 }
 
+public function pushItem(Request $request)
+{
+    $detail = OrderDetail::findOrFail($request->order_detail_id);
 
+    $detail->order_id = $request->new_order_id;
 
-//    public function showServed()
-//     {
-//         $servedDetails = OrderDetail::with([
-//             'order:id,time_submitted',
-//             'product.category',
-//             'component.category',
-//             'orderItems.cook' // each detail can have many items; we’ll take the latest one
-//         ])
-//         ->where('status', 'served')
-//         ->orderBy('updated_at', 'desc')
-//         ->get();
+    // dd($detail);
+    $detail->status = 'served';
+    $detail->update();
 
-//         return view('kitchen.served', compact('servedDetails'));
-//     }
-//     public function showWalked()
-//     {
-//         $walkedDetails = OrderDetail::with([
-//             'order:id,time_submitted',
-//             'product.category',
-//             'component.category',
-//             'orderItems.cook' // each detail can have many items; we’ll take the latest one
-//         ])
-//         ->where('status', 'walked')
-//         ->orderBy('updated_at', 'desc')
-//         ->get();
+    return response()->json([
+        'success' => true
+    ]);
+}
 
-//         return view('kitchen.walked', compact('walkedDetails'));
-//     }
 
 }
