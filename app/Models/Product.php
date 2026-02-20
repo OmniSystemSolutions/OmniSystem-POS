@@ -75,6 +75,10 @@ class Product extends Model
         return $this->hasMany(BundleItem::class, 'bundle_id')
                     ->where('item_type', 'component');
     }
+    public function details()
+{
+    return $this->hasMany(OrderDetail::class, 'product_id');
+}
 
     
 }

@@ -7,6 +7,7 @@ use App\Models\InventoryDeduction;
 use App\Models\Order;
 use App\Models\OrderDetail;
 use App\Models\OrderItem;
+use App\Models\Station;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -27,28 +28,42 @@ public function fetchItems(Request $request)
     $year   = $request->get('year');
     $month  = $request->get('month');
     $day    = $request->get('day');
+    $stationId = $request->station_id;
 
     $orders = Order::with([
-        'details' => function ($q) use ($status) {
-            $q->where('status', $status)
-              ->with([
-                  'product.category',
-                  'product.subcategory',
-                  'product.recipes.component',
-                  'product.station',
+    'details' => function ($q) use ($status, $stationId) {
+        $q->where('status', $status)
+          ->when($stationId, function ($q) use ($stationId) {
+              $q->whereHas('product.station', function ($q) use ($stationId) {
+                  $q->where('id', $stationId);
+              });
+          })
+          ->with([
+              'product.category',
+              'product.subcategory',
+              'product.recipes.component',
+              'product.station',
+              'component.category',
+              'orderItems.cook',
+              'component.station',
+          ]);
+    },
+    'user'
+])
+->when($stationId, function ($q) use ($stationId, $status) {
+    $q->whereHas('details', function ($q) use ($stationId, $status) {
+        $q->where('status', $status)
+          ->whereHas('product.station', function ($q) use ($stationId) {
+              $q->where('id', $stationId);
+          });
+    });
+})
+->when($year, fn ($q) => $q->whereYear('created_at', $year))
+->when($month, fn ($q) => $q->whereMonth('created_at', $month))
+->when($day, fn ($q) => $q->whereDay('created_at', $day))
+->orderBy('created_at', 'asc')
+->get();
 
-                  'component.category',
-                  'orderItems.cook', 
-                  'component.station',
-              ]);
-        },
-        'user'
-    ])
-    ->when($year, fn ($q) => $q->whereYear('created_at', $year))
-    ->when($month, fn ($q) => $q->whereMonth('created_at', $month))
-    ->when($day, fn ($q) => $q->whereDay('created_at', $day))
-    ->orderBy('created_at', 'asc')
-    ->get();
 
     // Flatten orders → orderItems
     $orderItems = $orders->flatMap(function ($order) {
@@ -127,6 +142,15 @@ public function fetchItems(Request $request)
         ];
     });
 
+   $stations = Station::whereHas('products.details', function ($q) use ($status, $year, $month, $day) {
+    $q->where('status', $status)
+      ->when($year, fn($q) => $q->whereYear('created_at', $year))
+      ->when($month, fn($q) => $q->whereMonth('created_at', $month))
+      ->when($day, fn($q) => $q->whereDay('created_at', $day));
+})
+->select('id', 'name')
+->orderBy('name')
+->get();
 
 
 
@@ -134,6 +158,7 @@ public function fetchItems(Request $request)
         'orderItems' => $orderItems,
         'chefs'      => $chefs,
         'availableOrders'=> $availableOrders,
+        'stations' => $stations,
     ]);
 }
 
