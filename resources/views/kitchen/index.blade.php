@@ -328,6 +328,36 @@ tr:hover {
                   </li>
                 </ul>
             </nav>
+
+            <div class="row" v-if="statusFilter === 'serving'">
+  <!-- ALL Stations Button -->
+  <div class="col-6 col-md-3 mt-3 mt-md-4">
+    <button 
+      class="btn w-100 m-3"
+      :class="selectedStation === null ? 'btn-primary' : 'btn-outline-primary'"
+      @click="showAllStations"
+    >
+      All Stations
+    </button>
+  </div>
+
+  <!-- Dynamic Stations -->
+  <div 
+    v-for="station in stations" 
+    :key="station.id" 
+    class="col-6 col-md-3 mt-3 mt-md-4"
+  >
+    <button 
+      class="btn w-100 mt-3"
+      :class="selectedStation === station.id ? 'btn-primary' : 'btn-outline-primary'"
+      @click="selectStation(station)"
+    >
+      @{{ station.name }}
+    </button>
+  </div>
+</div>
+
+
             <div class="card-body">
                 <div class="vgt-wrap ">
                   
@@ -555,7 +585,9 @@ new Vue({
     selectedOrder: null,
     modalMode: null,
     orderItems: [],
+    items: [],
     expandedOrderId: null,
+    selectedStation: null,
     chefs: [],
     availableOrders: [],
     headerLabelMap: {
@@ -722,12 +754,14 @@ console.log('RAW:', this.orderItems);
       status: this.statusFilter,
       year: this.selectedYear,
       month: this.selectedMonth,
-      day: this.selectedDay
+      day: this.selectedDay,
+      station_id: this.selectedStation
     }
   }).then(res => {
     this.orderItems = res.data.orderItems;
     this.availableOrders = res.data.availableOrders;
     this.chefs = res.data.chefs;
+    this.stations = res.data.stations;
     console.log('availableOrders:', this.availableOrders);
     // Restore expanded recipe if it still exists
     if (currentExpandedId && this.orderItems.some(i => i.order_detail_id === currentExpandedId)) {
@@ -738,6 +772,15 @@ console.log('RAW:', this.orderItems);
 
     console.log('data today:', this.orderItems);
   }).catch(err => console.error('Failed to fetch items:', err));
+},
+selectStation(station) {
+  this.selectedStation = station.id;
+  this.fetchItems();
+},
+
+showAllStations() {
+  this.selectedStation = null;
+  this.fetchItems();
 },
 setStatus(status) {
                this.statusFilter = status;
