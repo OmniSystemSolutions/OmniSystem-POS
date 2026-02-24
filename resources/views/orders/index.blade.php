@@ -360,7 +360,22 @@ if ($status === 'serving') {
       </td>
 
       <!-- Order Data -->
-      <td class="text-left">{{ $order->id }}</td>
+      {{-- <td class="text-left">{{ $order->id }}</td>
+      <td class="text-left">{{ $order->order_type }}</td> --}}
+      <!-- Order Data -->
+      <td class="text-left">
+          {{ $order->id }}
+          @if(!empty($order->reservation_id))
+              <br>
+              <span class="badge badge-warning" style="font-size:10px; white-space:nowrap;">
+                  <i class="i-Calendar"></i>
+                  From Reservation
+                  @if($order->reservation)
+                      · {{ $order->reservation->reference_number }}
+                  @endif
+              </span>
+          @endif
+      </td>
       <td class="text-left">{{ $order->order_type }}</td>
       <td class="text-left">{{ $order->user?->name ?? 'N/A' }}</td>
       <td class="text-left">{{ $order->table_no }}</td>

@@ -50,6 +50,7 @@ use App\Http\Controllers\DailyTimeRecordController;
 use App\Http\Controllers\TableLayoutController;
 use App\Http\Controllers\StationController;
 use App\Http\Controllers\BundledItemController;
+use App\Http\Controllers\OrderAndReservationController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -558,7 +559,37 @@ Route::prefix('workforce-allowances')->name('allowances.')->group(function () {
     Route::delete('/{id}', [AllowancesController::class, 'destroy']);
 });
 
+Route::prefix('order-reservations')->name('order-reservations.')->group(function () {
+    Route::get('/', [OrderAndReservationController::class, 'index'])
+        ->name('index');
 
+    // ── Create ──────────────────────────────────────────────────
+    Route::get('/create', [OrderAndReservationController::class, 'create'])
+        ->name('create');
+    Route::post('/', [OrderAndReservationController::class, 'store'])
+        ->name('store');
+
+    // ── Edit ────────────────────────────────────────────────────
+    Route::get('/{orderReservation}/edit', [OrderAndReservationController::class, 'edit'])
+        ->name('edit');
+    Route::put('/{orderReservation}', [OrderAndReservationController::class, 'update'])
+        ->name('update');
+
+
+    // ── Status Actions ──────────────────────────────────────────
+    Route::post('/{orderReservation}/ready-for-service', [OrderAndReservationController::class, 'readyForService'])
+        ->name('ready-for-service');
+    Route::put('/{orderReservation}/archive', [OrderAndReservationController::class, 'archive'])
+        ->name('archive');
+    Route::put('/{orderReservation}/restore', [OrderAndReservationController::class, 'restore'])
+        ->name('restore');
+    Route::delete('/{orderReservation}', [OrderAndReservationController::class, 'destroy'])
+        ->name('destroy');
+
+        // View Invoice
+Route::get('/{orderReservation}/invoice', [OrderAndReservationController::class, 'invoice'])
+    ->name('invoice');
+});
 
 // Night Differentials routes
 Route::get('/night-differentials', [App\Http\Controllers\NightDifferentialController::class, 'index'])->name('night-differentials.index');
