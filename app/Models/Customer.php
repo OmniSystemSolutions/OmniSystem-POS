@@ -29,4 +29,9 @@ class Customer extends Model
     {
         return $this->belongsTo(Discount::class);
     }
+
+    public function reservations()
+    {
+        return $this->hasMany(OrderAndReservation::class);
+    }
 }

@@ -296,8 +296,7 @@
                <span class="item-name">POS</span>
             </a>
             </li>
-            <li class="nav-item"><a href="#" class=""><i class="nav-icon i-Remove-Bag"></i> <span class="item-name">Sales Invoicing</span></a></li>
-            <li class="nav-item"><a href="/app/sales/manage-deliveries" class=""><i class="nav-icon i-Jeep"></i> <span class="item-name">Orders and Reservations</span></a></li>
+            <li class="nav-item"><a href="order-reservations" class=""><i class="nav-icon i-Jeep"></i> <span class="item-name">Orders and Reservations</span></a></li>
             <li class="nav-item">
                <a href="#" class="checkUnpaidTrigger">
                   <i class="nav-icon i-Hand"></i> 

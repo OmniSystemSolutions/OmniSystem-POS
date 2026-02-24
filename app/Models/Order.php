@@ -32,11 +32,23 @@ class Order extends Model
         'change_amount',
         'time_submitted',
         'cashier_id',
+        'reservation_id',
     ];
 
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function cashier()
+    {
+        return $this->belongsTo(User::class, 'cashier_id');
+    }
+
+
+    public function reservation()
+    {
+        return $this->belongsTo(OrderAndReservation::class, 'reservation_id');
     }
 
     public function details()
