@@ -7,6 +7,7 @@ use App\Models\OrderReservationDetail;
 use App\Models\Customer;
 use App\Models\Payment;
 use App\Models\CashEquivalent;
+use App\Models\Component;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -16,26 +17,63 @@ class OrderAndReservationController extends Controller
     // ─── Shared data for the form ─────────────────────────────────
     private function formData(): array
     {
+        // ── Products (all, same logic as OrderController@create) ──
+        $productsTransformed = \App\Models\Product::with(['category', 'subcategory'])->get()
+            ->map(fn($p) => [
+                'id'             => $p->id,
+                'type'           => 'product',
+                'sku'            => $p->code,
+                'name'           => $p->name,
+                'description'    => $p->description ?? '',
+                'price'          => $p->price,
+                'image'          => $p->image                              // ← fixed: storage path
+                    ? asset('storage/' . $p->image)
+                    : 'https://via.placeholder.com/300x200?text=No+Image',
+                'subcategory_id' => $p->subcategory_id,
+                'category_id'    => $p->category_id,
+            ]);
+
+        // ── Components (for_sale only, same logic as OrderController@create) ──
+        $componentsTransformed = Component::with(['category', 'subcategory'])
+            ->where('for_sale', '!=', 0)
+            ->get()
+            ->map(fn($c) => [
+                'id'             => $c->id,
+                'type'           => 'component',
+                'sku'            => $c->code,
+                'name'           => $c->name,
+                'description'    => $c->description ?? '',
+                'price'          => $c->price,
+                'image'          => $c->image                              // ← fixed: storage path
+                    ? asset('storage/' . $c->image)
+                    : 'https://via.placeholder.com/300x200?text=No+Image',
+                'subcategory_id' => $c->subcategory_id,
+                'category_id'    => $c->category_id,
+            ]);
+
+        // ── Categories (filter empty subcategories, same as OrderController@create) ──
+        $categories = \App\Models\Category::with([
+            'subcategories' => function ($query) {
+                $query->with([
+                    'products',
+                    'components' => fn($c) => $c->where('for_sale', '!=', 0),
+                ]);
+            },
+        ])->get()->filter(function ($category) {
+            $category->subcategories = $category->subcategories->filter(function ($sub) {
+                return ($sub->products && $sub->products->count() > 0)
+                    || ($sub->components && $sub->components->count() > 0);
+            })->values();
+            return $category->subcategories->count() > 0;
+        })->values();
+
         return [
             'customers'          => Customer::orderBy('customer_name')->get(),
             'paymentMethods'     => Payment::orderBy('name')->get(['id', 'name']),
             'paymentDestinations'=> CashEquivalent::orderBy('name')->get(['id', 'name']),
-            'categories'         => \App\Models\Category::with([
-                                        'subcategories.products',
-                                        'subcategories.components',
-                                    ])->get(),
-            'products'           => \App\Models\Product::all()
-                                        ->map(fn($p) => [
-                                            'id'             => $p->id,
-                                            'type'           => 'product',
-                                            'sku'            => $p->code,
-                                            'name'           => $p->name,
-                                            'description'    => $p->description,
-                                            'price'          => $p->price,
-                                            'image'          => $p->image_url ?? asset('assets/images/placeholder.png'),
-                                            'subcategory_id' => $p->subcategory_id,
-                                            'category_id'    => $p->category_id,
-                                        ]),
+            'categories'         => $categories,
+            // ← merged products + components, same as OrderController
+            'products'           => $productsTransformed->merge($componentsTransformed)->values(),
             'nextReferenceNo'    => $this->generateReferenceNo(),
         ];
     }

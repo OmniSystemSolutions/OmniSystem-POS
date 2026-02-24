@@ -1,6 +1,14 @@
 @extends('layouts.app')
 @section('content')
 
+{{-- ── Match the orders index dropdown positioning fix ── --}}
+<style>
+.dropdown-menu {
+    position: relative !important;
+    transform: translate(0px, 0px) !important;
+}
+</style>
+
 <div class="main-content">
     <div>
         <div class="breadcrumb">
@@ -13,308 +21,280 @@
         <div class="separator-breadcrumb border-top"></div>
     </div>
 
-    <div class="card wrapper">
-        <div class="card-body">
+    <div class="wrapper">
+        <div class="card mt-4">
 
-            <!-- NAV TABS -->
+            {{-- NAV TABS --}}
             <nav class="card-header">
                 <ul class="nav nav-tabs card-header-tabs">
                     <li class="nav-item">
                         <a href="{{ route('order-reservations.index', ['status' => 'reservations']) }}"
-                           class="nav-link {{ $status === 'reservations' ? 'active border-primary text-primary' : '' }}">
+                           class="nav-link {{ $status === 'reservations' ? 'active' : '' }}">
                             Reservations
                         </a>
                     </li>
                     <li class="nav-item">
                         <a href="{{ route('order-reservations.index', ['status' => 'prepared_service']) }}"
-                           class="nav-link {{ $status === 'prepared_service' ? 'active border-success text-success' : '' }}">
+                           class="nav-link {{ $status === 'prepared_service' ? 'active' : '' }}">
                             Prepared Service
                         </a>
                     </li>
                     <li class="nav-item">
                         <a href="{{ route('order-reservations.index', ['status' => 'ready_for_service']) }}"
-                           class="nav-link {{ $status === 'ready_for_service' ? 'active border-danger text-danger' : '' }}">
+                           class="nav-link {{ $status === 'ready_for_service' ? 'active' : '' }}">
                             Ready for Service
                         </a>
                     </li>
                 </ul>
             </nav>
 
-            <div class="vgt-wrap">
-                <div class="vgt-inner-wrap">
+            <div class="card-body">
+                <div class="vgt-wrap">
+                    <div class="vgt-inner-wrap">
 
-                    <!-- HEADER ACTIONS -->
-                    <div class="vgt-global-search vgt-clearfix" style="display:flex; align-items:center; gap:8px; padding: 12px 0;">
-                        <!-- Search -->
-                        <div class="vgt-global-search__input vgt-pull-left" style="display:flex; align-items:center; flex:1;">
-                            <span style="position:relative; display:inline-block; width:100%; max-width:280px;">
-                                <i class="i-Search" style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#aaa;"></i>
-                                <input 
-                                    type="text" 
-                                    id="tableSearch"
-                                    placeholder="Search this table"
-                                    class="vgt-input"
-                                    style="padding-left:32px; width:100%;"
-                                    onkeyup="filterTable(this.value)"
-                                >
-                            </span>
-                        </div>
-
-                        <!-- Right Actions -->
-                        <div class="vgt-global-search__actions vgt-pull-right" style="display:flex; gap:8px;">
-
-                            <!-- Add Button -->
-                            <a href="{{ route('order-reservations.create') }}"
-                               class="btn btn-primary btn-rounded btn-icon">
-                                <i class="i-Add"></i> Add
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- TABLE -->
-                    <div class="vgt-responsive">
-                        <table class="table-hover tableOne vgt-table" id="reservationsTable">
-                            <thead>
-                                <tr>
-                                    <th style="width:40px;">
-                                        <input type="checkbox" id="selectAll" onchange="toggleAll(this)">
-                                    </th>
-                                    <th class="sortable">
-                                        <span>Date and Time Created</span>
-                                        <i class="i-Arrow-Up-2" style="font-size:10px;"></i>
-                                    </th>
-                                    <th class="sortable">
-                                        <span>Created By</span>
-                                        <i class="i-Arrow-Up-2" style="font-size:10px;"></i>
-                                    </th>
-                                    <th class="sortable">
-                                        <span>Reference #</span>
-                                        <i class="i-Arrow-Up-2" style="font-size:10px;"></i>
-                                    </th>
-                                    <th class="sortable">
-                                        <span>Customer Name</span>
-                                        <i class="i-Arrow-Up-2" style="font-size:10px;"></i>
-                                    </th>
-                                    <th>Date of Reservation</th>
-                                    <th>Time of Reservation</th>
-                                    <th>Special Request</th>
-                                    <th class="text-right" style="width:80px;">Action</th>
-                                </tr>
-                            </thead>
-
-                            <tbody>
-                                @forelse($reservations as $reservation)
-                                <tr>
-                                    <!-- Checkbox -->
-                                    <td>
-                                        <input type="checkbox" class="row-checkbox" value="{{ $reservation->id }}">
-                                    </td>
-
-                                    <!-- Date and Time Created -->
-                                    <td>
-                                        {{ $reservation->created_at->timezone('Asia/Manila')->format('Y-m-d h:i A') }}
-                                    </td>
-
-                                    <!-- Created By -->
-                                    <td>{{ $reservation->createdBy?->name ?? '—' }}</td>
-
-                                    <!-- Reference # -->
-                                    <td>{{ $reservation->reference_number }}</td>
-
-                                    <!-- Customer Name -->
-                                    <td>{{ $reservation->customer?->customer_name ?? '—' }}</td>
-
-                                    <!-- Date of Reservation -->
-                                    <td>
-                                        {{ $reservation->reservation_date
-                                            ? \Carbon\Carbon::parse($reservation->reservation_date)->format('M d, Y')
-                                            : '—' }}
-                                    </td>
-
-                                    <!-- Time of Reservation -->
-                                    <td>
-                                        {{ $reservation->reservation_time
-                                            ? \Carbon\Carbon::parse($reservation->reservation_time)->format('g:i A')
-                                            : '—' }}
-                                    </td>
-
-                                    <td>
-                                        <span class="badge badge-{{
-                                            $reservation->status === 'ready_for_service' ? 'danger' :
-                                            ($reservation->status === 'prepared_service' ? 'info' : 'success')
-                                        }}">
-                                            {{
-                                                $reservation->status === 'reservations'    ? 'Reservations' :
-                                                ($reservation->status === 'prepared_service' ? 'Prepared Service' : 'Ready for Service')
-                                            }}
+                        {{-- SEARCH + ADD --}}
+                        <div class="vgt-global-search vgt-clearfix">
+                            <div class="vgt-global-search__input vgt-pull-left">
+                                <form role="search">
+                                    <label for="tableSearch">
+                                        <span aria-hidden="true" class="input__icon">
+                                            <div class="magnifying-glass"></div>
                                         </span>
-                                    </td>
-                                    <td>
-                                        @if($reservation->special_request)
-                                            <button 
+                                        <span class="sr-only">Search</span>
+                                    </label>
+                                    <input
+                                        id="tableSearch"
+                                        type="text"
+                                        placeholder="Search this table"
+                                        class="vgt-input vgt-pull-left"
+                                        onkeyup="filterTable(this.value)"
+                                    >
+                                </form>
+                            </div>
+                            <div class="vgt-global-search__actions vgt-pull-right">
+                                <a href="{{ route('order-reservations.create') }}"
+                                   class="btn mx-1 btn-primary btn-icon">
+                                    <i class="i-Add"></i> Add
+                                </a>
+                            </div>
+                        </div>
+
+                        {{-- TABLE --}}
+                        <div class="vgt-responsive" style="max-height: 400px; overflow-y: auto;">
+                            <table id="reservationsTable" class="table-hover tableOne vgt-table custom-vgt-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width:40px;">
+                                            <input type="checkbox" id="selectAll" onchange="toggleAll(this)">
+                                        </th>
+                                        <th class="vgt-left-align sortable"><span>Date and Time Created</span></th>
+                                        <th class="vgt-left-align sortable"><span>Created By</span></th>
+                                        <th class="vgt-left-align sortable"><span>Reference #</span></th>
+                                        <th class="vgt-left-align sortable"><span>Customer Name</span></th>
+                                        <th class="vgt-left-align"><span>Date of Reservation</span></th>
+                                        <th class="vgt-left-align"><span>Time of Reservation</span></th>
+                                        <th class="vgt-left-align"><span>Status</span></th>
+                                        <th class="vgt-left-align"><span>Special Request</span></th>
+                                        <th class="vgt-left-align text-right"><span>Action</span></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($reservations as $reservation)
+                                    <tr>
+                                        <td><input type="checkbox" class="row-checkbox" value="{{ $reservation->id }}"></td>
+                                        <td>{{ $reservation->created_at->timezone('Asia/Manila')->format('Y-m-d h:i A') }}</td>
+                                        <td>{{ $reservation->createdBy?->name ?? '—' }}</td>
+                                        <td>{{ $reservation->reference_number }}</td>
+                                        <td>{{ $reservation->customer?->customer_name ?? '—' }}</td>
+                                        <td>
+                                            {{ $reservation->reservation_date
+                                                ? \Carbon\Carbon::parse($reservation->reservation_date)->format('M d, Y')
+                                                : '—' }}
+                                        </td>
+                                        <td>
+                                            {{ $reservation->reservation_time
+                                                ? \Carbon\Carbon::parse($reservation->reservation_time)->format('g:i A')
+                                                : '—' }}
+                                        </td>
+                                        <td>
+                                            <span class="badge badge-{{
+                                                $reservation->status === 'ready_for_service' ? 'danger' :
+                                                ($reservation->status === 'prepared_service' ? 'info' : 'success')
+                                            }}">
+                                                {{
+                                                    $reservation->status === 'reservations'      ? 'Reservations' :
+                                                    ($reservation->status === 'prepared_service' ? 'Prepared Service' : 'Ready for Service')
+                                                }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <button
                                                 type="button"
-                                                class="btn btn-sm btn-primary"
+                                                class="btn mx-1 btn-primary btn-icon"
                                                 data-bs-toggle="modal"
-                                                data-bs-target="#specialRequestModal{{ $reservation->id }}"
-                                            >
+                                                data-bs-target="#specialRequestModal{{ $reservation->id }}">
                                                 View
                                             </button>
-                                        @else
-                                            <span class="text-muted">—</span>
-                                        @endif
-                                    </td>
+                                        </td>
 
-                                    <!-- Action -->
-                                    <td class="text-right">
-                                        <div class="dropdown">
-                                            <button 
-                                                class="btn btn-link text-dark"
-                                                data-bs-toggle="dropdown"
-                                                aria-expanded="false"
-                                                style="font-size:20px; line-height:1; padding: 2px 8px;"
-                                            >
-                                                &#8942;
-                                            </button>
+                                        {{-- ── ACTION COLUMN — matches orders/index style ── --}}
+                                        <td class="text-right">
+                                            <div class="dropdown">
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-link p-0"
+                                                    data-bs-toggle="dropdown"
+                                                    aria-expanded="false"
+                                                    style="font-size:22px; line-height:1; color:#555;">
+                                                    &#8942;
+                                                </button>
 
-                                            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                                <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="min-width:220px; font-size:14px;">
 
-                                                <!-- View Invoice -->
-                                                <li>
-                                                    <a class="dropdown-item d-flex align-items-center gap-2"
-                                                       href="">
-                                                        <i class="i-File-Search" style="font-size:15px;"></i>
-                                                        View Order and Reservations Invoice
-                                                    </a>
-                                                </li>
+                                                    {{-- View / Invoice --}}
+                                                    <li>
+                                                        <a class="dropdown-item d-flex align-items-center gap-2"
+                                                           href="#"
+                                                           data-bs-toggle="modal"
+                                                           data-bs-target="#specialRequestModal{{ $reservation->id }}">
+                                                            <i class="i-File-Search" style="font-size:15px; width:18px;"></i>
+                                                            View
+                                                        </a>
+                                                    </li>
 
-                                                <!-- Edit -->
-                                                @if($reservation->status === 'reservations')
-                                                <li>
-                                                    <a class="dropdown-item d-flex align-items-center gap-2"
-                                                       href="{{ route('order-reservations.edit', $reservation) }}">
-                                                        <i class="i-Pen-2" style="font-size:15px;"></i>
-                                                        Edit
-                                                    </a>
-                                                </li>
-                                                @endif
+                                                    {{-- Edit — only on Reservations tab --}}
+                                                    @if($reservation->status === 'reservations')
+                                                    <li>
+                                                        <a class="dropdown-item d-flex align-items-center gap-2"
+                                                           href="{{ route('order-reservations.edit', $reservation) }}">
+                                                            <i class="i-Pen-2" style="font-size:15px; width:18px;"></i>
+                                                            Edit
+                                                        </a>
+                                                    </li>
+                                                    @endif
 
-                                                <!-- Move to Prepared Service -->
-                                                @if($reservation->status === 'reservations')
-                                                <li>
-                                                    <form action="{{ route('order-reservations.archive', $reservation) }}" method="POST">
-                                                        @csrf
-                                                        @method('PUT')
-                                                        <button type="submit" class="dropdown-item d-flex align-items-center gap-2">
-                                                            <i class="i-Box-Full" style="font-size:15px;"></i>
-                                                            Move to Prepared Service
-                                                        </button>
-                                                    </form>
-                                                </li>
-                                                @endif
+                                                    {{-- Move to Prepared Service --}}
+                                                    @if($reservation->status === 'reservations')
+                                                    <li>
+                                                        <form action="{{ route('order-reservations.archive', $reservation) }}" method="POST">
+                                                            @csrf @method('PUT')
+                                                            <button type="submit" class="dropdown-item d-flex align-items-center gap-2">
+                                                                <i class="i-Box-Full" style="font-size:15px; width:18px;"></i>
+                                                                Move to Prepared Service
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                    @endif
 
-                                                <!-- Move to Ready for Service (from Prepared Service) -->
-                                                @if($reservation->status === 'prepared_service')
-                                                <li>
-                                                    <a class="dropdown-item d-flex align-items-center gap-2"
-                                                       href="#"
-                                                       onclick="openReadyForServiceModal({{ $reservation->id }}, {{ $reservation->number_of_guest ?? 1 }})">
-                                                        <i class="i-Arrow-Right" style="font-size:15px;"></i>
-                                                        Move to Ready for Service
-                                                    </a>
-                                                </li>
-                                                @endif
+                                                    {{-- Move to Ready for Service --}}
+                                                    @if($reservation->status === 'prepared_service')
+                                                    <li>
+                                                        <a class="dropdown-item d-flex align-items-center gap-2"
+                                                           href="#"
+                                                           onclick="openReadyForServiceModal({{ $reservation->id }}, {{ $reservation->number_of_guest ?? 1 }})">
+                                                            <i class="i-Arrow-Right" style="font-size:15px; width:18px;"></i>
+                                                            Move to Ready for Service
+                                                        </a>
+                                                    </li>
+                                                    @endif
 
-                                                <!-- Ready for Service actions -->
-                                                @if($reservation->status === 'ready_for_service')
-                                                <li>
-                                                    <form action="{{ route('order-reservations.restore', $reservation) }}" method="POST">
-                                                        @csrf
-                                                        @method('PUT')
-                                                        <button type="submit" class="dropdown-item d-flex align-items-center gap-2">
-                                                            <i class="i-Repeat-2" style="font-size:15px;"></i>
-                                                            Restore to Reservations
-                                                        </button>
-                                                    </form>
-                                                </li>
-                                                <li>
-                                                    <form action="{{ route('order-reservations.destroy', $reservation) }}"
-                                                          method="POST"
-                                                          onsubmit="return confirm('Delete permanently?')">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="dropdown-item d-flex align-items-center gap-2 text-danger">
-                                                            <i class="i-Trash" style="font-size:15px;"></i>
-                                                            Delete
-                                                        </button>
-                                                    </form>
-                                                </li>
-                                                @endif
+                                                    {{-- Restore to Reservations --}}
+                                                    @if($reservation->status === 'ready_for_service')
+                                                    <li>
+                                                        <form action="{{ route('order-reservations.restore', $reservation) }}" method="POST">
+                                                            @csrf @method('PUT')
+                                                            <button type="submit" class="dropdown-item d-flex align-items-center gap-2">
+                                                                <i class="i-Repeat-2" style="font-size:15px; width:18px;"></i>
+                                                                Restore to Reservations
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                    @endif
 
-                                                <li><hr class="dropdown-divider"></li>
+                                                    <li><hr class="dropdown-divider"></li>
 
-                                                <!-- Add Attachments -->
-                                                <li>
-                                                    <a class="dropdown-item d-flex align-items-center gap-2"
-                                                       href="#"
-                                                       data-bs-toggle="modal"
-                                                       data-bs-target="#attachmentModal{{ $reservation->id }}">
-                                                        <i class="i-Attach" style="font-size:15px;"></i>
-                                                        Add Attachments
-                                                    </a>
-                                                </li>
+                                                    {{-- Remarks --}}
+                                                    <li>
+                                                        <a class="dropdown-item d-flex align-items-center gap-2"
+                                                           href="#"
+                                                           data-bs-toggle="modal"
+                                                           data-bs-target="#remarksModal{{ $reservation->id }}">
+                                                            <i class="i-Speach-Bubble" style="font-size:15px; width:18px;"></i>
+                                                            Remarks
+                                                        </a>
+                                                    </li>
 
-                                                <!-- Logs -->
-                                                <li>
-                                                    <a class="dropdown-item d-flex align-items-center gap-2"
-                                                       href="#"
-                                                       data-bs-toggle="modal"
-                                                       data-bs-target="#logsModal{{ $reservation->id }}">
-                                                        <i class="i-Clock" style="font-size:15px;"></i>
-                                                        Logs
-                                                    </a>
-                                                </li>
+                                                    {{-- Attachments --}}
+                                                    <li>
+                                                        <a class="dropdown-item d-flex align-items-center gap-2"
+                                                           href="#"
+                                                           data-bs-toggle="modal"
+                                                           data-bs-target="#attachmentModal{{ $reservation->id }}">
+                                                            <i class="i-Attach" style="font-size:15px; width:18px;"></i>
+                                                            Add Attachments
+                                                        </a>
+                                                    </li>
 
-                                                <!-- Remarks -->
-                                                <li>
-                                                    <a class="dropdown-item d-flex align-items-center gap-2"
-                                                       href="#"
-                                                       data-bs-toggle="modal"
-                                                       data-bs-target="#remarksModal{{ $reservation->id }}">
-                                                        <i class="i-Speach-Bubble" style="font-size:15px;"></i>
-                                                        Remarks
-                                                    </a>
-                                                </li>
+                                                    {{-- Logs --}}
+                                                    <li>
+                                                        <a class="dropdown-item d-flex align-items-center gap-2"
+                                                           href="#"
+                                                           data-bs-toggle="modal"
+                                                           data-bs-target="#logsModal{{ $reservation->id }}">
+                                                            <i class="i-Clock" style="font-size:15px; width:18px;"></i>
+                                                            Logs
+                                                        </a>
+                                                    </li>
 
-                                            </ul>
-                                        </div>
-                                    </td>
-                                </tr>
-                                @empty
-                                <tr>
-                                    <td colspan="9" class="text-center text-muted py-4">
-                                        No reservations found.
-                                    </td>
-                                </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
+                                                    {{-- Delete — only on Ready for Service tab, styled red like orders index --}}
+                                                    @if($reservation->status === 'ready_for_service')
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <li>
+                                                        <form action="{{ route('order-reservations.destroy', $reservation) }}"
+                                                              method="POST"
+                                                              onsubmit="return confirm('Delete permanently?')">
+                                                            @csrf @method('DELETE')
+                                                            <button type="submit"
+                                                                    class="dropdown-item d-flex align-items-center gap-2"
+                                                                    style="color: #e74c3c;">
+                                                                <i class="i-Trash" style="font-size:15px; width:18px; color:#e74c3c;"></i>
+                                                                Delete
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                    @endif
+
+                                                </ul>
+                                            </div>
+                                        </td>
+                                        {{-- ── END ACTION COLUMN ── --}}
+
+                                    </tr>
+                                    @empty
+                                    <tr>
+                                        <td colspan="10" class="vgt-center-align vgt-text-disabled">
+                                            No reservations found.
+                                        </td>
+                                    </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                        {{-- END TABLE --}}
+
                     </div>
-                    <!-- End TABLE -->
-
                 </div>
             </div>
-
         </div>
     </div>
 </div>
 
-
 {{-- ============================================================
-     MODALS (per reservation row)
+     MODALS (per reservation)
      ============================================================ --}}
 @foreach($reservations as $reservation)
 
-    {{-- Special Request + Order Details Modal --}}
+    {{-- View / Special Request + Order Details Modal --}}
     <div class="modal fade" id="specialRequestModal{{ $reservation->id }}" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered modal-xl">
             <div class="modal-content">
@@ -325,8 +305,6 @@
                     </h5>
                 </div>
                 <div class="modal-body">
-
-                    {{-- Info Row --}}
                     <div class="row g-3 mb-3">
                         <div class="col-md-3">
                             <small class="text-muted d-block">Customer</small>
@@ -362,8 +340,11 @@
                         </div>
                         <div class="col-md-3">
                             <small class="text-muted d-block">Status</small>
-                            <span class="badge badge-{{ $reservation->status === 'archived' ? 'danger' : ($reservation->status === 'processed' ? 'info' : 'success') }}">
-                                {{ ucfirst($reservation->status) }}
+                            <span class="badge badge-{{
+                                $reservation->status === 'ready_for_service' ? 'danger' :
+                                ($reservation->status === 'prepared_service' ? 'info' : 'success')
+                            }}">
+                                {{ ucfirst(str_replace('_', ' ', $reservation->status)) }}
                             </span>
                         </div>
                         <div class="col-md-3">
@@ -371,8 +352,6 @@
                             <strong>₱ {{ number_format($reservation->gross_amount ?? 0, 2) }}</strong>
                         </div>
                     </div>
-
-                    {{-- Special Request / Notes --}}
                     <div class="card bg-light mb-3">
                         <div class="card-body py-2 px-3">
                             <small class="text-muted fw-bold d-block mb-1">
@@ -383,11 +362,7 @@
                             </p>
                         </div>
                     </div>
-
-                    {{-- Order Details Table --}}
-                    <h6 class="fw-bold mb-2">
-                        <i class="i-Bag me-1"></i> Order Details
-                    </h6>
+                    <h6 class="fw-bold mb-2"><i class="i-Bag me-1"></i> Order Details</h6>
                     @if($reservation->details && $reservation->details->count())
                     <div class="table-responsive">
                         <table class="table table-bordered table-hover table-sm vgt-table mb-0">
@@ -415,9 +390,7 @@
                                     <td class="text-center">{{ $detail->quantity }}</td>
                                     <td class="text-right">{{ number_format($detail->price, 2) }}</td>
                                     <td class="text-right">{{ number_format($subtotal, 2) }}</td>
-                                    <td class="text-right">
-                                        {{ $detail->discount > 0 ? number_format($detail->discount, 2) : '—' }}
-                                    </td>
+                                    <td class="text-right">{{ $detail->discount > 0 ? number_format($detail->discount, 2) : '—' }}</td>
                                     <td>{{ $detail->notes ?? '—' }}</td>
                                     <td class="text-center">
                                         <span class="badge badge-{{ $detail->status === 'done' ? 'success' : ($detail->status === 'cancelled' ? 'danger' : 'warning') }}">
@@ -444,7 +417,6 @@
                             <p class="mt-2 mb-0">No order details available.</p>
                         </div>
                     @endif
-
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -458,12 +430,9 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="i-Attach me-2"></i> Add Attachments
-                    </h5>
+                    <h5 class="modal-title"><i class="i-Attach me-2"></i> Add Attachments</h5>
                 </div>
                 <div class="modal-body">
-                    
                     <form action="" method="POST" enctype="multipart/form-data">
                         @csrf
                         <div class="mb-3">
@@ -491,7 +460,7 @@
                     </h5>
                 </div>
                 <div class="modal-body">
-                    @if($reservation->logs && $reservation->logs->count())
+                    @if(isset($reservation->logs) && $reservation->logs->count())
                         <ul class="list-group list-group-flush">
                             @foreach($reservation->logs as $log)
                             <li class="list-group-item">
@@ -532,9 +501,7 @@
                         </div>
                         <button type="submit" class="btn btn-primary w-100">Save Remark</button>
                     </form>
-
-                    {{-- Existing remarks --}}
-                    @if($reservation->remarks && $reservation->remarks->count())
+                    @if(isset($reservation->remarks) && $reservation->remarks->count())
                     <hr>
                     <h6 class="mt-3">Previous Remarks</h6>
                     <ul class="list-group list-group-flush">
@@ -557,9 +524,7 @@
 @endforeach
 {{-- END MODALS --}}
 
-{{-- ============================================================
-     READY FOR SERVICE MODAL (single shared modal, data injected via JS)
-     ============================================================ --}}
+{{-- Ready for Service Modal --}}
 <div class="modal fade" id="readyForServiceModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -567,40 +532,23 @@
                 <h5 class="modal-title">
                     <i class="i-Arrow-Right me-2 text-success"></i>
                     Move to Ready for Service
-                </h5
+                </h5>
             </div>
             <div class="modal-body">
                 <p class="text-muted mb-3">
-                    Enter the <strong>POS Table Order Number</strong> for this reservation.
-                    This will create an order in the POS Serving tab so your staff can process it.
+                    Enter the <strong>POS Table Number</strong> for this reservation.
+                    This will create an order in the POS Serving tab.
                 </p>
-
                 <input type="hidden" id="rfs_reservation_id" value="">
-
                 <div class="mb-3">
                     <label class="fw-bold">Table No. <span class="text-danger">*</span></label>
-                    <input
-                        type="number"
-                        id="rfs_table_no"
-                        class="form-control"
-                        min="1"
-                        placeholder="e.g. 5"
-                        autofocus
-                    />
-                    <div class="form-text text-muted">This is the physical table number in the restaurant.</div>
+                    <input type="number" id="rfs_table_no" class="form-control" min="1" placeholder="e.g. 5" autofocus />
+                    <div class="form-text text-muted">Physical table number in the restaurant.</div>
                 </div>
-
                 <div class="mb-3">
                     <label class="fw-bold">Number of Pax</label>
-                    <input
-                        type="number"
-                        id="rfs_pax"
-                        class="form-control"
-                        min="1"
-                        value="1"
-                    />
+                    <input type="number" id="rfs_pax" class="form-control" min="1" value="1" />
                 </div>
-
                 <div id="rfs_error" class="alert alert-danger d-none"></div>
             </div>
             <div class="modal-footer">
@@ -614,21 +562,16 @@
 </div>
 
 <script>
-// Simple client-side table search
 function filterTable(query) {
     const q = query.toLowerCase();
-    const rows = document.querySelectorAll('#reservationsTable tbody tr');
-    rows.forEach(row => {
+    document.querySelectorAll('#reservationsTable tbody tr').forEach(row => {
         row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
     });
 }
 
-// Select all checkboxes
 function toggleAll(source) {
     document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = source.checked);
 }
-
-// ── Ready for Service Logic ──────────────────────────────────
 
 function openReadyForServiceModal(reservationId, numberOfGuest) {
     document.getElementById('rfs_reservation_id').value = reservationId;
@@ -636,11 +579,8 @@ function openReadyForServiceModal(reservationId, numberOfGuest) {
     document.getElementById('rfs_table_no').value = '';
     document.getElementById('rfs_error').classList.add('d-none');
     document.getElementById('rfs_confirm_btn').disabled = false;
-
-    const modal = new bootstrap.Modal(document.getElementById('readyForServiceModal'));
-    modal.show();
-
-    // Focus table no input after modal is shown
+    document.getElementById('rfs_confirm_btn').innerHTML = '<i class="i-Arrow-Right me-1"></i> Confirm & Move';
+    new bootstrap.Modal(document.getElementById('readyForServiceModal')).show();
     document.getElementById('readyForServiceModal').addEventListener('shown.bs.modal', function onShown() {
         document.getElementById('rfs_table_no').focus();
         document.getElementById('readyForServiceModal').removeEventListener('shown.bs.modal', onShown);
@@ -654,7 +594,6 @@ function confirmReadyForService() {
     const errorEl       = document.getElementById('rfs_error');
     const confirmBtn    = document.getElementById('rfs_confirm_btn');
 
-    // Validate
     if (!tableNo || parseInt(tableNo) < 1) {
         errorEl.textContent = 'Please enter a valid Table No.';
         errorEl.classList.remove('d-none');
@@ -666,27 +605,19 @@ function confirmReadyForService() {
     confirmBtn.disabled = true;
     confirmBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Processing...';
 
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
-
     fetch(`/order-reservations/${reservationId}/ready-for-service`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': csrfToken,
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
             'Accept': 'application/json',
         },
-        body: JSON.stringify({
-            table_no: parseInt(tableNo),
-            pax: parseInt(pax),
-        }),
+        body: JSON.stringify({ table_no: parseInt(tableNo), pax: parseInt(pax) }),
     })
     .then(res => res.json())
     .then(data => {
         if (data.success) {
-            // Close modal
             bootstrap.Modal.getInstance(document.getElementById('readyForServiceModal')).hide();
-
-            // Show success toast / alert then reload
             Swal.fire({
                 icon: 'success',
                 title: 'Moved to Ready for Service!',
@@ -712,7 +643,6 @@ function confirmReadyForService() {
     });
 }
 
-// Allow Enter key to submit the modal
 document.getElementById('readyForServiceModal').addEventListener('keydown', function(e) {
     if (e.key === 'Enter') confirmReadyForService();
 });
