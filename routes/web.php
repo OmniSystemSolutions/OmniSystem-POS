@@ -119,6 +119,13 @@ Route::get('/orders/{id}/edit', [OrderController::class, 'edit'])->name('orders.
 Route::post('/orders/update/{id}', [OrderController::class, 'update'])->name('orders.update');
 Route::post('/orders/{order}/payment', [OrderController::class, 'payment'])->name('orders.payment');
 Route::get('/reports/sales-journal', [SalesJournalController::class, 'index'])->name('reports.sales-journal');
+Route::prefix('order-details')->group(function () {
+    Route::get('{id}/note', [OrderController::class, 'showNote']);
+    Route::post('{id}/note', [OrderController::class, 'saveNote']);
+    Route::post('{id}/update-note', [OrderController::class, 'updateNote']);
+});
+
+
 
 
 Route::prefix('kitchen')->name('kitchen.')->group(function () {

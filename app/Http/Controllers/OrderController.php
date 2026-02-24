@@ -37,6 +37,9 @@ class OrderController extends Controller
 
         // Fetch orders filtered by status
         $orders = Order::with([
+                'details' => function ($query) {
+                    $query->where('status', '!=', 'walked');
+                },
                 'details.product',
                 'details.component',
                 'user',
@@ -52,7 +55,7 @@ class OrderController extends Controller
                     $inner->where('status', 'serving')
                           ->orWhere('status', 'served');
                 });
-            })
+                })
             ->when($status === 'billout',   fn($q) => $q->where('status', 'billout'))
             ->when($status === 'payments',  fn($q) => $q->where('status', 'payments'))
             ->orderByDesc('created_at')
@@ -390,6 +393,22 @@ class OrderController extends Controller
         // ✅ Merge both
         $allItems = $productsTransformed->merge($componentsTransformed)->values();
 
+        $orderDetails = $order->details->map(function ($detail) {
+    return [
+        'order_detail_id' => $detail->id, // 🔥 THIS IS THE IMPORTANT PART
+        'product_id'      => $detail->product_id,
+        'component_id'    => $detail->component_id,
+        'id'              => $detail->product_id ?? $detail->component_id,
+        'type'            => $detail->product_id ? 'product' : 'component',
+        'sku'             => $detail->product->code ?? $detail->component->code,
+        'name'            => $detail->product->name ?? $detail->component->name,
+        'qty'             => $detail->quantity,
+        'price'           => $detail->price,
+        'status'          => $detail->status,
+        'notes'           => $detail->notes,
+    ];
+});
+
         // ✅ Return same view as create
         return view('orders.form', [
             'isEdit'       => true,
@@ -397,6 +416,7 @@ class OrderController extends Controller
             'products'     => $allItems,
             'categories'   => $categories,
             'waiters'      => $waiters,
+            'orderDetails' => $orderDetails,
         ]);
     }
 
@@ -411,11 +431,13 @@ class OrderController extends Controller
             'number_pax' => 'required|integer|min:1',
             'status' => 'required|in:serving,served,billout,payments,closed,cancelled',
             'order_details' => 'required|array|min:1',
+            'order_details.*.detail_id' => 'nullable|exists:order_details,id',
             'order_details.*.product_id'   => 'nullable|exists:products,id',
             'order_details.*.component_id' => 'nullable|exists:components,id',
             'order_details.*.quantity' => 'required|integer|min:1',
             'order_details.*.price' => 'required|numeric|min:0',
             'order_details.*.status'       => 'required|in:serving,served,walked,cancelled',
+            'order_details.*.notes' => 'nullable|string|max:255',
         ]);
 
         $order->update([
@@ -425,19 +447,50 @@ class OrderController extends Controller
             'status' => $validated['status'],
         ]);
 
-        // Remove old details
-        $order->details()->delete();
+        $existingIds = $order->details()->pluck('id')->toArray();
 
-        // Recreate details
-        foreach ($validated['order_details'] as $detail) {
-            $order->details()->create([
-                'product_id' => $detail['product_id'] ?? null,
-                'component_id' => $detail['component_id'] ?? null,
+$submittedIds = collect($validated['order_details'])
+    ->pluck('detail_id')
+    ->filter()
+    ->toArray();
+
+$idsToDelete = array_diff($existingIds, $submittedIds);
+
+$order->details()
+    ->whereIn('id', $idsToDelete)
+    ->delete();
+
+foreach ($validated['order_details'] as $detail) {
+
+    if (!empty($detail['detail_id'])) {
+
+        $existingDetail = $order->details()->find($detail['detail_id']);
+
+        if ($existingDetail) {
+            $existingDetail->fill([
                 'quantity' => $detail['quantity'],
                 'price' => $detail['price'],
                 'status' => $detail['status'],
+                'notes' => $detail['notes'] ?? null,
             ]);
+
+            if ($existingDetail->isDirty()) {
+                $existingDetail->save();
+            }
         }
+
+    } else {
+
+        $order->details()->create([
+            'product_id' => $detail['product_id'] ?? null,
+            'component_id' => $detail['component_id'] ?? null,
+            'quantity' => $detail['quantity'],
+            'price' => $detail['price'],
+            'status' => $detail['status'],
+            'notes' => $detail['notes'] ?? null,
+        ]);
+    }
+}
 
         return response()->json([
             'success' => true,
@@ -684,5 +737,18 @@ $hasUnservedProducts = OrderDetail::whereHas('order', function ($q) use ($branch
     ]);
 }
 
+public function showNote($orderDetailId)
+{
+    $detail = OrderDetail::findOrFail($orderDetailId);
+    return response()->json(['notes' => $detail->notes]);
+}
+
+public function saveNote(Request $request, $orderDetailId)
+{
+    $detail = OrderDetail::findOrFail($orderDetailId);
+    $validated = $request->validate(['notes' => 'nullable|string|max:255']);
+    $detail->update(['notes' => $validated['notes']]);
+    return response()->json(['success' => true]);
+}
 
 }
