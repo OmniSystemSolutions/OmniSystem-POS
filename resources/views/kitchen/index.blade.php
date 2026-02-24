@@ -462,7 +462,7 @@ tr:hover {
   v-for="(item, index) in filteredOrders"
   :key="index"
   :style="statusFilter === 'serving'
-    ? { backgroundColor: getOrderColor(item.time_submitted) }
+    ? { backgroundColor: getOrderColor(item.created_at) }
     : {}"
 >
                                 <td class="text-left fw-bold text-primary">#@{{ item.order_no }}</td>
@@ -473,16 +473,16 @@ tr:hover {
                                 <td class="text-end">@{{ item.category }}/@{{ item.subcategory }}</td>
                                 <td class="text-end">@{{ item.station }}</td>
                                 <td class="text-end fw-bold"
-    :class="statusFilter === 'serving' 
-    ?{ 'text-danger': (new Date(now) - new Date(item.time_submitted)) / 60000 >= 15 }
-    : {}">
+                                    :class="statusFilter === 'serving' 
+                                    ?{ 'text-danger': (new Date(now) - new Date(item.created_at)) / 60000 >= 15 }
+                                    : {}">
 
-  @{{ item.status === 'serving'
-      ? getRunningTime(item.time_submitted)
-      : formatAMPM(item.time_submitted)
-  }}
+                                  @{{ item.status === 'serving'
+                                      ? getRunningTime(item.created_at)
+                                      : formatAMPM(item.created_at)
+                                  }}
 
-</td>
+                                </td>
 
 <td v-if="statusFilter == 'serving'">
   <div class="recipe-wrapper">
@@ -590,6 +590,7 @@ new Vue({
     selectedStation: null,
     chefs: [],
     availableOrders: [],
+    stations: [],
     headerLabelMap: {
         pending: 'Running Time',
         served: 'Time Served',
@@ -652,14 +653,9 @@ new Vue({
     // 🔹 Filtered + Sorted orders based on selected date
 filteredOrders() {
   // Step 1: Filter by selected date
-  console.log(
-  'RAW WALKED FROM API:',
-  this.orderItems.filter(i => i.status === 'walked')
-);
-console.log('RAW:', this.orderItems);
   let data = this.orderItems.filter(item => {
-    console.log('padung', item)
-    const date = new Date(item.time_submitted);
+    
+    const date = new Date(item.created_at);
     return (
       date.getFullYear() === this.selectedYear &&
       date.getMonth() + 1 === this.selectedMonth &&
@@ -667,7 +663,6 @@ console.log('RAW:', this.orderItems);
     );
      console.log('return', date)
   });
-  console.log('sunod', data)
 
   // Step 2: Sort if a column is selected
   if (this.sortKey) {
@@ -677,8 +672,8 @@ console.log('RAW:', this.orderItems);
 
     // 🕐 Special: sort running time based on difference from now
     if (this.sortKey === 'running_time') {
-      const diffA = new Date(this.now) - new Date(a.time_submitted);
-      const diffB = new Date(this.now) - new Date(b.time_submitted);
+      const diffA = new Date(this.now) - new Date(a.created_at);
+      const diffB = new Date(this.now) - new Date(b.created_at);
       return this.sortAsc ? diffA - diffB : diffB - diffA;
     }
 
@@ -762,7 +757,7 @@ console.log('RAW:', this.orderItems);
     this.availableOrders = res.data.availableOrders;
     this.chefs = res.data.chefs;
     this.stations = res.data.stations;
-    console.log('availableOrders:', this.availableOrders);
+    console.log('details:', this.orderItems);
     // Restore expanded recipe if it still exists
     if (currentExpandedId && this.orderItems.some(i => i.order_detail_id === currentExpandedId)) {
       this.expandedOrderId = currentExpandedId;

@@ -29,8 +29,10 @@ public function fetchItems(Request $request)
     $month  = $request->get('month');
     $day    = $request->get('day');
     $stationId = $request->station_id;
+    $currentBranchId = current_branch_id();
 
-    $orders = Order::with([
+    $orders = Order::where('branch_id', $currentBranchId)
+    ->with([
     'details' => function ($q) use ($status, $stationId) {
         $q->where('status', $status)
           ->when($stationId, function ($q) use ($stationId) {
@@ -106,7 +108,7 @@ public function fetchItems(Request $request)
                 'order_detail_id' => $detail->id,
                 'order_id'        => $order->id,
                 'order_no'        => $order->order_no ?? ('ORD-' . $order->id),
-                'created_at'      => $order->created_at->format('Y-m-d H:i:s'),
+                'created_at'      => $detail->created_at->format('Y-m-d H:i:s'),
                'time_submitted' => in_array($detail->status, ['served', 'walked','cancelled'])
                                     ? optional($detail->updated_at)->format('Y-m-d H:i:s')
                                     : (optional($order->time_submitted)
@@ -132,7 +134,8 @@ public function fetchItems(Request $request)
         ->orderBy('name')
         ->get();
 
-    $availableOrders = Order::where('status', '!=', 'payments')
+    $availableOrders = Order::where('branch_id', $currentBranchId)
+    ->where('status', '!=', 'payments')
     ->orderBy('created_at', 'asc')
     ->get()
     ->map(function ($order) {
@@ -142,11 +145,14 @@ public function fetchItems(Request $request)
         ];
     });
 
-   $stations = Station::whereHas('products.details', function ($q) use ($status, $year, $month, $day) {
-    $q->where('status', $status)
-      ->when($year, fn($q) => $q->whereYear('created_at', $year))
-      ->when($month, fn($q) => $q->whereMonth('created_at', $month))
-      ->when($day, fn($q) => $q->whereDay('created_at', $day));
+   $stations = Station::whereHas('products.details', function ($q) use ($currentBranchId, $year, $month, $day) {
+    $q->where('status', 'serving') // 👈 filter by ORDER DETAIL status
+      ->whereHas('order', function ($orderQuery) use ($currentBranchId, $year, $month, $day) {
+          $orderQuery->where('branch_id', $currentBranchId)
+              ->when($year, fn($q) => $q->whereYear('created_at', $year))
+              ->when($month, fn($q) => $q->whereMonth('created_at', $month))
+              ->when($day, fn($q) => $q->whereDay('created_at', $day));
+      });
 })
 ->select('id', 'name')
 ->orderBy('name')

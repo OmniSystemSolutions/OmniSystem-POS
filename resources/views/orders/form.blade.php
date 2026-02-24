@@ -201,6 +201,39 @@ input[type=number] {
 
 </style>
 <div id="app">
+  <div class="modal fade" id="noteModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content shadow">
+
+        <div class="modal-header">
+          <h5 class="modal-title">
+            Order Note - @{{ selectedNoteItem.name }}
+          </h5>
+        </div>
+
+        <div class="modal-body">
+          <textarea
+            class="form-control"
+            rows="4"
+            v-model="selectedNoteItem.notes"
+            placeholder="Enter special instructions..."
+          ></textarea>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-light" @click="closeNoteModal">
+            Cancel
+          </button>
+          <button class="btn btn-primary" @click="saveNote">
+            Save
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+
 <h2>@{{ isEdit ? 'Edit Order' : 'Order Entry' }}</h2>
 <form @submit.prevent="submitOrder">
 <!-- Order Header -->
@@ -327,6 +360,9 @@ input[type=number] {
                                  <span>Status</span>
                               </th>
                               <th scope="col" class="vgt-left-align text-right sortable">
+                                 <span>Note</span>
+                              </th>
+                              <th scope="col" class="vgt-left-align text-right sortable">
                                  <span>Option</span>
                               </th>
                            </tr>
@@ -349,6 +385,7 @@ input[type=number] {
         type="button"
         class="btn btn-primary"
         @click="item.qty = Math.max(1, item.qty - 1)"
+        :disabled="item.status === 'served' || item.status === 'walked'"
       >
         -
       </button>
@@ -361,6 +398,7 @@ input[type=number] {
       class="form-control form-control-sm text-center"
       v-model.number="item.qty"
       :name="`order_details[${index}][quantity]`"
+      :disabled="item.status === 'served' || item.status === 'walked'"
     >
 
     <div class="input-group-append">
@@ -368,6 +406,7 @@ input[type=number] {
         type="button"
         class="btn btn-primary"
         @click="item.qty++"
+       :disabled="item.status === 'served' || item.status === 'walked'"
       >
         +
       </button>
@@ -386,6 +425,23 @@ input[type=number] {
                                 <td>@{{ (item.qty * item.price).toFixed(2) }}</td>
 
                                 <td>@{{ item.status }}</td>
+                                <td class="text-center">
+
+    <!-- Edit Note Icon -->
+    <i 
+        class="fa-regular fa-pen-to-square me-1"
+        :class="item.notes ? 'text-danger' : 'text-primary'"
+        style="cursor:pointer;"
+        @click="openNoteModal(item)"
+    ></i>
+
+    <!-- Show Info Icon ONLY if notes exist -->
+        <i 
+        v-if="item.notes && item.notes.trim() !== ''"
+        class="fa-solid fa-circle-info text-info"
+        :title="item.notes"
+    ></i>
+
                                 <!-- ✅ Remove Button Column -->
                                 <td class="text-center">
                                   <button 
@@ -398,7 +454,7 @@ input[type=number] {
                                 </td>
                                 </tr>
                            <tr v-if="orderDetails.length === 0">
-                              <td colspan="7" class="vgt-center-align vgt-text-disabled">
+                              <td colspan="8" class="vgt-center-align vgt-text-disabled">
                                  No order details available
                               </td>
                            </tr>
@@ -412,8 +468,7 @@ input[type=number] {
                      </div>
                      <div class="footer__navigation vgt-pull-right">
                         <span class="font-weight-bold">
-                        Grand Total: 
-                        @{{ orderDetails.reduce((sum, item) => sum + (item.qty * item.price), 0).toFixed(2) }}
+                          Grand Total: @{{ grandTotal }}
                         </span>
                      </div>
                   </div>
@@ -524,6 +579,8 @@ input[type=number] {
    new Vue({
    el: "#app",
    data: {
+    selectedNoteItem: {},
+noteModal: null,
        orderNo: @json($nextOrderNo ?? null),
        date: new Date().toLocaleString(),
        waiter: null,
@@ -542,6 +599,10 @@ input[type=number] {
        order: @json($order ?? null),
    },
 mounted() {
+  this.noteModal = new bootstrap.Modal(
+    document.getElementById('noteModal')
+);
+
     console.log('edit mounted — raw order from blade/api:', this.order);
 
     const params = new URLSearchParams(window.location.search);
@@ -562,15 +623,20 @@ mounted() {
             this.pax = this.order.number_pax;
             this.tableNo = this.order.table_no;
 
-            this.orderDetails = this.order.details.map(d => ({
-              id: d.product_id ?? d.component_id,
-              type: d.product_id ? 'product' : 'component',
-              sku: d.product?.code ?? d.component?.code,
-              name: d.product?.name ?? d.component?.name,
-              price: parseFloat(d.price),
-              qty: d.quantity,
-              status: d.status
-            }));
+            this.orderDetails = this.order.details.map(detail => {
+  const item = detail.product ?? detail.component;
+  return {
+    detail_id: detail.id,
+    id: item.id,
+    type: detail.product_id ? 'product' : 'component',
+    sku: item.code,
+    name: item.name,
+    price: parseFloat(detail.price),
+    qty: detail.quantity,
+    status: detail.status,
+    notes: detail.notes ?? ''  // ✅ match backend field
+  };
+});
 
             console.log("✅ Fields prefilled:", {
               selectedWaiter: this.selectedWaiter,
@@ -583,6 +649,12 @@ mounted() {
 },
 
    computed: {
+    grandTotal() {
+    return this.orderDetails
+      .filter(item => item.status !== 'walked')
+      .reduce((sum, item) => sum + (item.qty * item.price), 0)
+      .toFixed(2);
+  },
     sortedCategories() {
     return [...this.categories].sort((a, b) => a.name.localeCompare(b.name));
   },
@@ -620,6 +692,69 @@ mounted() {
     },
    },
    methods: {
+    openNoteModal(item) {
+    this.selectedNoteItem = { ...item }; // clone
+
+    // 🟢 If no note yet → just open modal
+    if (!this.selectedNoteItem.notes || this.selectedNoteItem.notes.trim() === '') {
+        this.selectedNoteItem.notes = '';
+        this.noteModal.show();
+        return;
+    }
+
+    // 🔵 If note exists → fetch latest from backend
+    axios.get(`/order-details/${this.selectedNoteItem.detail_id}/note`)
+        .then(res => {
+            this.$set(this.selectedNoteItem, 'notes', res.data.notes ?? '');
+            this.noteModal.show();
+        })
+        .catch(() => {
+            // fallback open modal even if request fails
+            this.noteModal.show();
+        });
+},
+saveNote() {
+
+    // 🟢 Case 1: New item (no detail_id yet)
+    if (!this.selectedNoteItem.detail_id) {
+
+        const index = this.orderDetails.findIndex(
+            item => item.key === this.selectedNoteItem.key
+        );
+
+        if (index !== -1) {
+            this.$set(this.orderDetails[index], 'notes', this.selectedNoteItem.notes);
+        }
+
+        this.noteModal.hide();
+        return;
+    }
+
+    // 🔵 Case 2: Existing DB item
+    axios.post(`/order-details/${this.selectedNoteItem.detail_id}/note`, {
+        notes: this.selectedNoteItem.notes
+    }).then(() => {
+
+        const index = this.orderDetails.findIndex(
+            item => item.detail_id === this.selectedNoteItem.detail_id
+        );
+
+        if (index !== -1) {
+            this.$set(this.orderDetails[index], 'notes', this.selectedNoteItem.notes);
+        }
+
+        this.noteModal.hide();
+    });
+},
+
+closeNoteModal() {
+    this.noteModal.hide();
+},
+
+// saveNote() {
+//     this.noteModal.hide();
+// },
+
     sortedSubcategories(subs) {
   return [...subs].sort((a, b) => a.name.localeCompare(b.name));
 },
@@ -688,7 +823,8 @@ toggleCategory(category) {
       name: product.name,
       qty: 1,
       price: parseFloat(product.price),
-      status: 'serving'
+      status: 'serving',
+      notes: ''
     });
   }
   },
@@ -722,11 +858,13 @@ toggleCategory(category) {
   order_type: this.orderType,
   gross_amount: parseFloat(grossAmount),
   order_details: this.orderDetails.map(item => ({
+    detail_id: item.detail_id  || null,
     product_id: item.type === "product" ? item.id : null,
     component_id: item.type === "component" ? item.id : null,
     quantity: item.qty,
     price: item.price,
-    status: item.status || 'serving'
+    status: item.status || 'serving',
+    notes: item.notes
   }))
 };
 
