@@ -194,15 +194,14 @@ th, td {
                     @input="onCustomerChange"
                     ref="customerSelect"
                   ></v-select>
-                  <button
-                    type="button"
+                  <a
+                    href="{{ route('customers.create', ['from' => 'reservation', 'redirect_back' => url()->current()]) }}"
                     class="btn btn-primary btn-sm ms-1"
-                    data-bs-toggle="modal"
-                    data-bs-target="#addCustomerModal"
                     title="Add Customer"
+                    target="_blank"
                   >
                     <i class="i-Add"></i>
-                  </button>
+                  </a>
                 </div>
               </div>
 
@@ -552,31 +551,108 @@ th, td {
 </div>
 
 <!-- Add Customer Modal -->
-<div class="modal fade" id="addCustomerModal" tabindex="-1">
-  <div class="modal-dialog">
+<div class="modal fade" id="addCustomerModal" tabindex="-1" aria-labelledby="addCustomerModalLabel">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
+
       <div class="modal-header">
-        <h5 class="modal-title">Add New Customer</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <h5 class="modal-title" id="addCustomerModalLabel">
+          <i class="i-Add me-2"></i> Add New Customer
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
+
       <div class="modal-body">
-        <div class="form-group mb-3">
-          <label class="fw-bold">Customer Name <span class="text-danger">*</span></label>
-          <input type="text" id="newCustomerName" class="form-control" required>
+
+        {{-- ── Source badge: always tagged as "From Reservation" ── --}}
+        <div class="alert alert-info d-flex align-items-center gap-2 py-2 mb-3" style="font-size:13px;">
+          <i class="i-Calendar-4 me-1"></i>
+          <div>
+            <strong>Source:</strong>
+            <span class="badge bg-primary ms-1">Order &amp; Reservations</span>
+            — this customer is being added directly from the reservation form.
+          </div>
         </div>
-        <div class="form-group mb-3">
-          <label class="fw-bold">Mobile No.</label>
-          <input type="text" id="newCustomerMobile" class="form-control">
-        </div>
-        <div class="form-group mb-3">
-          <label class="fw-bold">Email</label>
-          <input type="email" id="newCustomerEmail" class="form-control">
-        </div>
-      </div>
+
+        {{-- hidden flag sent to backend --}}
+        <input type="hidden" id="newCustomerSource" value="order_reservation">
+
+        <div class="row g-3">
+
+          {{-- Customer Name --}}
+          <div class="col-md-6">
+            <label class="fw-bold form-label">
+              Customer Name <span class="text-danger">*</span>
+            </label>
+            <input type="text" id="newCustomerName" class="form-control form-control-sm"
+                   placeholder="Enter full name" autocomplete="off">
+            <div id="err_newCustomerName" class="invalid-feedback"></div>
+          </div>
+
+          {{-- Mobile No --}}
+          <div class="col-md-6">
+            <label class="fw-bold form-label">Mobile No.</label>
+            <input type="text" id="newCustomerMobile" class="form-control form-control-sm"
+                   placeholder="09xxxxxxxxx">
+          </div>
+
+          {{-- Email --}}
+          <div class="col-md-6">
+            <label class="fw-bold form-label">Email</label>
+            <input type="email" id="newCustomerEmail" class="form-control form-control-sm"
+                   placeholder="email@example.com">
+          </div>
+
+          {{-- Company Name --}}
+          <div class="col-md-6">
+            <label class="fw-bold form-label">Company Name</label>
+            <input type="text" id="newCustomerCompany" class="form-control form-control-sm"
+                   placeholder="Optional">
+          </div>
+
+          {{-- Address --}}
+          <div class="col-md-12">
+            <label class="fw-bold form-label">Address</label>
+            <input type="text" id="newCustomerAddress" class="form-control form-control-sm"
+                   placeholder="Street, Barangay, City">
+          </div>
+
+          {{-- Customer Type radio --}}
+          <div class="col-md-12">
+            <label class="fw-bold form-label d-block">Customer Type</label>
+            <div class="d-flex flex-wrap gap-3">
+              @foreach([
+                'regular_customer'  => 'Regular',
+                'vip_customer'      => 'VIP',
+                'walk_in_customer'  => 'Walk-in',
+                'senior_customer'   => 'Senior',
+              ] as $value => $label)
+              <div class="form-check">
+                <input class="form-check-input" type="radio"
+                       name="newCustomerType" id="type_{{ $value }}"
+                       value="{{ $value }}"
+                       {{ $value === 'regular_customer' ? 'checked' : '' }}>
+                <label class="form-check-label" for="type_{{ $value }}">
+                  {{ $label }}
+                </label>
+              </div>
+              @endforeach
+            </div>
+          </div>
+
+        </div>{{-- end row --}}
+      </div>{{-- end modal-body --}}
+
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-primary" onclick="saveNewCustomer()">Save Customer</button>
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">
+          Cancel
+        </button>
+        <button type="button" class="btn btn-primary btn-sm" id="saveCustomerBtn"
+                onclick="saveNewCustomer()">
+          <i class="i-Yes me-1"></i> Save Customer
+        </button>
       </div>
+
     </div>
   </div>
 </div>
@@ -629,8 +705,14 @@ new Vue({
       this.selectedCustomer  = this.reservation.customer_id;
       this.contactNumber     = this.reservation.customer?.mobile_no ?? '';
       this.reservationType   = this.reservation.type_of_reservation;
-      this.reservationDate   = this.reservation.reservation_date;
-      this.reservationTime   = this.reservation.reservation_time;
+      // 2705 slice to "YYYY-MM-DD" — full ISO string breaks <input type="date">
+      this.reservationDate = this.reservation.reservation_date
+        ? String(this.reservation.reservation_date).substring(0, 10)
+        : null;
+      // 2705 slice to "HH:MM" — "09:00:00" breaks <input type="time">
+      this.reservationTime = this.reservation.reservation_time
+        ? String(this.reservation.reservation_time).substring(0, 5)
+        : null;
       this.numberOfGuest     = this.reservation.number_of_guest;
       this.downpaymentAmount  = parseFloat(this.reservation.downpayment_amount ?? 0);
       this.paymentMethodId    = this.reservation.payment_method_id ?? null;
@@ -820,28 +902,88 @@ new Vue({
   },
 });
 
-// Quick Add Customer (plain JS — calls backend then reloads v-select options)
+// ── Quick Add Customer from Order & Reservation form ──────────────────────
 function saveNewCustomer() {
-  const name   = document.getElementById('newCustomerName').value.trim();
-  const mobile = document.getElementById('newCustomerMobile').value.trim();
-  const email  = document.getElementById('newCustomerEmail').value.trim();
+  const nameEl   = document.getElementById('newCustomerName');
+  const errEl    = document.getElementById('err_newCustomerName');
+  const btn      = document.getElementById('saveCustomerBtn');
 
-  if (!name) { alert('Customer name is required.'); return; }
+  const name        = nameEl.value.trim();
+  const mobile      = document.getElementById('newCustomerMobile').value.trim();
+  const email       = document.getElementById('newCustomerEmail').value.trim();
+  const company     = document.getElementById('newCustomerCompany').value.trim();
+  const address     = document.getElementById('newCustomerAddress').value.trim();
+  const source      = document.getElementById('newCustomerSource').value;
+  const typeRadio   = document.querySelector('input[name="newCustomerType"]:checked');
+  const customerType = typeRadio ? typeRadio.value : 'regular_customer';
 
-  axios.post('/customers', { customer_name: name, mobile_no: mobile, email: email })
-    .then(res => {
-      const vm = document.getElementById('app').__vue__;
-      vm.customers.push(res.data.customer);
-      vm.selectedCustomer = res.data.customer.id;
-      vm.contactNumber    = res.data.customer.mobile_no ?? '';
+  // ── Validate required name ──
+  if (!name) {
+    nameEl.classList.add('is-invalid');
+    errEl.textContent = 'Customer name is required.';
+    nameEl.focus();
+    return;
+  }
+  nameEl.classList.remove('is-invalid');
 
-      // close modal
-      const modal = bootstrap.Modal.getInstance(document.getElementById('addCustomerModal'));
-      modal?.hide();
-    })
-    .catch(err => {
-      alert('Failed to save customer: ' + (err.response?.data?.message ?? 'Unknown error'));
+  // ── Loading state ──
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
+
+  const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
+  axios.post('/customers', {
+    customer_name:  name,
+    mobile_no:      mobile,
+    email:          email,
+    company_name:   company,
+    address:        address,
+    customer_type:  customerType,
+    source:         source,   // "order_reservation" flag
+  }, {
+    headers: { 'X-CSRF-TOKEN': csrfToken }
+  })
+  .then(res => {
+    const vm = document.getElementById('app').__vue__;
+    vm.customers.push(res.data.customer);
+    vm.selectedCustomer = res.data.customer.id;
+    vm.contactNumber    = res.data.customer.mobile_no ?? '';
+
+    // ── Reset form fields ──
+    ['newCustomerName','newCustomerMobile','newCustomerEmail',
+     'newCustomerCompany','newCustomerAddress'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
     });
+    // reset radio to default
+    const defaultRadio = document.getElementById('type_regular_customer');
+    if (defaultRadio) defaultRadio.checked = true;
+
+    // ── Close modal ──
+    const modal = bootstrap.Modal.getInstance(document.getElementById('addCustomerModal'));
+    modal?.hide();
+
+    // ── Success toast ──
+    Swal.fire({
+      icon: 'success',
+      title: 'Customer Added!',
+      html: `<strong>${res.data.customer.customer_name}</strong> has been saved and selected.`,
+      timer: 2000,
+      timerProgressBar: true,
+      showConfirmButton: false,
+    });
+  })
+  .catch(err => {
+    console.error('Save customer error:', err.response?.data || err);
+    const msg = err.response?.data?.message
+      ?? err.response?.data?.errors?.customer_name?.[0]
+      ?? 'Failed to save customer.';
+    Swal.fire({ icon: 'error', title: 'Error', text: msg });
+  })
+  .finally(() => {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="i-Yes me-1"></i> Save Customer';
+  });
 }
 </script>
 @endsection

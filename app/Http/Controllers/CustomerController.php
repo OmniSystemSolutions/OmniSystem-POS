@@ -8,9 +8,6 @@ use Illuminate\Http\Request;
 
 class CustomerController extends Controller
 {
-    /**
-     * Display a listing of customers.
-     */
     public function index(Request $request)
     {
         $status = $request->get('status', 'active');
@@ -25,18 +22,20 @@ class CustomerController extends Controller
     }
 
     /**
-     * Show the form for creating a new customer.
+     * Show create form.
+     * Accepts ?from=reservation&redirect_back=<url> to show source radio + banner.
      */
-    public function create()
+    public function create(Request $request)
     {
         $discounts = Discount::where('status', 'active')->get();
 
-        return view('customers.create', compact('discounts'));
+        $latestCustomer = Customer::latest()->first();
+        $nextId = $latestCustomer ? $latestCustomer->id + 1 : 1;
+        $generatedCustomerNo = 'CUS-' . str_pad($nextId, 6, '0', STR_PAD_LEFT);
+
+        return view('customers.create', compact('discounts', 'generatedCustomerNo'));
     }
 
-    /**
-     * Store a newly created customer in storage.
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -50,37 +49,46 @@ class CustomerController extends Controller
             'province'           => 'nullable|string|max:255',
             'city_municipality'  => 'nullable|string|max:255',
             'credit_limit'       => 'nullable|numeric|min:0',
-            'payment_terms_days'      => 'nullable|integer|min:0',
+            'payment_terms_days' => 'nullable|string|max:100',
             'customer_type'      => 'nullable|string|max:255',
             'discount_id'        => 'nullable|exists:discounts,id',
             'customer_since'     => 'nullable|date',
+            'from_source'        => 'nullable|string|max:50',
+            'redirect_back'      => 'nullable|url',
+            'customer_source'    => 'nullable|string|max:50',
         ]);
 
-        // Generate Customer No (e.g., CUS-000632)
+        // Auto-generate customer number
         $latestCustomer = Customer::latest()->first();
         $nextId = $latestCustomer ? $latestCustomer->id + 1 : 1;
-        $customerNo = 'CUS-' . str_pad($nextId, 6, '0', STR_PAD_LEFT);
-        $validated['customer_no'] = $customerNo;
+        $validated['customer_no'] = 'CUS-' . str_pad($nextId, 6, '0', STR_PAD_LEFT);
 
         Customer::create($validated);
+
+        $fromSource   = $request->input('from_source', 'direct');
+        $redirectBack = $request->input('redirect_back');
+
+        // ── If from reservation: stay on create page so SweetAlert fires
+        //    and user can close the tab manually ──
+        if ($fromSource === 'reservation') {
+            return redirect()
+                ->route('customers.create', [
+                    'from'          => 'reservation',
+                    'redirect_back' => $redirectBack,
+                ])
+                ->with('success', 'Customer created successfully.');
+        }
 
         return redirect()->route('customers.index')
             ->with('success', 'Customer created successfully.');
     }
 
-    /**
-     * Show the form for editing the specified customer.
-     */
     public function edit(Customer $customer)
     {
         $discounts = Discount::where('status', 'active')->get();
-
         return view('customers.edit', compact('customer', 'discounts'));
     }
 
-    /**
-     * Update the specified customer in storage.
-     */
     public function update(Request $request, Customer $customer)
     {
         $validated = $request->validate([
@@ -94,10 +102,10 @@ class CustomerController extends Controller
             'province'           => 'nullable|string|max:255',
             'city_municipality'  => 'nullable|string|max:255',
             'credit_limit'       => 'nullable|numeric|min:0',
-            'payment_terms_days'      => 'nullable|integer|min:0',
+            'payment_terms_days' => 'nullable|string|max:100',
             'customer_type'      => 'nullable|string|max:255',
             'discount_id'        => 'nullable|exists:discounts,id',
-            'customer_since' => 'nullable|date', // default today
+            'customer_since'     => 'nullable|date',
         ]);
 
         $customer->update($validated);
@@ -106,37 +114,21 @@ class CustomerController extends Controller
             ->with('success', 'Customer updated successfully.');
     }
 
-    /**
-     * Remove the specified customer from storage.
-     */
     public function destroy($id)
     {
-        $customer = Customer::findOrFail($id);
-        $customer->delete();
-
-        return redirect()->route('customers.index')
-            ->with('success', 'Customer deleted successfully.');
+        Customer::findOrFail($id)->delete();
+        return redirect()->route('customers.index')->with('success', 'Customer deleted successfully.');
     }
 
-    /**
-     * Move the specified customer to archive.
-     */
     public function archive(Customer $customer)
     {
         $customer->update(['status' => 'archived']);
-
-        return redirect()->route('customers.index')
-            ->with('success', 'Customer archived successfully.');
+        return redirect()->route('customers.index')->with('success', 'Customer archived successfully.');
     }
 
-    /**
-     * Restore an archived customer.
-     */
     public function restore(Customer $customer)
     {
         $customer->update(['status' => 'active']);
-
-        return redirect()->route('customers.index')
-            ->with('success', 'Customer restored successfully.');
+        return redirect()->route('customers.index')->with('success', 'Customer restored successfully.');
     }
 }

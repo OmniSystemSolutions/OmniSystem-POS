@@ -187,6 +187,41 @@
         </li>
         @endisset
 
+        {{-- ── Remarks Modal (order-reservations: opens BS modal instead of JS fn) --}}
+        @isset($remarksModalId)
+        <li role="presentation">
+            <a href="javascript:void(0);" class="dropdown-item"
+               data-bs-toggle="modal"
+               data-bs-target="#{{ $remarksModalId }}">
+                <i class="nav-icon i-Mail-Attachement font-weight-bold mr-2"></i> Remarks
+            </a>
+        </li>
+        @endisset
+
+        {{-- ── Add Attachments Modal (order-reservations) ──────────── --}}
+        @isset($attachmentModalId)
+        <li role="presentation">
+            <a href="javascript:void(0);" class="dropdown-item"
+               data-bs-toggle="modal"
+               data-bs-target="#{{ $attachmentModalId }}">
+                <i class="nav-icon i-Attach font-weight-bold mr-2"></i>
+                {{ $attachmentLabel ?? 'Add Attachments' }}
+            </a>
+        </li>
+        @endisset
+
+        {{-- ── Logs Modal (order-reservations: opens BS modal instead of route) ── --}}
+        @isset($logsModalId)
+        <li role="presentation">
+            <a href="javascript:void(0);" class="dropdown-item"
+               data-bs-toggle="modal"
+               data-bs-target="#{{ $logsModalId }}">
+                <i class="nav-icon i-Clock font-weight-bold mr-2"></i>
+                {{ $logsLabel ?? 'Logs' }}
+            </a>
+        </li>
+        @endisset
+
         {{-- ── Logs ────────────────────────────────────────────── --}}
         @isset($logsRoute)
         <li role="presentation">
@@ -370,12 +405,12 @@
         @endif
         @endif
 
-        {{-- ── Divider before Delete ────────────────────────────── --}}
-        @if(isset($deleteRoute))
+        {{-- ── Divider before Delete (only for true deletes, not Cancel labels) --}}
+        @if(isset($deleteRoute) && ($deleteLabel ?? 'Delete') !== 'Cancel')
         <li><hr class="dropdown-divider"></li>
         @endif
 
-        {{-- ── Delete ───────────────────────────────────────────── --}}
+        {{-- ── Delete / Cancel ──────────────────────────────────── --}}
         @isset($deleteRoute)
         <li role="presentation">
             <form action="{{ $deleteRoute }}" method="POST"
