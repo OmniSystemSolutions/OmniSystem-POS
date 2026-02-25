@@ -137,138 +137,63 @@
                                             </button>
                                         </td>
 
-                                        {{-- ── ACTION COLUMN — matches orders/index style ── --}}
+                                 {{-- ── ACTION COLUMN — uses shared layouts/actions-dropdown partial ── --}}
                                         <td class="text-right">
-                                            <div class="dropdown">
-                                                <button
-                                                    type="button"
-                                                    class="btn btn-link p-0"
-                                                    data-bs-toggle="dropdown"
-                                                    aria-expanded="false"
-                                                    style="font-size:22px; line-height:1; color:#555;">
-                                                    &#8942;
-                                                </button>
+                                            @include('layouts.actions-dropdown', [
+                                                'id' => $reservation->id,
 
-                                                <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="min-width:220px; font-size:14px;">
+                                                {{-- View reservation details modal --}}
+                                                // 'viewRoute'   => '#',
+                                                // 'viewLabel'   => 'View',
+                                                'viewModalId' => "specialRequestModal{$reservation->id}",
 
-                                                    {{-- View / Invoice --}}
-                                                    <li>
-                                                        <a class="dropdown-item d-flex align-items-center gap-2"
-                                                           href="#"
-                                                           data-bs-toggle="modal"
-                                                           data-bs-target="#specialRequestModal{{ $reservation->id }}">
-                                                            <i class="i-File-Search" style="font-size:15px; width:18px;"></i>
-                                                            View
-                                                        </a>
-                                                    </li>
+                                                {{-- Edit — only on Reservations tab --}}
+                                                'editRoute' => $reservation->status === 'reservations'
+                                                    ? route('order-reservations.edit', $reservation)
+                                                    : null,
+                                                'editLabel' => 'Edit',
 
-                                                    {{-- Edit — only on Reservations tab --}}
-                                                    @if($reservation->status === 'reservations')
-                                                    <li>
-                                                        <a class="dropdown-item d-flex align-items-center gap-2"
-                                                           href="{{ route('order-reservations.edit', $reservation) }}">
-                                                            <i class="i-Pen-2" style="font-size:15px; width:18px;"></i>
-                                                            Edit
-                                                        </a>
-                                                    </li>
-                                                    @endif
+                                                {{-- Move to Prepared Service — only on Reservations tab --}}
+                                                'archiveRoute' => $reservation->status === 'reservations'
+                                                    ? route('order-reservations.archive', $reservation)
+                                                    : null,
+                                                'archiveLabel' => 'Move to Prepared Service',
 
-                                                    {{-- Move to Prepared Service --}}
-                                                    @if($reservation->status === 'reservations')
-                                                    <li>
-                                                        <form action="{{ route('order-reservations.archive', $reservation) }}" method="POST">
-                                                            @csrf @method('PUT')
-                                                            <button type="submit" class="dropdown-item d-flex align-items-center gap-2">
-                                                                <i class="i-Box-Full" style="font-size:15px; width:18px;"></i>
-                                                                Move to Prepared Service
-                                                            </button>
-                                                        </form>
-                                                    </li>
-                                                    @endif
+                                                {{-- Move to Ready for Service — JS modal, only on Prepared Service tab --}}
+                                                'cancelRoute'   => $reservation->status === 'prepared_service' ? '#' : null,
+                                                'cancelLabel'   => 'Move to Ready for Service',
+                                                'cancelOnClick' => $reservation->status === 'prepared_service'
+                                                    ? "openReadyForServiceModal({$reservation->id}, " . ($reservation->number_of_guest ?? 1) . ")"
+                                                    : null,
 
-                                                    {{-- Move to Ready for Service --}}
-                                                    @if($reservation->status === 'prepared_service')
-                                                    <li>
-                                                        <a class="dropdown-item d-flex align-items-center gap-2"
-                                                           href="#"
-                                                           onclick="openReadyForServiceModal({{ $reservation->id }}, {{ $reservation->number_of_guest ?? 1 }})">
-                                                            <i class="i-Arrow-Right" style="font-size:15px; width:18px;"></i>
-                                                            Move to Ready for Service
-                                                        </a>
-                                                    </li>
-                                                    @endif
+                                                {{-- Restore to Reservations — only on Ready for Service tab --}}
+                                                'restoreRoute' => $reservation->status === 'ready_for_service'
+                                                    ? route('order-reservations.restore', $reservation)
+                                                    : null,
+                                                'restoreLabel' => 'Restore to Reservations',
 
-                                                    {{-- Restore to Reservations --}}
-                                                    @if($reservation->status === 'ready_for_service')
-                                                    <li>
-                                                        <form action="{{ route('order-reservations.restore', $reservation) }}" method="POST">
-                                                            @csrf @method('PUT')
-                                                            <button type="submit" class="dropdown-item d-flex align-items-center gap-2">
-                                                                <i class="i-Repeat-2" style="font-size:15px; width:18px;"></i>
-                                                                Restore to Reservations
-                                                            </button>
-                                                        </form>
-                                                    </li>
-                                                    @endif
+                                                {{-- status drives @if checks inside partial --}}
+                                                'status' => $reservation->status,
 
-                                                    <li><hr class="dropdown-divider"></li>
+                                                {{-- Remarks modal (BS modal trigger, not JS fn) --}}
+                                                'remarksModalId' => "remarksModal{$reservation->id}",
 
-                                                    {{-- Remarks --}}
-                                                    <li>
-                                                        <a class="dropdown-item d-flex align-items-center gap-2"
-                                                           href="#"
-                                                           data-bs-toggle="modal"
-                                                           data-bs-target="#remarksModal{{ $reservation->id }}">
-                                                            <i class="i-Speach-Bubble" style="font-size:15px; width:18px;"></i>
-                                                            Remarks
-                                                        </a>
-                                                    </li>
+                                                {{-- Add Attachments modal --}}
+                                                'attachmentModalId' => "attachmentModal{$reservation->id}",
+                                                'attachmentLabel'   => 'Add Attachments',
 
-                                                    {{-- Attachments --}}
-                                                    <li>
-                                                        <a class="dropdown-item d-flex align-items-center gap-2"
-                                                           href="#"
-                                                           data-bs-toggle="modal"
-                                                           data-bs-target="#attachmentModal{{ $reservation->id }}">
-                                                            <i class="i-Attach" style="font-size:15px; width:18px;"></i>
-                                                            Add Attachments
-                                                        </a>
-                                                    </li>
+                                                {{-- Logs modal --}}
+                                                'logsModalId' => "logsModal{$reservation->id}",
+                                                'logsLabel'   => 'Logs',
 
-                                                    {{-- Logs --}}
-                                                    <li>
-                                                        <a class="dropdown-item d-flex align-items-center gap-2"
-                                                           href="#"
-                                                           data-bs-toggle="modal"
-                                                           data-bs-target="#logsModal{{ $reservation->id }}">
-                                                            <i class="i-Clock" style="font-size:15px; width:18px;"></i>
-                                                            Logs
-                                                        </a>
-                                                    </li>
-
-                                                    {{-- Delete — only on Ready for Service tab, styled red like orders index --}}
-                                                    @if($reservation->status === 'ready_for_service')
-                                                    <li><hr class="dropdown-divider"></li>
-                                                    <li>
-                                                        <form action="{{ route('order-reservations.destroy', $reservation) }}"
-                                                              method="POST"
-                                                              onsubmit="return confirm('Delete permanently?')">
-                                                            @csrf @method('DELETE')
-                                                            <button type="submit"
-                                                                    class="dropdown-item d-flex align-items-center gap-2"
-                                                                    style="color: #e74c3c;">
-                                                                <i class="i-Trash" style="font-size:15px; width:18px; color:#e74c3c;"></i>
-                                                                Delete
-                                                            </button>
-                                                        </form>
-                                                    </li>
-                                                    @endif
-
-                                                </ul>
-                                            </div>
+                                                {{-- Delete — only on Ready for Service tab --}}
+                                                'deleteRoute' => $reservation->status === 'ready_for_service'
+                                                    ? route('order-reservations.destroy', $reservation)
+                                                    : null,
+                                                'deleteLabel' => 'Delete',
+                                            ])
                                         </td>
                                         {{-- ── END ACTION COLUMN ── --}}
-
                                     </tr>
                                     @empty
                                     <tr>

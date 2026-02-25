@@ -4,159 +4,255 @@ namespace App\Http\Controllers;
 
 use App\Models\AccountingCategory;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class AccountingCategoryController extends Controller
 {
-// public function index()
-// {
-//     // PAYABLE categories
-//     $categoryPayableOptions = AccountingCategory::where('mode', 'payable')
-//         ->pluck('category_payable')
-//         ->filter()
-//         ->unique()
-//         ->values();
+    public function index()
+    {
+        // Category rows only (type is null) — both modes
+        $categoryPayableOptions = AccountingCategory::where('mode', 'payable')
+            ->whereNull('type_payable')
+            ->where('status', 'active')
+            ->get();
 
-//     // RECEIVABLE categories
-//     $categoryReceivableOptions = AccountingCategory::where('mode', 'receivable')
-//         ->pluck('category_receivable')
-//         ->filter()
-//         ->unique()
-//         ->values();
+        $categoryReceivableOptions = AccountingCategory::where('mode', 'receivable')
+            ->whereNull('type_receivable')
+            ->where('status', 'active')
+            ->get();
 
-//     // TYPES GROUPED BY CATEGORY
-//     $typesByCategoryPayable = AccountingCategory::where('mode', 'payable')
-//         ->whereNotNull('type_payable')
-//         ->select('category_payable', 'type_payable')
-//         ->get()
-//         ->groupBy('category_payable');
+        // Type rows grouped by category name — both modes
+        $typesByCategoryPayable = AccountingCategory::where('mode', 'payable')
+            ->whereNotNull('type_payable')
+            ->where('status', 'active')
+            ->select('id', 'category_payable', 'type_payable', 'account_code_payable')
+            ->get()
+            ->groupBy('category_payable');
 
-//     $typesByCategoryReceivable = AccountingCategory::where('mode', 'receivable')
-//         ->whereNotNull('type_receivable')
-//         ->select('category_receivable', 'type_receivable')
-//         ->get()
-//         ->groupBy('category_receivable');
+        $typesByCategoryReceivable = AccountingCategory::where('mode', 'receivable')
+            ->whereNotNull('type_receivable')
+            ->where('status', 'active')
+            ->select('id', 'category_receivable', 'type_receivable', 'account_code_receivable')
+            ->get()
+            ->groupBy('category_receivable');
 
-//     return view('accounting-categories.index', compact(
-//         'categoryPayableOptions',
-//         'categoryReceivableOptions',
-//         'typesByCategoryPayable',
-//         'typesByCategoryReceivable'
-//     ));
-// }
+        return view('accounting-categories.index', compact(
+            'categoryPayableOptions',
+            'categoryReceivableOptions',
+            'typesByCategoryPayable',
+            'typesByCategoryReceivable'
+        ));
+    }
 
-public function index()
-{
-    // PAYABLE categories (only category records, type_payable is null)
-    $categoryPayableOptions = AccountingCategory::where('mode', 'payable')
-        ->whereNull('type_payable')
-        ->get();
+    // -------------------------------------------------------------------------
+    // ADD CATEGORY
+    // -------------------------------------------------------------------------
 
-    // RECEIVABLE categories (only category records, type_receivable is null)
-    $categoryReceivableOptions = AccountingCategory::where('mode', 'receivable')
-        ->whereNull('type_receivable')
-        ->get();
-
-    // TYPES GROUPED BY CATEGORY
-    $typesByCategoryPayable = AccountingCategory::where('mode', 'payable')
-        ->whereNotNull('type_payable')
-        ->select('id', 'category_payable', 'type_payable')
-        ->get()
-        ->groupBy('category_payable');
-
-    $typesByCategoryReceivable = AccountingCategory::where('mode', 'receivable')
-        ->whereNotNull('type_receivable')
-        ->select('id', 'category_receivable', 'type_receivable')
-        ->get()
-        ->groupBy('category_receivable');
-
-    return view('accounting-categories.index', compact(
-        'categoryPayableOptions',
-        'categoryReceivableOptions',
-        'typesByCategoryPayable',
-        'typesByCategoryReceivable'
-    ));
-}
-
-
-    public function store(Request $request)
+    public function addPayable(Request $request)
     {
         $request->validate([
-            'mode' => 'required|in:payable,receivable',
-            'category_payable' => 'nullable|required_if:mode,payable',
-            'category_receivable' => 'nullable|required_if:mode,receivable',
-            'type_payable' => 'nullable|string|max:255|required_if:mode,payable',
-            'type_receivable' => 'nullable|string|max:255|required_if:mode,receivable',
+            'category_payable' => 'required|string|max:255',
+            'account_code'     => 'required|string|max:50|unique:accounting_categories,account_code_payable',
         ]);
 
-        // Duplicate check
-        $exists = AccountingCategory::where('mode', $request->mode)
-            ->when($request->mode === 'payable', function ($q) use ($request) {
-                $q->where('category_payable', $request->category_payable)
-                  ->whereRaw('LOWER(type_payable) = ?', [strtolower($request->type_payable)]);
-            })
-            ->when($request->mode === 'receivable', function ($q) use ($request) {
-                $q->where('category_receivable', $request->category_receivable)
-                  ->whereRaw('LOWER(type_receivable) = ?', [strtolower($request->type_receivable)]);
-            })
+        // Duplicate category name check
+        $exists = AccountingCategory::where('mode', 'payable')
+            ->whereNull('type_payable')
+            ->whereRaw('LOWER(category_payable) = ?', [strtolower($request->category_payable)])
             ->exists();
 
         if ($exists) {
-            return back()->withErrors([
-                'type' => 'This category + type already exists.'
-            ])->withInput();
+            return response()->json([
+                'success' => false,
+                'message' => 'Category name already exists.'
+            ], 422);
         }
 
-        AccountingCategory::create([
-            'mode' => $request->mode,
-            'category_payable' => $request->category_payable,
-            'category_receivable' => $request->category_receivable,
-            'type_payable' => $request->type_payable,
-            'type_receivable' => $request->type_receivable,
-            'status' => 'active',
+        $category = AccountingCategory::create([
+            'mode'                 => 'payable',
+            'category_payable'     => $request->category_payable,
+            'account_code_payable' => $request->account_code,
+            'type_payable'         => null,
+            'status'               => 'active',
+            'created_by'           => auth()->id(),
         ]);
 
-        return redirect()->route('accounting-categories.index');
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'id'           => $category->id,
+                'name'         => $category->category_payable,
+                'account_code' => $category->account_code_payable,
+                'label'        => $category->category_label,
+            ]
+        ]);
     }
 
-    public function update(Request $request, AccountingCategory $accountingCategory)
+    public function addReceivable(Request $request)
     {
         $request->validate([
-            'mode' => 'required|in:payable,receivable',
-            'category_payable' => 'nullable|required_if:mode,payable',
-            'category_receivable' => 'nullable|required_if:mode,receivable',
-            'type_payable' => 'nullable|string|max:255|required_if:mode,payable',
-            'type_receivable' => 'nullable|string|max:255|required_if:mode,receivable',
+            'name'         => 'required|string|max:255',
+            'account_code' => 'required|string|max:50|unique:accounting_categories,account_code_receivable',
         ]);
 
-        $exists = AccountingCategory::where('mode', $request->mode)
-            ->where('id', '!=', $accountingCategory->id)
-            ->when($request->mode === 'payable', function ($q) use ($request) {
-                $q->where('category_payable', $request->category_payable)
-                  ->whereRaw('LOWER(type_payable) = ?', [strtolower($request->type_payable)]);
-            })
-            ->when($request->mode === 'receivable', function ($q) use ($request) {
-                $q->where('category_receivable', $request->category_receivable)
-                  ->whereRaw('LOWER(type_receivable) = ?', [strtolower($request->type_receivable)]);
-            })
+        $exists = AccountingCategory::where('mode', 'receivable')
+            ->whereNull('type_receivable')
+            ->whereRaw('LOWER(category_receivable) = ?', [strtolower($request->name)])
             ->exists();
 
         if ($exists) {
-            return back()->withErrors([
-                'type' => 'This category + type already exists.'
-            ])->withInput();
+            return response()->json([
+                'success' => false,
+                'message' => 'Category name already exists.'
+            ], 422);
         }
 
-        $accountingCategory->update([
-            'mode' => $request->mode,
-            'category_payable' => $request->category_payable,
-            'category_receivable' => $request->category_receivable,
-            'type_payable' => $request->type_payable,
-            'type_receivable' => $request->type_receivable,
+        $category = AccountingCategory::create([
+            'mode'                    => 'receivable',
+            'category_receivable'     => $request->name,
+            'account_code_receivable' => $request->account_code,
+            'type_receivable'         => null,
+            'status'                  => 'active',
+            'created_by'              => auth()->id(),
         ]);
 
-        return redirect()->route('accounting-categories.index');
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'id'           => $category->id,
+                'name'         => $category->category_receivable,
+                'account_code' => $category->account_code_receivable,
+                'label'        => $category->category_label,
+            ]
+        ]);
     }
+
+    // -------------------------------------------------------------------------
+    // ADD TYPE (SUB CATEGORY)
+    // -------------------------------------------------------------------------
+
+    public function addTypePayable(Request $request)
+    {
+        $request->validate([
+            'category'     => 'required|string|max:255',
+            'name'         => 'required|string|max:255',
+            'account_code' => 'required|string|max:50|unique:accounting_categories,account_code_payable',
+        ]);
+
+        // Duplicate type name within same category
+        $exists = AccountingCategory::where('mode', 'payable')
+            ->where('category_payable', $request->category)
+            ->whereNotNull('type_payable')
+            ->whereRaw('LOWER(type_payable) = ?', [strtolower($request->name)])
+            ->exists();
+
+        if ($exists) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Sub category already exists under this category.'
+            ], 422);
+        }
+
+        $type = AccountingCategory::create([
+            'mode'                 => 'payable',
+            'category_payable'     => $request->category,
+            'account_code_payable' => $request->account_code,
+            'type_payable'         => $request->name,
+            'category_receivable'  => null,
+            'type_receivable'      => null,
+            'status'               => 'active',
+            'created_by'           => auth()->id(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'id'           => $type->id,
+                'name'         => $type->type_payable,
+                'account_code' => $type->account_code_payable,
+                'label'        => $type->type_label,
+            ]
+        ]);
+    }
+
+    public function addTypeReceivable(Request $request)
+    {
+        $request->validate([
+            'category'     => 'required|string|max:255',
+            'name'         => 'required|string|max:255',
+            'account_code' => 'required|string|max:50|unique:accounting_categories,account_code_receivable',
+        ]);
+
+        $exists = AccountingCategory::where('mode', 'receivable')
+            ->where('category_receivable', $request->category)
+            ->whereNotNull('type_receivable')
+            ->whereRaw('LOWER(type_receivable) = ?', [strtolower($request->name)])
+            ->exists();
+
+        if ($exists) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Sub category already exists under this category.'
+            ], 422);
+        }
+
+        $type = AccountingCategory::create([
+            'mode'                    => 'receivable',
+            'category_receivable'     => $request->category,
+            'account_code_receivable' => $request->account_code,
+            'type_receivable'         => $request->name,
+            'category_payable'        => null,
+            'type_payable'            => null,
+            'status'                  => 'active',
+            'created_by'              => auth()->id(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'id'           => $type->id,
+                'name'         => $type->type_receivable,
+                'account_code' => $type->account_code_receivable,
+                'label'        => $type->type_label,
+            ]
+        ]);
+    }
+
+    // -------------------------------------------------------------------------
+    // DELETE
+    // -------------------------------------------------------------------------
+
+    public function destroy($id)
+    {
+        $category = AccountingCategory::find($id);
+
+        if (!$category) {
+            return response()->json(['success' => false, 'message' => 'Category not found'], 404);
+        }
+
+        if ($category->mode === 'receivable') {
+            AccountingCategory::where('category_receivable', $category->category_receivable)->delete();
+        } else {
+            AccountingCategory::where('category_payable', $category->category_payable)->delete();
+        }
+
+        return response()->json(['success' => true]);
+    }
+
+    public function destroyType($id)
+    {
+        $type = AccountingCategory::findOrFail($id);
+
+        if ($type->type_payable || $type->type_receivable) {
+            $type->delete();
+            return response()->json(['success' => true]);
+        }
+
+        return response()->json(['success' => false, 'message' => 'Not a sub category record'], 400);
+    }
+
+    // -------------------------------------------------------------------------
+    // ARCHIVE / RESTORE
+    // -------------------------------------------------------------------------
 
     public function archive(AccountingCategory $accountingCategory)
     {
@@ -168,124 +264,5 @@ public function index()
     {
         $accountingCategory->update(['status' => 'active']);
         return redirect()->route('accounting-categories.index');
-    }
-
-    // public function destroy(AccountingCategory $accountingCategory)
-    // {
-    //     $accountingCategory->delete();
-    //     return redirect()->route('accounting-categories.index');
-    // }
-
-public function destroy($id)
-{
-    $category = AccountingCategory::find($id);
-
-    if (!$category) {
-        return response()->json(['success' => false, 'message' => 'Category not found'], 404);
-    }
-
-    // Determine if payable or receivable
-    if ($category->mode === 'receivable') {
-        $categoryName = $category->category_receivable;
-
-        // Delete ALL rows under same receivable category
-        AccountingCategory::where('category_receivable', $categoryName)->delete();
-
-    } else {
-        $categoryName = $category->category_payable;
-
-        // Delete ALL rows under same payable category
-        AccountingCategory::where('category_payable', $categoryName)->delete();
-    }
-
-    return response()->json(['success' => true]);
-}
-
-    public function addPayable(Request $request)
-    {
-        $request->validate([
-            'category_payable' => 'required|string|max:255',
-        ]);
-
-        AccountingCategory::create([
-            'mode' => 'payable',
-            'category_payable' => $request->category_payable,
-            'type_payable' => null,
-            'status' => 'active',
-            'created_by' => auth()->id()
-        ]);
-
-        return response()->json(['success' => true]);
-    }
-
-    public function addReceivable(Request $request)
-    {
-        $request->validate([
-            'name' => 'required|string|max:255'
-        ]);
-
-        AccountingCategory::create([
-            'mode' => 'receivable',
-            'category_receivable' => $request->name,
-            'type_receivable' => null,
-            'status' => 'active',
-            'created_by' => auth()->id()
-        ]);
-
-        return response()->json(['success' => true]);
-    }
-
-    public function addTypePayable(Request $request)
-    {
-        $request->validate([
-            'category' => 'required|string|max:255',
-            'name' => 'required|string|max:255',
-        ]);
-
-        $cat = AccountingCategory::create([
-            'mode' => 'payable',
-            'category_payable' => $request->category,
-            'type_payable' => $request->name,
-            'category_receivable' => null,
-            'type_receivable' => null,
-            'status' => 'active',
-            'created_by' => auth()->id()
-        ]);
-
-        return response()->json(['success' => true, 'data' => $cat]);
-    }
-
-    public function addTypeReceivable(Request $request)
-    {
-        $request->validate([
-            'category' => 'required|string|max:255',
-            'name' => 'required|string|max:255',
-        ]);
-
-        $cat = AccountingCategory::create([
-            'mode' => 'receivable',
-            'category_receivable' => $request->category,
-            'type_receivable' => $request->name,
-            'category_payable' => null,
-            'type_payable' => null,
-            'status' => 'active',
-            'created_by' => auth()->id()
-        ]);
-
-        return response()->json(['success' => true, 'data' => $cat]);
-    }
-
-    public function destroyType($id)
-    {
-        // Find the type record in AccountingCategory by ID
-        $type = AccountingCategory::findOrFail($id);
-
-        // Only delete if it's a type (has type_payable or type_receivable)
-        if ($type->type_payable || $type->type_receivable) {
-            $type->delete();
-            return response()->json(['success' => true]);
-        }
-
-        return response()->json(['success' => false, 'message' => 'Not a type record'], 400);
     }
 }

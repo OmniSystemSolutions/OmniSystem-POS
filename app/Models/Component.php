@@ -8,20 +8,39 @@ use Illuminate\Database\Eloquent\Model;
 class Component extends Model
 {
     use HasFactory;
-    
+
     protected $fillable = [
-        'name', 'code', 'cost', 'price', 'unit', 'onhand', 'status', 'image', 'for_sale', 'category_id', 'subcategory_id', 'supplier_id'
+        'name',
+        'code',
+        'brand_name',        // <-- added
+        'cost',
+        'price',
+        'unit_id',
+        'onhand',
+        'status',
+        'image',
+        'for_sale',
+        'category_id',
+        'subcategory_id',
+        'supplier_id',
     ];
 
     protected $casts = [
         'onhand' => 'string',
     ];
 
-    public function category() {
+    public function category()
+    {
         return $this->belongsTo(Category::class);
     }
 
-    public function subcategory() {
+    public function unit()
+    {
+        return $this->belongsTo(Unit::class);
+    }
+
+    public function subcategory()
+    {
         return $this->belongsTo(Subcategory::class);
     }
 
@@ -49,5 +68,4 @@ class Component extends Model
     {
         return $this->belongsTo(Station::class);
     }
-
 }

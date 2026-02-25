@@ -41,7 +41,17 @@ class SupplierController extends Controller
             'address' => 'nullable|string|max:500',
         ]);
 
-        Supplier::create($validated);
+        
+        $supplier = Supplier::create($validated);
+
+        // ✅ IF AJAX REQUEST
+        if ($request->ajax()) {
+            return response()->json([
+                'id' => $supplier->id,
+                'fullname' => $supplier->fullname,
+                'message' => 'Supplier created successfully.'
+            ]);
+        }
 
         return redirect()->route('suppliers.index')->with('success', 'Supplier created successfully.');
     }
@@ -72,6 +82,15 @@ class SupplierController extends Controller
         ]);
 
         $supplier->update($validated);
+
+        // ✅ IF AJAX REQUEST
+        if ($request->ajax()) {
+            return response()->json([
+                'id' => $supplier->id,
+                'fullname' => $supplier->fullname,
+                'message' => 'Supplier updated successfully.'
+            ]);
+        }
 
         return redirect()->route('suppliers.index')
                 ->with('success', 'Supplier updated successfully.');
