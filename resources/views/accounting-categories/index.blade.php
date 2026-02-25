@@ -14,17 +14,6 @@
 
     <div class="container">
 
-        {{-- MODE TABS (replaces dropdown) --}}
-  {{-- MODE DROPDOWN --}}
-<div class="row mb-4">
-    <div class="col-md-4 mx-auto">
-        <select id="mode" class="form-control" onchange="switchMode(this.value)">
-            <option value="payable">Accounts Payables</option>
-            <option value="receivable">Accounts Receivables</option>
-        </select>
-    </div>
-</div>
-
         {{-- CATEGORY + SUB CATEGORY LIST --}}
         <div class="row">
 
@@ -33,19 +22,17 @@
                 <label class="font-weight-bold">Category</label>
 
                 <ul id="categoryList" class="list-group mx-auto" style="max-width:380px;">
-
-                    {{-- PAYABLE CATEGORIES --}}
-                    @foreach ($categoryPayableOptions as $option)
-                    <li class="list-group-item category-item payable-item d-none"
+                    @foreach ($categoryOptions as $option)
+                    <li class="list-group-item category-item"
                         data-id="{{ $option->id }}"
-                        data-category="{{ $option->category_payable }}"
-                        onclick="selectCategory('{{ $option->category_payable }}')">
+                        data-category="{{ $option->category }}"
+                        onclick="selectCategory('{{ $option->category }}')">
 
                         <span class="category-label">
-                            @if($option->account_code_payable)
-                                {{ $option->account_code_payable }} – {{ ucfirst($option->category_payable) }}
+                            @if($option->account_code)
+                                {{ $option->account_code }} – {{ ucfirst($option->category) }}
                             @else
-                                {{ ucfirst($option->category_payable) }}
+                                {{ ucfirst($option->category) }}
                             @endif
                         </span>
 
@@ -56,30 +43,6 @@
                         </button>
                     </li>
                     @endforeach
-
-                    {{-- RECEIVABLE CATEGORIES --}}
-                    @foreach ($categoryReceivableOptions as $option)
-                    <li class="list-group-item category-item receivable-item d-none"
-                        data-id="{{ $option->id }}"
-                        data-category="{{ $option->category_receivable }}"
-                        onclick="selectCategory('{{ $option->category_receivable }}')">
-
-                        <span class="category-label">
-                            @if($option->account_code_receivable)
-                                {{ $option->account_code_receivable }} – {{ ucfirst($option->category_receivable) }}
-                            @else
-                                {{ ucfirst($option->category_receivable) }}
-                            @endif
-                        </span>
-
-                        <button class="btn btn-sm btn-danger float-right remove-category-btn"
-                                style="display:none;"
-                                onclick="event.stopPropagation(); removeCategory({{ $option->id }});">
-                            -
-                        </button>
-                    </li>
-                    @endforeach
-
                 </ul>
 
                 <button class="btn btn-outline-success btn-sm mt-3" onclick="toggleCategoryForm()">
@@ -92,15 +55,13 @@
                 <label class="font-weight-bold">Sub Category</label>
 
                 <ul id="typeList" class="list-group mx-auto" style="max-width:380px;">
-
-                    {{-- PAYABLE TYPES --}}
-                    @foreach ($typesByCategoryPayable as $category => $types)
+                    @foreach ($typesByCategory as $category => $types)
                         @foreach ($types as $item)
-                        <li class="list-group-item type-item payable-type d-none"
+                        <li class="list-group-item type-item d-none"
                             data-category="{{ $category }}"
                             data-id="{{ $item->id }}">
 
-                            {{ $item->account_code_payable ? $item->account_code_payable . ' – ' : '' }}{{ ucfirst($item->type_payable) }}
+                            {{ $item->account_code ? $item->account_code . ' – ' : '' }}{{ ucfirst($item->type) }}
 
                             <button class="btn btn-sm btn-danger float-right"
                                     onclick="event.stopPropagation(); removeType({{ $item->id }});">
@@ -109,24 +70,6 @@
                         </li>
                         @endforeach
                     @endforeach
-
-                    {{-- RECEIVABLE TYPES --}}
-                    @foreach ($typesByCategoryReceivable as $category => $types)
-                        @foreach ($types as $item)
-                        <li class="list-group-item type-item receivable-type d-none"
-                            data-category="{{ $category }}"
-                            data-id="{{ $item->id }}">
-
-                            {{ $item->account_code_receivable ? $item->account_code_receivable . ' – ' : '' }}{{ ucfirst($item->type_receivable) }}
-
-                            <button class="btn btn-sm btn-danger float-right"
-                                    onclick="event.stopPropagation(); removeType({{ $item->id }});">
-                                -
-                            </button>
-                        </li>
-                        @endforeach
-                    @endforeach
-
                 </ul>
 
                 <button class="btn btn-outline-success btn-sm mt-3" onclick="toggleTypeForm()">
@@ -147,20 +90,14 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="font-weight-bold">Category Name *</label>
-                        <input type="text"
-                               id="new_category_name"
-                               class="form-control"
-                               placeholder="Enter name">
+                        <input type="text" id="new_category_name" class="form-control" placeholder="Enter name">
                         <div class="invalid-feedback" id="err_new_category_name"></div>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="font-weight-bold">Account Code *</label>
-                        <input type="text"
-                               id="new_category_code"
-                               class="form-control"
-                               placeholder="Enter code (e.g. 1000)">
+                        <input type="text" id="new_category_code" class="form-control" placeholder="e.g. 1000">
                         <div class="invalid-feedback" id="err_new_category_code"></div>
                     </div>
                 </div>
@@ -172,7 +109,7 @@
             </div>
         </div>
 
-        {{-- ADD TYPE (SUB CATEGORY) FORM --}}
+        {{-- ADD TYPE FORM --}}
         <div id="newTypeForm"
              class="border rounded p-4 mt-4 bg-white shadow-sm"
              style="display:none; max-width:550px; margin:auto;">
@@ -183,20 +120,14 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="font-weight-bold">Type Name *</label>
-                        <input type="text"
-                               id="new_type_name"
-                               class="form-control"
-                               placeholder="Enter type name">
+                        <input type="text" id="new_type_name" class="form-control" placeholder="Enter type name">
                         <div class="invalid-feedback" id="err_new_type_name"></div>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="font-weight-bold">Account Code *</label>
-                        <input type="text"
-                               id="new_type_code"
-                               class="form-control"
-                               placeholder="Enter code (e.g. 100)">
+                        <input type="text" id="new_type_code" class="form-control" placeholder="e.g. 100">
                         <div class="invalid-feedback" id="err_new_type_code"></div>
                     </div>
                 </div>
@@ -215,57 +146,11 @@
 
 <script>
 // ─────────────────────────────────────────────
-// STATE
-// ─────────────────────────────────────────────
-let currentMode = 'payable';
-
-// ─────────────────────────────────────────────
-// MODE SWITCH (replaces dropdown)
-// ─────────────────────────────────────────────
-function switchMode(mode) {
-    currentMode = mode;
-    updateCategoryList();
-
-    document.getElementById('newCategoryForm').style.display = 'none';
-    document.getElementById('newTypeForm').style.display = 'none';
-}
-
-// INIT — read from dropdown on load
-document.addEventListener('DOMContentLoaded', () => {
-    switchMode(document.getElementById('mode').value);
-});
-
-// ─────────────────────────────────────────────
-// CATEGORY LIST
-// ─────────────────────────────────────────────
-function updateCategoryList() {
-    const items = document.querySelectorAll('.category-item');
-
-    items.forEach(i => {
-        const visible = currentMode === 'payable'
-            ? i.classList.contains('payable-item')
-            : i.classList.contains('receivable-item');
-        i.classList.toggle('d-none', !visible);
-    });
-
-    // Auto-select first visible category
-    const first = Array.from(items).find(i => !i.classList.contains('d-none'));
-    if (first) {
-        selectCategory(first.dataset.category);
-    } else {
-        // No categories yet — clear type list
-        updateTypeList(null);
-    }
-}
-
-// ─────────────────────────────────────────────
 // SELECT CATEGORY → SHOW ITS TYPES
 // ─────────────────────────────────────────────
 function selectCategory(category) {
     document.querySelectorAll('.category-item').forEach(i => {
-        const isActive = i.dataset.category === category
-            && !i.classList.contains('d-none'); // only active-mode items
-
+        const isActive = i.dataset.category === category;
         i.classList.toggle('active', isActive);
 
         const btn = i.querySelector('.remove-category-btn');
@@ -276,15 +161,8 @@ function selectCategory(category) {
 }
 
 function updateTypeList(category) {
-    const items = document.querySelectorAll('.type-item');
-
-    items.forEach(i => {
-        const correctMode = currentMode === 'payable'
-            ? i.classList.contains('payable-type')
-            : i.classList.contains('receivable-type');
-
-        const visible = correctMode && i.dataset.category === category;
-        i.classList.toggle('d-none', !visible);
+    document.querySelectorAll('.type-item').forEach(i => {
+        i.classList.toggle('d-none', i.dataset.category !== category);
     });
 }
 
@@ -294,8 +172,6 @@ function updateTypeList(category) {
 function toggleCategoryForm() {
     const form = document.getElementById('newCategoryForm');
     form.style.display = form.style.display === 'none' ? 'block' : 'none';
-
-    // Reset fields
     document.getElementById('new_category_name').value = '';
     document.getElementById('new_category_code').value = '';
     clearError('new_category_name');
@@ -304,7 +180,6 @@ function toggleCategoryForm() {
 
 function toggleTypeForm() {
     const activeCategory = document.querySelector('.category-item.active');
-
     if (!activeCategory) {
         Swal.fire('Select a Category', 'Please click a category before adding a sub category.', 'warning');
         return;
@@ -312,8 +187,6 @@ function toggleTypeForm() {
 
     const form = document.getElementById('newTypeForm');
     form.style.display = form.style.display === 'none' ? 'block' : 'none';
-
-    // Reset fields
     document.getElementById('new_type_name').value = '';
     document.getElementById('new_type_code').value = '';
     clearError('new_type_name');
@@ -324,36 +197,21 @@ function toggleTypeForm() {
 // SAVE CATEGORY
 // ─────────────────────────────────────────────
 async function saveNewCategory() {
-    const nameInput = document.getElementById('new_category_name');
-    const codeInput = document.getElementById('new_category_code');
-    const name = nameInput.value.trim();
-    const code = codeInput.value.trim();
+    const name = document.getElementById('new_category_name').value.trim();
+    const code = document.getElementById('new_category_code').value.trim();
 
     clearError('new_category_name');
     clearError('new_category_code');
 
     let valid = true;
-
-    if (!name) {
-        setError('new_category_name', 'Category name is required.');
-        valid = false;
-    }
-    if (!code) {
-        setError('new_category_code', 'Account code is required.');
-        valid = false;
-    }
+    if (!name) { setError('new_category_name', 'Category name is required.'); valid = false; }
+    if (!code) { setError('new_category_code', 'Account code is required.');  valid = false; }
     if (!valid) return;
 
     try {
-        const url = currentMode === 'payable'
-            ? "{{ route('accounting-categories.accounting-category.add-payable') }}"
-            : "{{ route('accounting-categories.accounting-category.add-receivable') }}";
-
-        const payload = currentMode === 'payable'
-            ? { category_payable: name, account_code: code }
-            : { name: name, account_code: code };
-
-        const res = await fetchPost(url, payload);
+        const res  = await fetchPost("{{ route('accounting-categories.category.add') }}", {
+            name, account_code: code
+        });
         const data = await res.json();
 
         if (!res.ok || !data.success) {
@@ -361,13 +219,9 @@ async function saveNewCategory() {
             return;
         }
 
-        // ── Append to DOM instantly ──
-        const list = document.getElementById('categoryList');
-        const li   = document.createElement('li');
-
-        li.classList.add('list-group-item', 'category-item',
-            currentMode === 'payable' ? 'payable-item' : 'receivable-item');
-
+        // Append to DOM
+        const li = document.createElement('li');
+        li.classList.add('list-group-item', 'category-item');
         li.dataset.id       = data.data.id;
         li.dataset.category = data.data.name;
         li.innerHTML = `
@@ -377,43 +231,34 @@ async function saveNewCategory() {
                     onclick="event.stopPropagation(); removeCategory(${data.data.id});">-</button>
         `;
         li.onclick = () => selectCategory(data.data.name);
+        document.getElementById('categoryList').appendChild(li);
 
-        list.appendChild(li);
+        // Auto-select the new category
+        selectCategory(data.data.name);
 
         toggleCategoryForm();
-        updateCategoryList();
         Swal.fire('Success', `${name} added successfully!`, 'success');
 
     } catch (err) {
-        Swal.fire('Error', err.message || 'Something went wrong.', 'error');
+        Swal.fire('Error', 'Something went wrong.', 'error');
     }
 }
 
 // ─────────────────────────────────────────────
-// SAVE TYPE (SUB CATEGORY)
+// SAVE TYPE
 // ─────────────────────────────────────────────
 async function saveNewType() {
-    const nameInput = document.getElementById('new_type_name');
-    const codeInput = document.getElementById('new_type_code');
-    const name      = nameInput.value.trim();
-    const code      = codeInput.value.trim();
-
-    const activeCategory = document.querySelector('.category-item.active');
-    const category       = activeCategory ? activeCategory.dataset.category : null;
+    const name     = document.getElementById('new_type_name').value.trim();
+    const code     = document.getElementById('new_type_code').value.trim();
+    const active   = document.querySelector('.category-item.active');
+    const category = active ? active.dataset.category : null;
 
     clearError('new_type_name');
     clearError('new_type_code');
 
     let valid = true;
-
-    if (!name) {
-        setError('new_type_name', 'Type name is required.');
-        valid = false;
-    }
-    if (!code) {
-        setError('new_type_code', 'Account code is required.');
-        valid = false;
-    }
+    if (!name) { setError('new_type_name', 'Type name is required.');    valid = false; }
+    if (!code) { setError('new_type_code', 'Account code is required.'); valid = false; }
     if (!category) {
         Swal.fire('Select a Category', 'Please select a category first.', 'warning');
         return;
@@ -421,11 +266,9 @@ async function saveNewType() {
     if (!valid) return;
 
     try {
-        const url = currentMode === 'payable'
-            ? "{{ route('accounting-categories.accounting-type.add-payable') }}"
-            : "{{ route('accounting-categories.accounting-type.add-receivable') }}";
-
-        const res  = await fetchPost(url, { category, name, account_code: code });
+        const res  = await fetchPost("{{ route('accounting-categories.type.add') }}", {
+            category, name, account_code: code
+        });
         const data = await res.json();
 
         if (!res.ok || !data.success) {
@@ -433,13 +276,9 @@ async function saveNewType() {
             return;
         }
 
-        // ── Append to DOM instantly ──
-        const list = document.getElementById('typeList');
-        const li   = document.createElement('li');
-
-        li.classList.add('list-group-item', 'type-item',
-            currentMode === 'payable' ? 'payable-type' : 'receivable-type');
-
+        // Append to DOM
+        const li = document.createElement('li');
+        li.classList.add('list-group-item', 'type-item');
         li.dataset.category = category;
         li.dataset.id       = data.data.id;
         li.innerHTML = `
@@ -447,15 +286,14 @@ async function saveNewType() {
             <button class="btn btn-sm btn-danger float-right"
                     onclick="event.stopPropagation(); removeType(${data.data.id});">-</button>
         `;
+        document.getElementById('typeList').appendChild(li);
 
-        list.appendChild(li);
-
-        toggleTypeForm();
         updateTypeList(category);
+        toggleTypeForm();
         Swal.fire('Success', `${name} added successfully!`, 'success');
 
     } catch (err) {
-        Swal.fire('Error', err.message || 'Something went wrong.', 'error');
+        Swal.fire('Error', 'Something went wrong.', 'error');
     }
 }
 
@@ -471,13 +309,10 @@ async function removeCategory(id) {
         confirmButtonColor: '#d33',
         confirmButtonText: 'Yes, delete it'
     });
-
     if (!result.isConfirmed) return;
 
     try {
-        const url = "{{ route('accounting-categories.destroy', ':id') }}"
-            .replace(':id', id);
-
+        const url  = "{{ route('accounting-categories.destroy', ':id') }}".replace(':id', id);
         const res  = await fetchDelete(url);
         const data = await res.json().catch(() => null);
 
@@ -486,13 +321,8 @@ async function removeCategory(id) {
             return;
         }
 
-        // Remove from DOM
-        document.querySelectorAll(`.category-item[data-id="${id}"]`)
-            .forEach(el => el.remove());
-
-        // Clear type list
+        document.querySelectorAll(`.category-item[data-id="${id}"]`).forEach(el => el.remove());
         updateTypeList(null);
-
         Swal.fire('Deleted', 'Category removed.', 'success');
 
     } catch (err) {
@@ -508,13 +338,10 @@ async function removeType(id) {
         confirmButtonColor: '#d33',
         confirmButtonText: 'Yes, delete it'
     });
-
     if (!result.isConfirmed) return;
 
     try {
-        const url = "{{ route('accounting-categories.accounting-type.destroy', ':id') }}"
-            .replace(':id', id);
-
+        const url = "{{ route('accounting-categories.type.destroy', ':id') }}".replace(':id', id);
         const res = await fetchDelete(url);
 
         if (res.ok) {
@@ -567,10 +394,11 @@ function clearError(fieldId) {
 }
 
 // ─────────────────────────────────────────────
-// INIT
+// INIT — auto-select first category on load
 // ─────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-    switchMode('payable');
+    const first = document.querySelector('.category-item');
+    if (first) selectCategory(first.dataset.category);
 });
 </script>
 
@@ -578,21 +406,20 @@ document.addEventListener('DOMContentLoaded', () => {
 .category-item {
     cursor: pointer;
     transition: background-color 0.15s;
-    position: relative;        /* add this */
-    min-height: 42px;          /* add this */
+    min-height: 42px;
 }
 .category-item:hover {
     background-color: #f8f9fa;
 }
 .category-item.active {
-    background-color: #fff !important;   /* was transparent — change to white */
+    background-color: #fff !important;
     border: 2px solid #e74c3c !important;
     font-weight: normal !important;
-    color: #333 !important;              /* add this */
+    color: #333 !important;
 }
 .category-item .category-label {
-    display: inline-block;     /* add this */
-    line-height: 1.5;          /* add this */
+    display: inline-block;
+    line-height: 1.5;
 }
 </style>
 

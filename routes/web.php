@@ -448,29 +448,18 @@ Route::prefix('fund-transfers')->name('fund-transfers.')->group(function () {
 
 Route::prefix('accounting-categories')->name('accounting-categories.')->group(function () {
 
-    Route::get('/', [AccountingCategoryController::class, 'index'])->name('index');
-    Route::post('/', [AccountingCategoryController::class, 'store'])->name('store');
+    Route::get('/',                          [AccountingCategoryController::class, 'index'])->name('index');
+    Route::delete('/{id}',                   [AccountingCategoryController::class, 'destroy'])->name('destroy');
+    Route::put('/{accountingCategory}/archive', [AccountingCategoryController::class, 'archive'])->name('archive');
+    Route::put('/{accountingCategory}/restore', [AccountingCategoryController::class, 'restore'])->name('restore');
 
-    Route::put('/{accounting_category}', [AccountingCategoryController::class, 'update'])->name('update');
-    Route::delete('/{accounting_category}', [AccountingCategoryController::class, 'destroy'])->name('destroy');
+    // Category
+    Route::post('/category/add',             [AccountingCategoryController::class, 'addCategory'])->name('category.add');
 
-    Route::put('/{accounting_category}/archive', [AccountingCategoryController::class, 'archive'])->name('archive');
-    Route::put('/{accounting_category}/restore', [AccountingCategoryController::class, 'restore'])->name('restore');
+    // Type (Sub Category)
+    Route::post('/type/add',                 [AccountingCategoryController::class, 'addType'])->name('type.add');
+    Route::delete('/type/{id}',              [AccountingCategoryController::class, 'destroyType'])->name('type.destroy');
 
-    Route::post('/accounting-category/add-payable', [AccountingCategoryController::class, 'addPayable'])
-    ->name('accounting-category.add-payable');
-    Route::post('/accounting-category/add-receivable', [AccountingCategoryController::class, 'addReceivable'])
-    ->name('accounting-category.add-receivable');
-
-    // Add Type routes
-    Route::post('/accounting-type/add-payable', [AccountingCategoryController::class, 'addTypePayable'])
-        ->name('accounting-type.add-payable');
-
-    Route::post('/accounting-type/add-receivable', [AccountingCategoryController::class, 'addTypeReceivable'])
-        ->name('accounting-type.add-receivable');
-
-    Route::delete('/accounting-type/{id}', [AccountingCategoryController::class, 'destroyType'])
-    ->name('accounting-type.destroy');
 });
 
 Route::prefix('accounts-payables')->name('accounts-payables.')->group(function () {

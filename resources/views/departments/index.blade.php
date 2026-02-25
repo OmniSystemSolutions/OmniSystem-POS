@@ -196,13 +196,6 @@
                                                 </li>
                                                 @endif
 
-                                                <!-- View Stock Card -->
-                                                <li role="presentation">
-                                                    <a class="dropdown-item" href="#">
-                                                        <i class="nav-icon i-Receipt font-weight-bold mr-2"></i> View Stock Card
-                                                    </a>
-                                                </li>
-
                                                 <!-- Archive -->
                                                 @if($department->status === 'active')
                                                 <li role="presentation">

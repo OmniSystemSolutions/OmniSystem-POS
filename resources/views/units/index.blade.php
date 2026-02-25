@@ -178,14 +178,7 @@
                         <i class="nav-icon i-Edit font-weight-bold mr-2"></i> Edit
                     </a>
                 </li>
-
-                <!-- View Stock Card -->
-                <li role="presentation">
-                    <a class="dropdown-item" href="#">
-                        <i class="nav-icon i-Receipt font-weight-bold mr-2"></i> View Stock Card
-                    </a>
-                </li>
-
+                
                 <!-- Archive -->
                 @if($unit->status === 'active')
                 <form action="{{ route('units.archive', $unit) }}" method="POST"
