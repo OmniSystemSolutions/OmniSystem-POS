@@ -492,6 +492,14 @@
                      </ul>
                      <ul class="submenu">
                         <li class="nav-item">
+                           <a href="{{ route('chart-of-accounts.index') }}">
+                              <i class="fa-solid fa-diagram-project"></i>
+                              <span class="item-name">Chart of Account</span>
+                           </a>
+                        </li>
+                     </ul>
+                     <ul class="submenu">
+                        <li class="nav-item">
                            <a href="{{ route('asset-categories.index') }}">
                               <i class="nav-icon i-Network-Window"></i>
                               <span class="item-name">Assets Category</span>

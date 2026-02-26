@@ -118,6 +118,7 @@ class BundledItemController extends Controller
         'subcategories' => Subcategory::all(),
         'stations' => Station::all(),
         'units' => Unit::all(),
+        'components' => Component::where('for_sale', true)->get(),
         'products' => Product::where('type', 'simple')->get()
     ]);
 }
