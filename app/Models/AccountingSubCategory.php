@@ -34,4 +34,12 @@ class AccountingSubCategory extends Model
     {
         return $this->belongsTo(AccountingCategory::class, 'accounting_category_id');
     }
+
+    public function subChartAccounts()
+    {
+        return $this->hasMany(
+            ChartAccount::class,
+            'accounting_subcategory_id'
+        );
+    }
 }

@@ -41,4 +41,12 @@ class AccountingCategory extends Model
     {
         return $this->hasMany(AccountPayableDetail::class, 'accounting_category_id');
     }
+
+    public function chartAccounts()
+    {
+        return $this->hasMany(
+            ChartAccount::class,
+            'accounting_category_id'
+        );
+    }
 }

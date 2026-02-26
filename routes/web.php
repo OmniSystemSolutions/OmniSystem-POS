@@ -50,6 +50,7 @@ use App\Http\Controllers\DailyTimeRecordController;
 use App\Http\Controllers\TableLayoutController;
 use App\Http\Controllers\StationController;
 use App\Http\Controllers\BundledItemController;
+use App\Http\Controllers\ChartofAccountController;
 use App\Http\Controllers\OrderAndReservationController;
 
 Route::get('/', function () {
@@ -699,4 +700,9 @@ Route::prefix('/bundled-items')->name('bundled-items.')->group(function () {
     Route::put('/{id}/restore', [BundledItemController::class, 'restore'])->name('restore');
 });
 
+Route::prefix('/chart-of-accounts')->name('chart-of-accounts.')->group(function () {
+    Route::get('/', [ChartofAccountController::class, 'index'])->name('index');
+    Route::get('/fetch', [ChartofAccountController::class, 'fetchItems'])->name('fetch');
+
+});
 
