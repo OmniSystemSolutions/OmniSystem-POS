@@ -447,19 +447,14 @@ Route::prefix('fund-transfers')->name('fund-transfers.')->group(function () {
 });
 
 Route::prefix('accounting-categories')->name('accounting-categories.')->group(function () {
-
-    Route::get('/',                          [AccountingCategoryController::class, 'index'])->name('index');
-    Route::delete('/{id}',                   [AccountingCategoryController::class, 'destroy'])->name('destroy');
+    Route::get('/',    [AccountingCategoryController::class, 'index'])->name('index');
+    Route::delete('/{id}', [AccountingCategoryController::class, 'destroy'])->name('destroy');
     Route::put('/{accountingCategory}/archive', [AccountingCategoryController::class, 'archive'])->name('archive');
     Route::put('/{accountingCategory}/restore', [AccountingCategoryController::class, 'restore'])->name('restore');
 
-    // Category
-    Route::post('/category/add',             [AccountingCategoryController::class, 'addCategory'])->name('category.add');
-
-    // Type (Sub Category)
-    Route::post('/type/add',                 [AccountingCategoryController::class, 'addType'])->name('type.add');
-    Route::delete('/type/{id}',              [AccountingCategoryController::class, 'destroyType'])->name('type.destroy');
-
+    Route::post('/category/add',         [AccountingCategoryController::class, 'addCategory'])->name('category.add');
+    Route::post('/sub-category/add',     [AccountingCategoryController::class, 'addSubCategory'])->name('sub-category.add');
+    Route::delete('/sub-category/{id}',  [AccountingCategoryController::class, 'destroySubCategory'])->name('sub-category.destroy');
 });
 
 Route::prefix('accounts-payables')->name('accounts-payables.')->group(function () {
