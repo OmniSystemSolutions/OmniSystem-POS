@@ -25,8 +25,8 @@
                     @foreach ($categoryOptions as $option)
                     <li class="list-group-item category-item"
                         data-id="{{ $option->id }}"
-                        data-category="{{ $option->category }}"
-                        onclick="selectCategory('{{ $option->category }}')">
+                        data-category-id="{{ $option->id }}"
+                        onclick="selectCategory({{ $option->id }})">
 
                         <span class="category-label">
                             @if($option->account_code)
@@ -54,17 +54,22 @@
             <div class="col-md-6 text-center">
                 <label class="font-weight-bold">Sub Category</label>
 
-                <ul id="typeList" class="list-group mx-auto" style="max-width:380px;">
-                    @foreach ($typesByCategory as $category => $types)
-                        @foreach ($types as $item)
-                        <li class="list-group-item type-item d-none"
-                            data-category="{{ $category }}"
-                            data-id="{{ $item->id }}">
+                <ul id="subCategoryList" class="list-group mx-auto" style="max-width:380px;">
+                    {{-- Loop categories then their sub categories --}}
+                    @foreach ($categoryOptions as $option)
+                        @foreach ($option->activeSubCategories as $sub)
+                        <li class="list-group-item sub-item d-none"
+                            data-category-id="{{ $option->id }}"
+                            data-id="{{ $sub->id }}">
 
-                            {{ $item->account_code ? $item->account_code . ' – ' : '' }}{{ ucfirst($item->type) }}
+                            @if($sub->account_code)
+                                {{ $sub->account_code }} – {{ ucfirst($sub->sub_category) }}
+                            @else
+                                {{ ucfirst($sub->sub_category) }}
+                            @endif
 
                             <button class="btn btn-sm btn-danger float-right"
-                                    onclick="event.stopPropagation(); removeType({{ $item->id }});">
+                                    onclick="event.stopPropagation(); removeSubCategory({{ $sub->id }});">
                                 -
                             </button>
                         </li>
@@ -72,7 +77,7 @@
                     @endforeach
                 </ul>
 
-                <button class="btn btn-outline-success btn-sm mt-3" onclick="toggleTypeForm()">
+                <button class="btn btn-outline-success btn-sm mt-3" onclick="toggleSubCategoryForm()">
                     <i class="i-Add"></i> Add Type
                 </button>
             </div>
@@ -109,8 +114,8 @@
             </div>
         </div>
 
-        {{-- ADD TYPE FORM --}}
-        <div id="newTypeForm"
+        {{-- ADD SUB CATEGORY FORM --}}
+        <div id="newSubCategoryForm"
              class="border rounded p-4 mt-4 bg-white shadow-sm"
              style="display:none; max-width:550px; margin:auto;">
 
@@ -120,22 +125,22 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="font-weight-bold">Type Name *</label>
-                        <input type="text" id="new_type_name" class="form-control" placeholder="Enter type name">
-                        <div class="invalid-feedback" id="err_new_type_name"></div>
+                        <input type="text" id="new_sub_name" class="form-control" placeholder="Enter type name">
+                        <div class="invalid-feedback" id="err_new_sub_name"></div>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="font-weight-bold">Account Code *</label>
-                        <input type="text" id="new_type_code" class="form-control" placeholder="e.g. 100">
-                        <div class="invalid-feedback" id="err_new_type_code"></div>
+                        <input type="text" id="new_sub_code" class="form-control" placeholder="e.g. 100">
+                        <div class="invalid-feedback" id="err_new_sub_code"></div>
                     </div>
                 </div>
             </div>
 
             <div class="d-flex justify-content-center mt-3">
-                <button type="button" onclick="saveNewType()" class="btn btn-success px-4 mr-3">Save</button>
-                <button type="button" onclick="toggleTypeForm()" class="btn btn-danger px-4">Cancel</button>
+                <button type="button" onclick="saveNewSubCategory()" class="btn btn-success px-4 mr-3">Save</button>
+                <button type="button" onclick="toggleSubCategoryForm()" class="btn btn-danger px-4">Cancel</button>
             </div>
         </div>
 
@@ -145,24 +150,28 @@
 <meta name="csrf-token" content="{{ csrf_token() }}">
 
 <script>
+let selectedCategoryId = null;
+
 // ─────────────────────────────────────────────
-// SELECT CATEGORY → SHOW ITS TYPES
+// SELECT CATEGORY → SHOW ITS SUB CATEGORIES
 // ─────────────────────────────────────────────
-function selectCategory(category) {
+function selectCategory(categoryId) {
+    selectedCategoryId = categoryId;
+
     document.querySelectorAll('.category-item').forEach(i => {
-        const isActive = i.dataset.category === category;
+        const isActive = parseInt(i.dataset.categoryId) === categoryId;
         i.classList.toggle('active', isActive);
 
         const btn = i.querySelector('.remove-category-btn');
         if (btn) btn.style.display = isActive ? 'inline-block' : 'none';
     });
 
-    updateTypeList(category);
+    updateSubCategoryList(categoryId);
 }
 
-function updateTypeList(category) {
-    document.querySelectorAll('.type-item').forEach(i => {
-        i.classList.toggle('d-none', i.dataset.category !== category);
+function updateSubCategoryList(categoryId) {
+    document.querySelectorAll('.sub-item').forEach(i => {
+        i.classList.toggle('d-none', parseInt(i.dataset.categoryId) !== categoryId);
     });
 }
 
@@ -178,19 +187,17 @@ function toggleCategoryForm() {
     clearError('new_category_code');
 }
 
-function toggleTypeForm() {
-    const activeCategory = document.querySelector('.category-item.active');
-    if (!activeCategory) {
+function toggleSubCategoryForm() {
+    if (!selectedCategoryId) {
         Swal.fire('Select a Category', 'Please click a category before adding a sub category.', 'warning');
         return;
     }
-
-    const form = document.getElementById('newTypeForm');
+    const form = document.getElementById('newSubCategoryForm');
     form.style.display = form.style.display === 'none' ? 'block' : 'none';
-    document.getElementById('new_type_name').value = '';
-    document.getElementById('new_type_code').value = '';
-    clearError('new_type_name');
-    clearError('new_type_code');
+    document.getElementById('new_sub_name').value = '';
+    document.getElementById('new_sub_code').value = '';
+    clearError('new_sub_name');
+    clearError('new_sub_code');
 }
 
 // ─────────────────────────────────────────────
@@ -219,23 +226,21 @@ async function saveNewCategory() {
             return;
         }
 
-        // Append to DOM
+        // Append to category list
         const li = document.createElement('li');
         li.classList.add('list-group-item', 'category-item');
-        li.dataset.id       = data.data.id;
-        li.dataset.category = data.data.name;
+        li.dataset.id         = data.data.id;
+        li.dataset.categoryId = data.data.id;
         li.innerHTML = `
             <span class="category-label">${data.data.label}</span>
             <button class="btn btn-sm btn-danger float-right remove-category-btn"
                     style="display:none;"
                     onclick="event.stopPropagation(); removeCategory(${data.data.id});">-</button>
         `;
-        li.onclick = () => selectCategory(data.data.name);
+        li.onclick = () => selectCategory(data.data.id);
         document.getElementById('categoryList').appendChild(li);
 
-        // Auto-select the new category
-        selectCategory(data.data.name);
-
+        selectCategory(data.data.id);
         toggleCategoryForm();
         Swal.fire('Success', `${name} added successfully!`, 'success');
 
@@ -245,29 +250,29 @@ async function saveNewCategory() {
 }
 
 // ─────────────────────────────────────────────
-// SAVE TYPE
+// SAVE SUB CATEGORY
 // ─────────────────────────────────────────────
-async function saveNewType() {
-    const name     = document.getElementById('new_type_name').value.trim();
-    const code     = document.getElementById('new_type_code').value.trim();
-    const active   = document.querySelector('.category-item.active');
-    const category = active ? active.dataset.category : null;
+async function saveNewSubCategory() {
+    const name = document.getElementById('new_sub_name').value.trim();
+    const code = document.getElementById('new_sub_code').value.trim();
 
-    clearError('new_type_name');
-    clearError('new_type_code');
+    clearError('new_sub_name');
+    clearError('new_sub_code');
 
     let valid = true;
-    if (!name) { setError('new_type_name', 'Type name is required.');    valid = false; }
-    if (!code) { setError('new_type_code', 'Account code is required.'); valid = false; }
-    if (!category) {
+    if (!name) { setError('new_sub_name', 'Type name is required.');    valid = false; }
+    if (!code) { setError('new_sub_code', 'Account code is required.'); valid = false; }
+    if (!selectedCategoryId) {
         Swal.fire('Select a Category', 'Please select a category first.', 'warning');
         return;
     }
     if (!valid) return;
 
     try {
-        const res  = await fetchPost("{{ route('accounting-categories.type.add') }}", {
-            category, name, account_code: code
+        const res  = await fetchPost("{{ route('accounting-categories.sub-category.add') }}", {
+            accounting_category_id: selectedCategoryId,
+            name,
+            account_code: code
         });
         const data = await res.json();
 
@@ -276,20 +281,20 @@ async function saveNewType() {
             return;
         }
 
-        // Append to DOM
+        // Append to sub category list
         const li = document.createElement('li');
-        li.classList.add('list-group-item', 'type-item');
-        li.dataset.category = category;
-        li.dataset.id       = data.data.id;
+        li.classList.add('list-group-item', 'sub-item');
+        li.dataset.categoryId = selectedCategoryId;
+        li.dataset.id         = data.data.id;
         li.innerHTML = `
             ${data.data.label}
             <button class="btn btn-sm btn-danger float-right"
-                    onclick="event.stopPropagation(); removeType(${data.data.id});">-</button>
+                    onclick="event.stopPropagation(); removeSubCategory(${data.data.id});">-</button>
         `;
-        document.getElementById('typeList').appendChild(li);
+        document.getElementById('subCategoryList').appendChild(li);
 
-        updateTypeList(category);
-        toggleTypeForm();
+        updateSubCategoryList(selectedCategoryId);
+        toggleSubCategoryForm();
         Swal.fire('Success', `${name} added successfully!`, 'success');
 
     } catch (err) {
@@ -298,7 +303,7 @@ async function saveNewType() {
 }
 
 // ─────────────────────────────────────────────
-// REMOVE
+// REMOVE CATEGORY
 // ─────────────────────────────────────────────
 async function removeCategory(id) {
     const result = await Swal.fire({
@@ -321,8 +326,12 @@ async function removeCategory(id) {
             return;
         }
 
+        // Remove category row
         document.querySelectorAll(`.category-item[data-id="${id}"]`).forEach(el => el.remove());
-        updateTypeList(null);
+        // Remove all its sub category rows
+        document.querySelectorAll(`.sub-item[data-category-id="${id}"]`).forEach(el => el.remove());
+
+        selectedCategoryId = null;
         Swal.fire('Deleted', 'Category removed.', 'success');
 
     } catch (err) {
@@ -330,7 +339,10 @@ async function removeCategory(id) {
     }
 }
 
-async function removeType(id) {
+// ─────────────────────────────────────────────
+// REMOVE SUB CATEGORY
+// ─────────────────────────────────────────────
+async function removeSubCategory(id) {
     const result = await Swal.fire({
         title: 'Remove Sub Category?',
         icon: 'warning',
@@ -341,15 +353,18 @@ async function removeType(id) {
     if (!result.isConfirmed) return;
 
     try {
-        const url = "{{ route('accounting-categories.type.destroy', ':id') }}".replace(':id', id);
-        const res = await fetchDelete(url);
+        const url  = "{{ route('accounting-categories.sub-category.destroy', ':id') }}".replace(':id', id);
+        const res  = await fetchDelete(url);
+        const data = await res.json().catch(() => null);
 
-        if (res.ok) {
-            document.querySelector(`.type-item[data-id="${id}"]`)?.remove();
-            Swal.fire('Deleted', 'Sub category removed.', 'success');
-        } else {
-            Swal.fire('Error', 'Could not remove.', 'error');
+        if (!res.ok || !data?.success) {
+            Swal.fire('Error', data?.message || 'Could not remove.', 'error');
+            return;
         }
+
+        document.querySelector(`.sub-item[data-id="${id}"]`)?.remove();
+        Swal.fire('Deleted', 'Sub category removed.', 'success');
+
     } catch (err) {
         Swal.fire('Error', 'Something went wrong.', 'error');
     }
@@ -398,7 +413,7 @@ function clearError(fieldId) {
 // ─────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
     const first = document.querySelector('.category-item');
-    if (first) selectCategory(first.dataset.category);
+    if (first) selectCategory(parseInt(first.dataset.categoryId));
 });
 </script>
 

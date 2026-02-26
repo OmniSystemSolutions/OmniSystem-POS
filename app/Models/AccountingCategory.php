@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class AccountingCategory extends Model
 {
@@ -12,9 +13,8 @@ class AccountingCategory extends Model
     protected $fillable = [
         'category',
         'account_code',
-        'type',
-        'created_by',
         'status',
+        'created_by',
     ];
 
     /**
@@ -27,17 +27,17 @@ class AccountingCategory extends Model
             : ($this->category ?? '');
     }
 
-    /**
-     * Display label for type: "100 – Current Assets"
-     */
-    public function getTypeLabelAttribute(): string
+    public function subCategories(): HasMany
     {
-        return $this->account_code
-            ? "{$this->account_code} – {$this->type}"
-            : ($this->type ?? '');
+        return $this->hasMany(AccountingSubCategory::class, 'accounting_category_id');
     }
 
-    public function payableDetails()
+    public function activeSubCategories(): HasMany
+    {
+        return $this->subCategories()->where('status', 'active');
+    }
+
+    public function payableDetails(): HasMany
     {
         return $this->hasMany(AccountPayableDetail::class, 'accounting_category_id');
     }
