@@ -30,6 +30,11 @@ class ChartAccount extends Model
         'classification' => 'string',
     ];
 
+    protected $appends = [
+    'category_name',
+    'subcategory_name',
+];
+
     /**
      * Scope: Active accounts
      */
@@ -49,6 +54,16 @@ class ChartAccount extends Model
     public function subcategory()
     {
         return $this->belongsTo(AccountingSubcategory::class, 'accounting_subcategory_id');
+    }
+
+    public function getCategoryNameAttribute()
+    {
+        return $this->category?->category;
+    }
+
+    public function getSubcategoryNameAttribute()
+    {
+        return $this->subcategory?->sub_category;
     }
 
     /**
