@@ -519,6 +519,7 @@ Route::post('/accounts-receivable/{id}/status', [AccountReceivableController::cl
 Route::get('/receive-payment-options', [AccountReceivableController::class, 'receivePaymentOptions']);
 Route::post('/accounts-receivables/{id}/payments', [AccountReceivableController::class, 'updatePayment']);
 Route::patch('/accounts-receivable/{id}/due-date', [AccountReceivableController::class, 'updateDueDate']);
+Route::get('/api/receivable/account-names', [AccountReceivableController::class, 'getAccountNames']);
 
 Route::get('/pos-clossing', [PosClossingController::class, 'index'])->name('pos-clossing.index');
 Route::get('/pos-clossing/closed', [PosClossingController::class, 'getClosed'])->name('pos-clossing.closed');

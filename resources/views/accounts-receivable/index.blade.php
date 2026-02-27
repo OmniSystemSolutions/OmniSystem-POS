@@ -942,28 +942,45 @@ new Vue({
 
     methods: {
         openModal(items) {
-            if (!items || items.length === 0) {
-                console.warn('No items available for this record');
-                this.modalItems = [];
-                return;
-            }
+    if (!items || items.length === 0) {
+        this.modalItems = [];
+        const modal = new bootstrap.Modal(document.getElementById('ItemDetailsModal'));
+        modal.show();
+        return;
+    }
 
-            this.modalItems = items.map(item => ({
-                category: item.type ? item.type.category_receivable || 'N/A' : 'N/A',
-                type: item.type ? item.type.type_receivable || 'N/A' : 'N/A',
-                description: item.description || '',
-                quantity: Number(item.qty || 0),
-                unit_price: Number(item.unit_price || 0),
-                tax: Number(item.tax_amount || 0),
-                subtotal: Number(item.sub_total || (item.qty * item.unit_price || 0)),
-            }));
+    this.modalItems = items.map(item => {
+        const chart      = item.chart_account;
+        const legacyType = item.type; // AccountingSubCategory (old records)
 
-            // console.log('Modal Items:', this.modalItems);
+        return {
+            account_name : chart
+                ? (chart.code ? `${chart.code} – ${chart.name}` : chart.name)
+                : (legacyType?.sub_category ?? 'N/A'),
 
-            const modalEl = document.getElementById('ItemDetailsModal');
-            const modal = new bootstrap.Modal(modalEl);
-            modal.show();
-        },
+            category     : chart?.category?.category
+                ?? legacyType?.category?.category
+                ?? 'N/A',
+
+            sub_category : chart?.subcategory?.sub_category
+                ?? legacyType?.sub_category
+                ?? 'N/A',
+
+            description  : item.description || '',
+            quantity     : Number(item.qty  || 0),
+            unit_price   : Number(item.unit_price || 0),
+
+            // Handle both: new 'tax' string column OR old 'tax_id' numeric
+            tax_label    : item.tax ? String(item.tax).toUpperCase() : 'NON-VAT',
+            tax          : Number(item.tax_amount || 0),
+
+            subtotal     : Number(item.sub_total || (item.qty * item.unit_price) || 0),
+        };
+    });
+
+    const modal = new bootstrap.Modal(document.getElementById('ItemDetailsModal'));
+    modal.show();
+},
 
         generateYears() {
             const min = window.yearRange.min;

@@ -1,6 +1,6 @@
 @extends('layouts.app')
-
 @section('content')
+
 <div class="main-content" id="app">
     <div>
         <div class="breadcrumb">
@@ -17,94 +17,70 @@
     <div class="wrapper">
         <div class="row">
 
-            <!-- STEP 1: Basic Information -->
+            {{-- ─── STEP 1: Basic Information ──────────────────────────────────── --}}
             <div class="px-xl-1 col-lg-6 col-xl-3">
                 <div class="list-group h-100">
                     <div class="list-group-item h-100 mb-3">
                         <div :style="{ opacity: step1Locked ? 0.7 : 1, pointerEvents: step1Locked ? 'none' : 'auto' }">
                             <p><span class="t-font-boldest">Step 1: Basic Information</span></p>
 
-                            <!-- Transaction Date/Time -->
                             <fieldset class="form-group">
                                 <legend class="col-form-label pt-0">Date And Time of Transaction *</legend>
                                 <div class="d-flex">
                                     <input type="text" class="form-control" id="transaction_datetime"
-                                        v-model="form.transaction_datetime" :disabled="step1Locked"
-                                        placeholder="Select date & time" readonly>
-                                    <button type="button" class="btn btn-secondary btn-sm ml-2" @click="clearDate">
-                                        Clear
-                                    </button>
+                                           v-model="form.transaction_datetime"
+                                           :disabled="step1Locked"
+                                           placeholder="Select date & time" readonly>
+                                    <button type="button" class="btn btn-secondary btn-sm ml-2"
+                                            @click="clearDate">Clear</button>
                                 </div>
-                                <small class="form-text text-muted">
-                                    Cannot select future date. Edit to backdate.
-                                </small>
+                                <small class="form-text text-muted">Cannot select future date. Edit to backdate.</small>
                             </fieldset>
 
-                            <!-- Reference # -->
                             <fieldset class="form-group">
                                 <legend class="col-form-label pt-0">Reference #</legend>
-                                <div>
-                                    <input type="text" 
-                                        class="form-control" 
-                                        v-model="form.reference_no"
-                                        :disabled="true"
-                                        placeholder="Auto-generated">
-                                    <small class="text-muted">Auto-generated per branch (e.g., AR-15-00001)</small>
-                                </div>
+                                <input type="text" class="form-control"
+                                       v-model="form.reference_no" :disabled="true"
+                                       placeholder="Auto-generated">
+                                <small class="text-muted">Auto-generated per branch (e.g., AR-15-00001)</small>
                             </fieldset>
 
-                            <!-- Payor Details -->
                             <fieldset class="form-group mt-3">
                                 <legend class="col-form-label pt-0">Payor Details *</legend>
-                                <div>
-                                    <input type="text" class="form-control" v-model="form.payor_name"
-                                        :disabled="step1Locked" placeholder="Enter Name">
-                                </div>
+                                <input type="text" class="form-control mb-2" v-model="form.payor_name"
+                                       :disabled="step1Locked" placeholder="Enter Name">
                             </fieldset>
 
                             <fieldset class="form-group">
-                                <div>
-                                    <input type="text" class="form-control" v-model="form.company"
-                                        :disabled="step1Locked" placeholder="Company">
-                                </div>
+                                <input type="text" class="form-control mb-2" v-model="form.company"
+                                       :disabled="step1Locked" placeholder="Company">
                             </fieldset>
 
                             <fieldset class="form-group">
-                                <div>
-                                    <input type="text" class="form-control" v-model="form.address"
-                                        :disabled="step1Locked" placeholder="Address">
-                                </div>
+                                <input type="text" class="form-control mb-2" v-model="form.address"
+                                       :disabled="step1Locked" placeholder="Address">
                             </fieldset>
 
                             <fieldset class="form-group">
-                                <div>
-                                    <input type="text" class="form-control" v-model="form.mobile_no"
-                                        :disabled="step1Locked" placeholder="Mobile #">
-                                </div>
+                                <input type="text" class="form-control mb-2" v-model="form.mobile_no"
+                                       :disabled="step1Locked" placeholder="Mobile #">
                             </fieldset>
 
                             <fieldset class="form-group">
-                                <div>
-                                    <input type="text" class="form-control" v-model="form.email"
-                                        :disabled="step1Locked" placeholder="Email Address">
-                                </div>
+                                <input type="text" class="form-control mb-2" v-model="form.email"
+                                       :disabled="step1Locked" placeholder="Email Address">
                             </fieldset>
 
                             <fieldset class="form-group">
-                                <div>
-                                    <input type="text" class="form-control" v-model="form.tin"
-                                        :disabled="step1Locked" placeholder="TIN">
-                                </div>
+                                <input type="text" class="form-control mb-2" v-model="form.tin"
+                                       :disabled="step1Locked" placeholder="TIN">
                             </fieldset>
 
-                            <!-- Due Date -->
                             <fieldset class="form-group mt-3">
                                 <legend class="col-form-label pt-0">Set Due Date *</legend>
-                                <div>
-                                    <input type="text" id="due_date" class="form-control"
-                                        v-model="form.due_date" :disabled="step1Locked"
-                                        placeholder="Select Date Here" readonly>
-                                </div>
+                                <input type="text" id="due_date" class="form-control"
+                                       v-model="form.due_date" :disabled="step1Locked"
+                                       placeholder="Select Date Here" readonly>
                             </fieldset>
                         </div>
 
@@ -117,83 +93,86 @@
                 </div>
             </div>
 
-            <!-- STEP 2: Particulars -->
+            {{-- ─── STEP 2: Particulars ─────────────────────────────────────────── --}}
             <div class="px-xl-1 col-lg-6 col-xl-3">
                 <div class="list-group h-100">
                     <div class="list-group-item h-100 mb-3">
                         <div class="h-100 d-flex flex-column">
                             <p><span class="t-font-boldest">Step 2: Particulars</span></p>
 
+                            {{-- Account Name — from chart_accounts --}}
                             <fieldset class="form-group">
-                                <legend class="bv-no-focus-ring col-form-label pt-0">Category *</legend>
-                                <div>
-                                    <select class="form-control" v-model="form.category">
-                                        <option value="" disabled hidden>Select Category</option>
-                                        <option v-for="c in categories" :key="c.id" :value="c.name">@{{ c.name }}</option>
-                                    </select>
-                                </div>
+                                <legend class="bv-no-focus-ring col-form-label pt-0">Account Name *</legend>
+                                <select class="form-control" v-model="form.chart_account_id"
+                                        @change="onAccountNameChange">
+                                    <option value="" disabled hidden>Select Account Name</option>
+                                    <option v-for="a in accountNames" :key="a.id" :value="a.id">
+                                        @{{ a.display_name }}
+                                    </option>
+                                </select>
                             </fieldset>
 
+                            {{-- Category + Type — auto-filled, read-only --}}
                             <fieldset class="form-group">
-                                <legend class="bv-no-focus-ring col-form-label pt-0">Type *</legend>
-                                <div>
-                                    <select class="form-control" v-model="form.type_id">
-                                        <option value="" disabled hidden>Select Type</option>
-                                        <option v-for="t in types" :key="t.id" :value="t.id">@{{ t.name }}</option>
-                                    </select>
+                                <div class="row">
+                                    <div class="col-6 pr-1">
+                                        <legend class="bv-no-focus-ring col-form-label pt-0">Category</legend>
+                                        <input type="text" class="form-control"
+                                               :value="form.category_display"
+                                               readonly placeholder="Auto-filled"
+                                               style="background:#f8f9fa; cursor:default;">
+                                    </div>
+                                    <div class="col-6 pl-1">
+                                        <legend class="bv-no-focus-ring col-form-label pt-0">Sub Category</legend>
+                                        <input type="text" class="form-control"
+                                               :value="form.sub_category_display"
+                                               readonly placeholder="Auto-filled"
+                                               style="background:#f8f9fa; cursor:default;">
+                                    </div>
                                 </div>
                             </fieldset>
 
                             <fieldset class="form-group">
                                 <legend class="bv-no-focus-ring col-form-label pt-0">Description *</legend>
-                                <div>
-                                    <textarea rows="3" class="form-control" v-model="form.description"
-                                              placeholder="Enter Description here"></textarea>
-                                </div>
+                                <textarea rows="3" class="form-control" v-model="form.description"
+                                          placeholder="Enter Description here"></textarea>
                             </fieldset>
 
                             <fieldset class="form-group">
                                 <legend class="bv-no-focus-ring col-form-label pt-0">Mode *</legend>
-                                <div>
-                                    <div role="radiogroup" class="d-flex gap-4">
-                                        <div class="custom-control custom-radio custom-control-inline">
-                                            <input type="radio" id="mode_regular" value="Regular"
-                                                   class="custom-control-input" v-model="form.mode">
-                                            <label class="custom-control-label" for="mode_regular">Regular</label>
-                                        </div>
-                                        <div class="custom-control custom-radio custom-control-inline">
-                                            <input type="radio" id="mode_recurring" value="Recurring"
-                                                   class="custom-control-input" v-model="form.mode">
-                                            <label class="custom-control-label" for="mode_recurring">Recurring</label>
-                                        </div>
+                                <div class="d-flex gap-4">
+                                    <div class="custom-control custom-radio custom-control-inline">
+                                        <input type="radio" id="mode_regular" value="Regular"
+                                               class="custom-control-input" v-model="form.mode">
+                                        <label class="custom-control-label" for="mode_regular">Regular</label>
+                                    </div>
+                                    <div class="custom-control custom-radio custom-control-inline">
+                                        <input type="radio" id="mode_recurring" value="Recurring"
+                                               class="custom-control-input" v-model="form.mode">
+                                        <label class="custom-control-label" for="mode_recurring">Recurring</label>
                                     </div>
                                 </div>
                             </fieldset>
 
                             <fieldset class="form-group">
                                 <legend class="bv-no-focus-ring col-form-label pt-0">Quantity *</legend>
-                                <div>
-                                    <input type="number" class="form-control" v-model.number="form.quantity" min="1">
-                                </div>
+                                <input type="number" class="form-control"
+                                       v-model.number="form.quantity" min="1">
                             </fieldset>
 
                             <fieldset class="form-group">
                                 <legend class="bv-no-focus-ring col-form-label pt-0">Tax</legend>
-                                <div>
-                                    <select class="form-control" v-model="form.tax">
-                                        <option value="VAT">VAT</option>
-                                        <option value="NON-VAT">NON-VAT</option>
-                                        <option value="ZERO-RATED">Zero Rated</option>
-                                    </select>
-                                </div>
+                                <select class="form-control" v-model="form.tax">
+                                    <option value="VAT">VAT</option>
+                                    <option value="NON-VAT">NON-VAT</option>
+                                    <option value="ZERO-RATED">Zero Rated</option>
+                                </select>
                             </fieldset>
 
                             <fieldset class="form-group mb-3">
                                 <legend class="bv-no-focus-ring col-form-label pt-0">Amount per Unit *</legend>
-                                <div>
-                                    <input type="number" step="0.01" class="form-control" placeholder="0"
-                                           v-model.number="form.amount_per_unit">
-                                </div>
+                                <input type="number" step="0.01" class="form-control"
+                                       placeholder="0" v-model.number="form.amount_per_unit">
                             </fieldset>
 
                             <div class="mt-auto">
@@ -206,7 +185,7 @@
                 </div>
             </div>
 
-            <!-- STEP 3: Summary -->
+            {{-- ─── STEP 3: Summary ─────────────────────────────────────────────── --}}
             <div class="px-xl-1 col-lg-12 col-xl-6">
                 <div class="list-group h-100">
                     <div class="list-group-item h-100 mb-3">
@@ -217,8 +196,9 @@
                                 <table class="table table-hover tableOne">
                                     <thead>
                                         <tr>
+                                            <th>Account Name</th>
                                             <th>Category</th>
-                                            <th>Type</th>
+                                            <th>Sub Category</th>
                                             <th>Description</th>
                                             <th>Qty</th>
                                             <th>Sub-Total</th>
@@ -229,11 +209,12 @@
                                     </thead>
                                     <tbody>
                                         <tr v-if="!summaryList.length">
-                                            <td colspan="8" class="text-center text-muted">No items added</td>
+                                            <td colspan="9" class="text-center text-muted">No items added</td>
                                         </tr>
                                         <tr v-for="(item, index) in summaryList" :key="index">
-                                            <td>@{{ item.category }}</td>
-                                            <td>@{{ item.type_name }}</td>
+                                            <td>@{{ item.account_name_display }}</td>
+                                            <td>@{{ item.category_display }}</td>
+                                            <td>@{{ item.sub_category_display }}</td>
                                             <td>@{{ item.description }}</td>
                                             <td>@{{ item.quantity }}</td>
                                             <td>₱@{{ item.subtotal.toFixed(2) }}</td>
@@ -279,343 +260,322 @@
                     </div>
                 </div>
             </div>
+
         </div>
     </div>
 </div>
 
 <script>
-    new Vue({
-        el: '#app',
-        data() {
-            return {
-                mode: '{{ $mode ?? "create" }}',
-                receivable: @json($receivable ?? null),
+new Vue({
+    el: '#app',
 
-                categories: [],
-                types: [],
-                summaryList: [],
+    data() {
+        return {
+            mode:       '{{ $mode ?? "create" }}',
+            receivable: @json($receivable ?? null),
 
-                step1Locked: false,
-                isSubmitting: false,
+            // Account names from chart_accounts
+            accountNames: [],
 
-                form: {
-                    transaction_datetime: "",
-                    reference_no: "",
-                    payor_name: "",
-                    company: "",
-                    address: "",
-                    mobile_no: "",
-                    email: "",
-                    tin: "",
-                    due_date: "",
+            summaryList:  [],
+            step1Locked:  false,
+            isSubmitting: false,
 
-                    category: "",
-                    type_id: null,
-                    type_name: "",
-                    description: "",
-                    mode: "Regular",
-                    quantity: 1,
-                    amount_per_unit: "",
-                    tax: "VAT"
-                }
-            }
+            form: {
+                transaction_datetime: '',
+                reference_no:         '{{ $next_reference_no ?? "" }}',
+                payor_name:           '',
+                company:              '',
+                address:              '',
+                mobile_no:            '',
+                email:                '',
+                tin:                  '',
+                due_date:             '',
+
+                // Step 2 fields
+                chart_account_id:    '',   // selected from Account Name dropdown
+                category_display:    '',   // auto-filled (read-only display)
+                sub_category_display:'',   // auto-filled (read-only display)
+                // Internal IDs stored for submission
+                accounting_category_id:    null,
+                accounting_subcategory_id: null,
+
+                description:     '',
+                mode:            'Regular',
+                quantity:        1,
+                amount_per_unit: '',
+                tax:             'VAT',
+            },
+        };
+    },
+
+    computed: {
+        isStep2Valid() {
+            return this.form.chart_account_id &&
+                   this.form.description &&
+                   this.form.quantity > 0 &&
+                   this.form.amount_per_unit > 0;
         },
-
-        computed: {
-            isStep2Valid() {
-                return this.form.category &&
-                       this.form.type_id &&
-                       this.form.description &&
-                       this.form.quantity > 0 &&
-                       this.form.amount_per_unit > 0;
-            },
-            subTotal() {
-                return this.summaryList.reduce((sum, i) => sum + i.subtotal, 0);
-            },
-            totalTax() {
-                return this.summaryList.reduce((sum, i) => sum + i.tax_amount, 0);
-            },
-            totalAmount() {
-                return this.subTotal + this.totalTax;
-            },
-            formatSubTotal() {
-                return '₱' + this.subTotal.toLocaleString('en-US', { minimumFractionDigits: 2 });
-            },
-            formatTax() {
-                return '₱' + this.totalTax.toLocaleString('en-US', { minimumFractionDigits: 2 });
-            },
-            formatTotalAmount() {
-                return '₱' + this.totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 });
-            }
+        subTotal() {
+            return this.summaryList.reduce((s, i) => s + i.subtotal, 0);
         },
-
-        watch: {
-            'form.category'(val) {
-                if (val) this.fetchTypes(val);
-                else this.types = [];
-            }
+        totalTax() {
+            return this.summaryList.reduce((s, i) => s + i.tax_amount, 0);
         },
+        totalAmount() {
+            return this.subTotal + this.totalTax;
+        },
+        formatSubTotal()   { return '₱' + this.subTotal.toLocaleString('en-US',   { minimumFractionDigits: 2 }); },
+        formatTax()        { return '₱' + this.totalTax.toLocaleString('en-US',   { minimumFractionDigits: 2 }); },
+        formatTotalAmount(){ return '₱' + this.totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 }); },
+    },
 
-       mounted() {
-            this.fetchCategories();
+    mounted() {
+        this.fetchAccountNames();
+        this.$nextTick(() => {
             this.initDatePickers();
-
-            // Get the final AR number directly from Laravel (passed from controller)
-            const finalReferenceNo = "{{ $next_reference_no ?? '' }}".trim();
-
-            // Log it clearly
-            console.log('Current Branch ID:', {{ $current_branch_id ?? 'null' }});
-            console.log('Final Reference Number:', finalReferenceNo || 'Not generated yet');
-
-            // Set it in Vue form (so v-model works)
-            this.form.reference_no = finalReferenceNo;
-
-            // Optional: extra debug
-            if (finalReferenceNo) {
-                console.log('AR Number Ready →', finalReferenceNo);
-            } else {
-                console.warn('No AR number! Check if user has a branch assigned.');
+            if (this.mode === 'edit' && this.receivable) {
+                this.loadEditData();
             }
+        });
+    },
 
-            // Initialize date pickers first
-            this.$nextTick(() => {
-                this.initDatePickers();
+    methods: {
 
-                // Then load edit data if applicable
-                if (this.mode === 'edit' && this.receivable) {
-                    this.loadEditData();
-                }
+        // ─── Fetch chart_accounts ──────────────────────────────────────────
+        fetchAccountNames() {
+            axios.get('/api/receivable/account-names').then(res => {
+                this.accountNames = res.data;
+            }).catch(() => {
+                console.error('Failed to load account names');
             });
         },
 
-        methods: {
-            initDatePickers() {
-                const vm = this;
-                const now = moment().format('YYYY-MM-DD HH:mm:ss');
-                const today = moment();
+        // ─── When Account Name is selected → auto-fill Category & Sub Category
+        onAccountNameChange() {
+            const selected = this.accountNames.find(a => a.id == this.form.chart_account_id);
 
-                // Default to current date/time when creating new
-                if (this.mode !== 'edit' || !this.form.transaction_datetime) {
-                    this.form.transaction_datetime = now;
-                }
-
-                $('#transaction_datetime').daterangepicker({
-                    singleDatePicker: true,
-                    showDropdowns: true,
-                    timePicker: true,
-                    timePicker24Hour: true,
-                    timePickerIncrement: 1,
-                    autoApply: true,
-                    maxDate: today,
-                    drops: 'up',
-                    locale: {
-                        format: 'YYYY-MM-DD HH:mm:ss'
-                    },
-                    // Set start date to current value (either now or existing)
-                    startDate: this.form.transaction_datetime || now
-                }).on('apply.daterangepicker', (ev, picker) => {
-                    vm.form.transaction_datetime = picker.startDate.format('YYYY-MM-DD HH:mm:ss');
-                });
-
-                // Trigger change so input field displays the value immediately
-                $('#transaction_datetime').val(this.form.transaction_datetime);
-                $('#transaction_datetime').trigger('change');
-
-                // Due Date Picker (minimum today)
-                $('#due_date').daterangepicker({
-                    singleDatePicker: true,
-                    showDropdowns: true,
-                    autoApply: true,
-                    minDate: today,
-                    drops: 'up',
-                    locale: {
-                        format: 'YYYY-MM-DD'
-                    },
-                    startDate: this.form.due_date || today
-                }).on('apply.daterangepicker', (ev, picker) => {
-                    vm.form.due_date = picker.startDate.format('YYYY-MM-DD');
-                });
-
-                if (this.form.due_date) {
-                    $('#due_date').val(this.form.due_date);
-                }
-            },
-
-            clearDate() {
-                this.form.transaction_datetime = "";
-                $('#transaction_datetime').val("");
-            },
-
-            editStep1() {
-                this.step1Locked = false;
-            },
-
-            fetchCategories() {
-                axios.get('/api/receivable/categories').then(res => {
-                    this.categories = res.data;
-                });
-            },
-
-            fetchTypes(category) {
-                axios.get('/api/receivable/types', { params: { category } }).then(res => {
-                    this.types = res.data;
-                });
-            },
-
-            addSummary() {
-                if (!this.isStep2Valid) return;
-
-                // Your existing add logic...
-                const type = this.types.find(t => t.id == this.form.type_id);
-                const qty = Number(this.form.quantity);
-                const price = Number(this.form.amount_per_unit);
-                const taxRate = this.form.tax === 'VAT' ? 0.12 : 0;
-                const subtotal = qty * price;
-                const tax_amount = subtotal * taxRate;
-                const total = subtotal + tax_amount;
-
-                this.summaryList.push({
-                    category: this.form.category,
-                    type_name: type ? type.name : '',
-                    type_id: this.form.type_id,
-                    description: this.form.description,
-                    quantity: qty,
-                    unit_price: price,
-                    tax: this.form.tax,
-                    tax_amount,
-                    subtotal,
-                    total
-                });
-
-                // Reset Step 2 fields
-                this.form.category = "";
-                this.form.type_id = null;
-                this.form.description = "";
-                this.form.quantity = 1;
-                this.form.amount_per_unit = 0;
-                this.step1Locked = true;
-                
-                // LOCK STEP 1 ONLY ON FIRST ADD
-                if (this.summaryList.length === 1) {
-                    this.step1Locked = true;
-                    this.$nextTick(() => {
-                        // Optional: show toast
-                        // Swal.fire('Step 1 Locked', 'Basic information is now locked.', 'info');
-                    });
-                }
-            },
-
-            removeSummary(index) {
-                this.summaryList.splice(index, 1);
-            },
-
-            loadEditData() {
-                const r = this.receivable;
-
-                this.form = {
-                    ...this.form,
-                    transaction_datetime: r.transaction_datetime,
-                    reference_no: r.reference_no,
-                    payor_name: r.payor_name,
-                    company: r.company || "",
-                    address: r.address || "",
-                    mobile_no: r.mobile_no || "",
-                    email: r.email || "",
-                    tin: r.tin || "",
-                    due_date: r.due_date,
-                };
-
-                // Keep it disabled always
-                this.$nextTick(() => {
-                    if (this.$refs.referenceInput) {
-                        this.$refs.referenceInput.disabled = true;
-                    }
-                });
-
-                this.$nextTick(() => {
-                    if (r.transaction_datetime) {
-                        $('#transaction_datetime')
-                            .data('daterangepicker')
-                            .setStartDate(moment(r.transaction_datetime));
-                        $('#transaction_datetime').val(r.transaction_datetime);
-                    }
-                    if (r.due_date) {
-                        $('#due_date')
-                            .data('daterangepicker')
-                            .setStartDate(moment(r.due_date));
-                        $('#due_date').val(r.due_date);
-                    }
-                });
-
-                this.summaryList = (r.items || []).map(item => {
-                    const type = item.type || {};
-                    return {
-                        category: type.category_receivable || 'Unknown Category',
-                        type_name: type.type_receivable || 'Unknown Type',
-                        type_id: item.type_id,
-                        description: item.description || '',
-                        quantity: Number(item.qty) || 0,
-                        unit_price: Number(item.unit_price) || 0,
-                        tax: item.tax_amount > 0 ? 'VAT' : 'NON-VAT',
-                        tax_amount: Number(item.tax_amount) || 0,
-                        subtotal: Number(item.sub_total) || 0,
-                        total: Number(item.total_amount) || 0
-                    };
-                });
-
-                if (this.summaryList.length > 0) {
-                    this.step1Locked = true;
-                }
-
-                setTimeout(() => {
-                    $('#transaction_datetime').val(r.transaction_datetime);
-                    $('#due_date').val(r.due_date);
-                }, 100);
-            },
-
-            async submitReceivable() {
-                if (this.summaryList.length === 0) {
-                    Swal.fire('Error', 'Please add at least 1 summary', 'error');
-                    return;
-                }
-
-                this.isSubmitting = true;
-
-                const payload = {
-                    ...this.form,
-                    items: this.summaryList.map(i => ({
-                        type_id: i.type_id,
-                        description: i.description,
-                        qty: i.quantity,
-                        unit_price: i.unit_price,
-                        tax: i.tax,
-                        tax_amount: i.tax_amount,
-                        sub_total: i.subtotal,
-                        total_amount: i.total
-                    })),
-                    sub_total: this.subTotal,
-                    total_tax: this.totalTax,
-                    total_amount: this.totalAmount
-                };
-
-                console.log(payload)
-
-                const url = this.mode === 'edit'
-                    ? `/accounts-receivable/${this.receivable.id}/update`
-                    : '/accounts-receivable/store';
-
-                try {
-                    await axios.post(url, payload);
-                    Swal.fire('Success!', 'Accounts Receivable saved.', 'success');
-                    setTimeout(() => location.href = '/accounts-receivable', 1500);
-                } catch (err) {
-                    const msg = err.response?.data?.message || 'Failed to save';
-                    Swal.fire('Error', msg, 'error');
-                } finally {
-                    this.isSubmitting = false;
-                }
+            if (selected) {
+                this.form.category_display         = selected.category_name    || '';
+                this.form.sub_category_display     = selected.subcategory_name || '';
+                this.form.accounting_category_id   = selected.category_id      || null;
+                this.form.accounting_subcategory_id= selected.subcategory_id   || null;
+            } else {
+                this.form.category_display          = '';
+                this.form.sub_category_display      = '';
+                this.form.accounting_category_id    = null;
+                this.form.accounting_subcategory_id = null;
             }
-        }
-    });
+        },
+
+        // ─── Add to Summary ────────────────────────────────────────────────
+        addSummary() {
+            if (!this.isStep2Valid) {
+                Swal.fire('Incomplete', 'Please fill in all required fields.', 'warning');
+                return;
+            }
+
+            const account  = this.accountNames.find(a => a.id == this.form.chart_account_id);
+            const qty      = Number(this.form.quantity);
+            const price    = Number(this.form.amount_per_unit);
+            const taxRate  = this.form.tax === 'VAT' ? 0.12 : 0;
+            const subtotal = qty * price;
+            const taxAmt   = subtotal * taxRate;
+            const total    = subtotal + taxAmt;
+
+            this.summaryList.push({
+                chart_account_id      : this.form.chart_account_id,
+                account_name_display  : account ? account.display_name : '',
+                category_display      : this.form.category_display,
+                sub_category_display  : this.form.sub_category_display,
+                accounting_category_id   : this.form.accounting_category_id,
+                accounting_subcategory_id: this.form.accounting_subcategory_id,
+                description           : this.form.description,
+                quantity              : qty,
+                unit_price            : price,
+                tax                   : this.form.tax,
+                tax_amount            : taxAmt,
+                subtotal,
+                total,
+            });
+
+            // Reset Step 2 fields
+            this.form.chart_account_id          = '';
+            this.form.category_display          = '';
+            this.form.sub_category_display      = '';
+            this.form.accounting_category_id    = null;
+            this.form.accounting_subcategory_id = null;
+            this.form.description               = '';
+            this.form.quantity                  = 1;
+            this.form.amount_per_unit           = '';
+            this.form.tax                       = 'VAT';
+
+            // Lock Step 1 on first add
+            if (this.summaryList.length === 1) {
+                this.step1Locked = true;
+            }
+        },
+
+        removeSummary(index) {
+            this.summaryList.splice(index, 1);
+        },
+
+        // ─── Submit ────────────────────────────────────────────────────────
+        async submitReceivable() {
+            if (this.summaryList.length === 0) {
+                Swal.fire('Error', 'Please add at least 1 item to the summary.', 'error');
+                return;
+            }
+
+            if (!this.form.transaction_datetime || !this.form.payor_name || !this.form.due_date) {
+                Swal.fire('Error', 'Please complete Step 1 basic information.', 'error');
+                return;
+            }
+
+            this.isSubmitting = true;
+
+            const payload = {
+                transaction_datetime : this.form.transaction_datetime,
+                payor_name           : this.form.payor_name,
+                company              : this.form.company,
+                address              : this.form.address,
+                mobile_no            : this.form.mobile_no,
+                email                : this.form.email,
+                tin                  : this.form.tin,
+                due_date             : this.form.due_date,
+
+                items: this.summaryList.map(i => ({
+                    chart_account_id: i.chart_account_id,
+                    type_id         : i.accounting_subcategory_id,
+                    description     : i.description,
+                    qty             : i.quantity,
+                    unit_price      : i.unit_price,
+                    tax             : i.tax,
+                    tax_amount      : i.tax_amount,
+                    sub_total       : i.subtotal,
+                    total_amount    : i.total,
+                })),
+
+                sub_total    : this.subTotal,
+                total_tax    : this.totalTax,
+                total_amount : this.totalAmount,
+            };
+
+            const url = this.mode === 'edit'
+                ? `/accounts-receivable/${this.receivable.id}/update`
+                : '/accounts-receivable/store';
+
+            try {
+                await axios.post(url, payload);
+                Swal.fire('Success!', 'Accounts Receivable saved.', 'success');
+                setTimeout(() => location.href = '/accounts-receivable', 1500);
+            } catch (err) {
+                const errors = err.response?.data?.errors;
+                const msg    = errors
+                    ? Object.values(errors).flat().join('\n')
+                    : (err.response?.data?.message || 'Failed to save');
+                Swal.fire('Error', msg, 'error');
+            } finally {
+                this.isSubmitting = false;
+            }
+        },
+
+        // ─── Date Pickers ──────────────────────────────────────────────────
+        initDatePickers() {
+            const vm  = this;
+            const now = moment().format('YYYY-MM-DD HH:mm:ss');
+
+            if (!this.form.transaction_datetime && this.mode !== 'edit') {
+                this.form.transaction_datetime = now;
+            }
+
+            $('#transaction_datetime').daterangepicker({
+                singleDatePicker : true,
+                showDropdowns    : true,
+                timePicker       : true,
+                timePicker24Hour : true,
+                timePickerIncrement: 1,
+                autoApply        : true,
+                maxDate          : moment(),
+                drops            : 'down',
+                locale           : { format: 'YYYY-MM-DD HH:mm:ss' },
+                startDate        : this.form.transaction_datetime || now,
+            }).on('apply.daterangepicker', (ev, picker) => {
+                vm.form.transaction_datetime = picker.startDate.format('YYYY-MM-DD HH:mm:ss');
+            });
+
+            $('#transaction_datetime').val(this.form.transaction_datetime);
+
+            $('#due_date').daterangepicker({
+                singleDatePicker : true,
+                showDropdowns    : true,
+                autoApply        : true,
+                minDate          : moment(),
+                drops            : 'down',
+                locale           : { format: 'YYYY-MM-DD' },
+                startDate        : this.form.due_date || moment(),
+            }).on('apply.daterangepicker', (ev, picker) => {
+                vm.form.due_date = picker.startDate.format('YYYY-MM-DD');
+            });
+
+            if (this.form.due_date) {
+                $('#due_date').val(this.form.due_date);
+            }
+        },
+
+        clearDate() {
+            this.form.transaction_datetime = '';
+            $('#transaction_datetime').val('');
+        },
+
+        // ─── Load Edit Data ────────────────────────────────────────────────
+        loadEditData() {
+            const r = this.receivable;
+
+            this.form.transaction_datetime = r.transaction_datetime || '';
+            this.form.reference_no         = r.reference_no         || '';
+            this.form.payor_name           = r.payor_name           || '';
+            this.form.company              = r.company              || '';
+            this.form.address              = r.address              || '';
+            this.form.mobile_no            = r.mobile_no            || '';
+            this.form.email                = r.email                || '';
+            this.form.tin                  = r.tin                  || '';
+            this.form.due_date             = r.due_date             || '';
+
+            this.$nextTick(() => {
+                if (r.transaction_datetime) {
+                    $('#transaction_datetime').data('daterangepicker')
+                        ?.setStartDate(moment(r.transaction_datetime));
+                    $('#transaction_datetime').val(r.transaction_datetime);
+                }
+                if (r.due_date) {
+                    $('#due_date').data('daterangepicker')
+                        ?.setStartDate(moment(r.due_date));
+                    $('#due_date').val(r.due_date);
+                }
+            });
+
+            this.summaryList = (r.items || []).map(item => ({
+                chart_account_id         : item.chart_account_id         || null,
+                account_name_display     : item.account_name             || 'Unknown',
+                category_display         : item.category                 || 'Unknown',
+                sub_category_display     : item.sub_category_name        || 'Unknown',
+                accounting_category_id   : null,
+                accounting_subcategory_id: item.type_id                  || null,
+                description              : item.description              || '',
+                quantity                 : Number(item.quantity)         || 0,
+                unit_price               : Number(item.unit_price)       || 0,
+                tax                      : item.tax                      || 'NON-VAT',
+                tax_amount               : Number(item.tax_amount)       || 0,
+                subtotal                 : Number(item.subtotal)         || 0,
+                total                    : Number(item.total)            || 0,
+            }));
+
+            if (this.summaryList.length > 0) {
+                this.step1Locked = true;
+            }
+        },
+    },
+});
 </script>
 @endsection

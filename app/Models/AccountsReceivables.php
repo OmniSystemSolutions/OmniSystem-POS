@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Branch;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class AccountsReceivables extends Model
@@ -13,8 +12,11 @@ class AccountsReceivables extends Model
     protected $table = 'accounts_receivables';
 
     protected $fillable = [
-        'transaction_datetime',
         'reference_no',
+        'branch_id',
+        'user_id',
+        'transaction_datetime',
+        'transaction_type',
         'payor_name',
         'company',
         'address',
@@ -22,17 +24,23 @@ class AccountsReceivables extends Model
         'email',
         'tin',
         'due_date',
-        'user_id',
-        'branch_id',   
-        'transaction_type',
+
+        // Totals — added via migration
+        'sub_total',
+        'total_tax',
+        'total_amount',
+
+        // Payment tracking
         'amount_due',
         'total_received',
         'balance',
+
+        // Status
         'status',
-        'approved_by', 'approved_at',
-        'completed_by', 'completed_at',
+        'approved_by',    'approved_at',
+        'completed_by',   'completed_at',
         'disapproved_by', 'disapproved_at',
-        'archived_by', 'archived_at',
+        'archived_by',    'archived_at',
     ];
 
     public function items()
@@ -44,8 +52,8 @@ class AccountsReceivables extends Model
     {
         return $this->hasMany(AccountsReceivablesPayment::class, 'account_receivable_id', 'id');
     }
-    
-     public function user()
+
+    public function user()
     {
         return $this->belongsTo(User::class);
     }
@@ -54,36 +62,30 @@ class AccountsReceivables extends Model
     {
         return $this->belongsTo(\App\Models\Branch::class, 'branch_id');
     }
-    public function approvedBy()    
-    { 
-        return $this->belongsTo(User::class, 'approved_by'); 
-    }
-    public function completedBy()   
-    { 
-        return $this->belongsTo(User::class, 'completed_by'); 
-    }
-    public function disapprovedBy() 
-    { 
-        return $this->belongsTo(User::class, 'disapproved_by'); 
-    }
-    public function archivedBy()    
-    { 
-        return $this->belongsTo(User::class, 'archived_by'); 
+
+    public function approvedBy()    { return $this->belongsTo(User::class, 'approved_by'); }
+    public function completedBy()   { return $this->belongsTo(User::class, 'completed_by'); }
+    public function disapprovedBy() { return $this->belongsTo(User::class, 'disapproved_by'); }
+    public function archivedBy()    { return $this->belongsTo(User::class, 'archived_by'); }
+
+    public function chartAccounts()
+    {
+        return $this->hasManyThrough(
+            ChartAccount::class,
+            AccountsReceivableDetail::class,
+            'accounts_receivable_id',
+            'id',
+            'id',
+            'chart_account_id'
+        );
     }
 
     protected static function booted()
     {
         static::creating(function ($ar) {
-            // Get the branch of the currently logged-in user
             $user = auth()->user();
-
             if ($user) {
-                // Option A: User belongs to one branch only (most common)
                 $branch = $user->branches()->first();
-
-                // Option B: If user can belong to many branches, pick active one
-                // $branch = $user->branches()->wherePivot('is_active', true)->first();
-
                 if ($branch) {
                     $ar->branch_id = $branch->id;
                 }

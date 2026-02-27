@@ -66,9 +66,10 @@ class AccountingCategoryController extends Controller
         $request->validate([
             'accounting_category_id' => 'required|exists:accounting_categories,id',
             'name'                   => 'required|string|max:255',
-            'account_code'           => 'required|string|max:50|unique:accounting_sub_categories,account_code',
+            'account_code'           => 'required|string|max:50', // ← removed unique rule
         ]);
 
+        // Duplicate check: same name AND same account_code within same parent category only
         $exists = AccountingSubCategory::where('accounting_category_id', $request->accounting_category_id)
             ->whereRaw('LOWER(sub_category) = ?', [strtolower($request->name)])
             ->exists();
@@ -98,7 +99,6 @@ class AccountingCategoryController extends Controller
             ]
         ]);
     }
-
     // -------------------------------------------------------------------------
     // DELETE CATEGORY
     // -------------------------------------------------------------------------

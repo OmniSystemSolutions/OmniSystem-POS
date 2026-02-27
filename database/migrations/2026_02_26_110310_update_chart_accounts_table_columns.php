@@ -30,7 +30,7 @@ return new class extends Migration
         if (!Schema::hasColumn('chart_accounts', 'accounting_subcategory_id')) {
             $table->foreignId('accounting_subcategory_id')
                   ->nullable()
-                  ->constrained('accounting_categories')
+                  ->constrained('accounting_sub_categories')
                   ->cascadeOnDelete();
         }
         });
