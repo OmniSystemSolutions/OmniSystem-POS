@@ -705,5 +705,12 @@ Route::prefix('/chart-of-accounts')->name('chart-of-accounts.')->group(function 
     Route::get('/', [ChartofAccountController::class, 'index'])->name('index');
     Route::get('/fetch', [ChartofAccountController::class, 'fetchItems'])->name('fetch');
 
-});
+    Route::post('/', [ChartofAccountController::class, 'store'])->name('store');
+    Route::put('/{id}', [ChartofAccountController::class, 'update']);
 
+    Route::put('/{id}/archive', [ChartofAccountController::class, 'archive'])->name('archive');
+    Route::put('/{id}/restore', [ChartofAccountController::class, 'restore'])->name('restore');
+
+    Route::delete('/{id}', [ChartofAccountController::class, 'destroy']);
+
+});
