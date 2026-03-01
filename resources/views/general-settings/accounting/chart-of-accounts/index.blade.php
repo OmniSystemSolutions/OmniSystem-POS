@@ -52,7 +52,7 @@
                                             <option disabled value="">Select Category</option>
                                             @foreach ($categories as $category)
                                             <option value="{{ $category->id }}">
-                                            {{ $category->category }}
+                                            {{$category->account_code}} - {{ $category->category }}
                                             </option>
                                             @endforeach
                                         </select>
@@ -70,7 +70,7 @@
                                 <label>Category Name</label>
                                 <input type="text"
                                     class="form-control"
-                                    v-model="newCategory.category"
+                                    v-model="newCategory.name"
                                     :class="{'is-invalid': errors.category}">
                                 <div class="invalid-feedback">@{{ errors.category }}</div>
                             </div>
@@ -99,7 +99,7 @@
                                     <option value="" disabled selected>Select Subcategory</option>
                                     <!-- Filtered subcategories -->
                                    <option v-for="sub in form.subcategories" :key="sub.id" :value="sub.id">
-                                    @{{ sub.sub_category }}
+                                    @{{sub.account_code }} - @{{ sub.sub_category }}
                                 </option>
                                 </select>
                                 <button type="button" class="btn btn-outline-success btn-sm" @click="toggleSubCategoryForm">
@@ -112,11 +112,11 @@
                             <h4 class="text-center mb-4">Add Subcategory</h4>
                             <div class="form-group">
                                 <label class="font-weight-bold">Subcategory Name</label>
-                                <input type="text" class="form-control" v-model="newSubCategory.sub_category" :class="{ 'is-invalid': errors.sub_category }">
+                                <input type="text" class="form-control" v-model="newSubCategory.name" :class="{ 'is-invalid': errors.sub_category }">
                                 <div class="invalid-feedback">@{{ errors.sub_category }}</div>
                             </div>
                             <div class="form-group mt-3">
-                                <label class="font-weight-bold">Description</label>
+                                <label class="font-weight-bold">Account code</label>
                                 <textarea class="form-control" rows="3" v-model="newSubCategory.account_code" :class="{ 'is-invalid': errors.account_code }"></textarea>
                                 <div class="invalid-feedback">@{{ errors.account_code }}</div>
                             </div>
@@ -223,8 +223,8 @@
                                         <td class="vgt-left-align text-left">@{{ row.name }}</td>
                                         <td class="vgt-left-align text-left">@{{ row.category_name }}</td>
                                         <td class="vgt-left-align text-left">@{{ row.subcategory_name }}</td>
-                                        <td class="vgt-left-align text-left">@{{ row.classification }}</td>
-                                        <td class="vgt-left-align text-left">@{{ row.tax_mapping }}</td>
+                                        <td class="vgt-left-align text-left text-capitalize">@{{ row.classification }}</td>
+                                        <td class="vgt-left-align text-left text-capitalize">@{{ row.tax_mapping }}</td>
                                         <td class="vgt-left-align text-left">
                                             <actions-dropdown :row="row" 
                                                 @edit-chart="openEditModal"
@@ -409,8 +409,8 @@ new Vue({
             showCategoryForm: false,
             showSubCategoryForm: false,
             errors: {},
-            newCategory: { category: '', account_code: '' },
-            newSubCategory: { sub_category: '', account_code: '' },
+            newCategory: { name: '', account_code: '' },
+            newSubCategory: { accounting_category_id: '', name: '', account_code: '' },
             form: {
                 category_id: '',
                 subcategory_id: '',
@@ -449,12 +449,12 @@ new Vue({
         },
         clearCategoryErrors() {
             this.errors = {};
-            this.newCategory.category = '';
+            this.newCategory.name = '';
             this.newCategory.account_code = '';
         },
         clearSubCategoryErrors() {
             this.errors = {};
-            this.newSubCategory.sub_category = '';
+            this.newSubCategory.name = '';
             this.newSubCategory.account_code = '';
         },
         async saveCategory() {
@@ -468,14 +468,64 @@ new Vue({
                     },
                     body: JSON.stringify(this.newCategory)
                 });
-                const data = await res.json();
-                if (!res.ok) throw data;
 
-                const option = { id: data.id, name: data.category };
+                const result = await res.json();
+                if (!res.ok) throw result;
+
+                const category = result.data;
+
+                const option = { 
+                    id: category.id, 
+                    name: category.name 
+                };
+
                 this.form.categories.push(option);
-                this.form.category_id = data.id;
+                this.form.category_id = category.id;
+
                 this.toggleCategoryForm();
                 Swal.fire('Success', 'Category created', 'success');
+
+            } catch (err) {
+                this.errors = err.errors || { general: 'Something went wrong' };
+            }
+        },
+        async saveSubCategory() {
+            try {
+                if (!this.form.category_id) {
+                    Swal.fire('Warning', 'Please select a category first.', 'warning');
+                    return;
+                }
+
+                // ✅ PUT IT HERE (before fetch)
+                this.newSubCategory.accounting_category_id = this.form.category_id;
+
+                const res = await fetch("{{ route('accounting-categories.sub-category.add') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': "{{ csrf_token() }}",
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(this.newSubCategory)
+                });
+
+                const result = await res.json();
+                if (!res.ok) throw result;
+
+                const subCategory = result.data;
+
+                const option = { 
+                    accounting_category_id: this.form.category_id,
+                    id: subCategory.id, 
+                    name: subCategory.name 
+                };
+
+                this.form.subcategories.push(option);
+                this.form.subcategory_id = subCategory.id;
+
+                this.toggleSubCategoryForm();
+                Swal.fire('Success', 'Subcategory created', 'success');
+
             } catch (err) {
                 this.errors = err.errors || { general: 'Something went wrong' };
             }
