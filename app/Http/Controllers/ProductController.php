@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\BranchProduct;
 use App\Models\Category;
-use App\Models\Component;
 use App\Models\Product;
 use App\Models\Station;
 use App\Models\Subcategory;
@@ -14,6 +13,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use App\Models\BranchComponent;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Recipe;
 
 class ProductController extends Controller
 {
@@ -361,117 +361,97 @@ class ProductController extends Controller
 
 
     public function import(Request $request)
-    {
-        $request->validate([
-            'rows' => 'required'
-        ]);
+{
+    $request->validate([
+        'rows' => 'required'
+    ]);
 
-        $rows = json_decode($request->rows, true);
-        $branchId = current_branch_id();
+    $rows = json_decode($request->rows, true);
+    $branchId = current_branch_id();
 
-        DB::beginTransaction();
+    DB::beginTransaction();
 
-        try {
+    try {
 
-            foreach ($rows as $row) {
+        foreach ($rows as $row) {
+    // 1️⃣ Create/get category
+    $category = !empty($row['category']['name'])
+        ? Category::firstOrCreate(['name' => $row['category']['name']], ['status' => 'active'])
+        : null;
 
-                /*
-                |--------------------------------------------------------------------------
-                | 1️⃣ CREATE OR GET CATEGORY
-                |--------------------------------------------------------------------------
-                */
+    // 2️⃣ Create/get subcategory
+    $subcategory = !empty($row['subcategory']['name']) && $category
+        ? SubCategory::firstOrCreate(
+            ['name' => $row['subcategory']['name'], 'category_id' => $category->id],
+            ['status' => 'active']
+          )
+        : null;
 
-                $category = null;
+    // 3️⃣ Create/get unit
+    $unit = !empty($row['unit']['name'])
+        ? Unit::firstOrCreate(['name' => $row['unit']['name']])
+        : null;
 
-                if (!empty($row['category']['name'])) {
-                    $category = Category::firstOrCreate(
-                        ['name' => $row['category']['name']],
-                        ['status' => 'active']
-                    );
-                }
+    // 4️⃣ Create/update product
+    $product = Product::updateOrCreate(
+        ['code' => $row['code']],
+        [
+            'name' => $row['name'],
+            'category_id' => $category?->id,
+            'subcategory_id' => $subcategory?->id,
+            'status' => 'active'
+        ]
+    );
 
-                /*
-                |--------------------------------------------------------------------------
-                | 2️⃣ CREATE OR GET SUBCATEGORY
-                |--------------------------------------------------------------------------
-                */
+    // 5️⃣ Create/update branch product
+    BranchProduct::updateOrCreate(
+        [
+            'branch_id' => $branchId,
+            'product_id' => $product->id
+        ],
+        [
+            'unit_id' => $unit?->id,
+            'quantity' => $row['quantity'] ?? 0,
+            'cost' => $row['cost'] ?? 0,
+            'price' => $row['price'] ?? 0,
+            'status' => 'active',
+            'type' => 'simple'
+        ]
+    );
 
-                $subcategory = null;
+    // 6️⃣ Attach existing recipes
+    $product->recipes = Recipe::where('product_id', $product->id)->get();
 
-                if (!empty($row['subcategory']['name']) && $category) {
-                    $subcategory = SubCategory::firstOrCreate(
-                        [
-                            'name' => $row['subcategory']['name'],
-                            'category_id' => $category->id
-                        ],
-                        ['status' => 'active']
-                    );
-                }
-
-                /*
-                |--------------------------------------------------------------------------
-                | 3️⃣ CREATE OR GET UNIT
-                |--------------------------------------------------------------------------
-                */
-
-                $unit = null;
-
-                if (!empty($row['unit']['name'])) {
-                    $unit = Unit::firstOrCreate(
-                        ['name' => $row['unit']['name']]
-                    );
-                }
-
-                /*
-                |--------------------------------------------------------------------------
-                | 4️⃣ CREATE OR UPDATE PRODUCT
-                |--------------------------------------------------------------------------
-                */
-
-                $product = Product::updateOrCreate(
-                    ['code' => $row['code']],
-                    [
-                        'name' => $row['name'],
-                        'category_id' => $category?->id,
-                        'subcategory_id' => $subcategory?->id,
-                        'status' => 'active'
-                    ]
-                );
-
-                /*
-                |--------------------------------------------------------------------------
-                | 5️⃣ CREATE OR UPDATE BRANCH PRODUCT
-                |--------------------------------------------------------------------------
-                */
-
-                BranchProduct::updateOrCreate(
-                    [
-                        'branch_id'  => $branchId,
-                        'product_id' => $product->id,
-                    ],
-                    [
-                        'unit_id'   => $unit?->id,
-                        'quantity'  => $row['quantity'] ?? 0,
-                        'cost'      => $row['cost'] ?? 0,
-                        'price'     => $row['price'] ?? 0,
-                        'status'    => 'active',
-                        'type'      => 'simple',
-                    ]
-                );
-            }
-
-            DB::commit();
-
-            return response()->json(['success' => true]);
-
-        } catch (\Exception $e) {
-
-            DB::rollBack();
-
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 500);
-        }
+    // 7️⃣ Optional: Create branch components if recipe components exist
+    foreach ($product->recipes as $recipe) {
+        $component = BranchComponent::firstOrCreate(
+            [
+                'branch_id' => $branchId,
+                'component_id' => $recipe->component_id
+            ],
+            [
+                'onhand' => 0,
+                'cost' => $recipe->component->cost ?? 0,
+                'price' => $recipe->component->price ?? 0,
+                'for_sale' => $recipe->component->for_sale ?? false,
+                'status' => 'active'
+            ]
+        );
     }
+}
+
+        DB::commit();
+
+        return response()->json(['success' => true]);
+
+    } catch (\Exception $e) {
+
+        DB::rollBack();
+
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage()
+        ], 500);
+    }
+}
 }
