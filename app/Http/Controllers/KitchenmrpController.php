@@ -112,20 +112,20 @@ class KitchenmrpController extends Controller
         // 🔥 Get next ID preview (for display only)
         $nextId = \App\Models\KitchenMassProduction::max('id') + 1;
 
-       $components = BranchComponent::with(['component', 'unit', 'station'])
+       $components = BranchComponent::with(['component.unit'])
                     ->where('branch_id', $branchId)
                     ->get();
 
             // 🔹 Only branch products
-    $products = Product::with(['unit', 'station', 'recipes'])
-    ->where('type', 'simple')
-    ->where('status', 'active')
-    ->whereIn('id', function ($query) use ($branchId) {
-        $query->select('product_id')
-            ->from('branch_products')
-            ->where('branch_id', $branchId);
-    })
-    ->get();
+            $products = Product::with(['unit', 'station', 'recipes'])
+            ->where('type', 'simple')
+            ->where('status', 'active')
+            ->whereIn('id', function ($query) use ($branchId) {
+                $query->select('product_id')
+                    ->from('branch_products')
+                    ->where('branch_id', $branchId);
+            })
+            ->get();
 
         $previewReferenceNo = 'MRP-' . $branchId . '-' . str_pad($nextId, 4, '0', STR_PAD_LEFT);
 
@@ -347,7 +347,18 @@ class KitchenmrpController extends Controller
             ->where('status', 'active')
             ->get();
 
-        $components = \App\Models\Component::all();
+        $components = BranchComponent::with(['component.unit'])
+            ->where('branch_id', $branchId)
+            ->get()
+            ->map(function($branchComponent) {
+                return [
+                    'id' => $branchComponent->id,
+                    'component_id' => $branchComponent->component_id,
+                    'name' => $branchComponent->component->name ?? '',
+                    'unit' => $branchComponent->component->unit ? $branchComponent->component->unit->name : '',
+                    'onhand' => $branchComponent->onhand ?? 0,
+                ];
+            });
 
         return view('inventory.kitchen-mrp.form', [
             'massProduction' => $massProduction,

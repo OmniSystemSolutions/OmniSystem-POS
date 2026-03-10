@@ -184,16 +184,16 @@
 
                                             <!-- Component Dropdown -->
                                             <td>
-                                                <select v-model="row.component_id"
-                                                        class="form-control"
-                                                        @change="updateRow(row)">
-                                                    <option value="" disabled>Select component</option>
-                                                    <option v-for="component in components"
-                                                            :key="component.id"
-                                                            :value="component.id">
-                                                        @{{ component.name }}
-                                                    </option>
-                                                </select>
+                                               <select v-model="row.component_id"
+                                                class="form-control"
+                                                @change="updateRow(row)">
+                                            <option value="" disabled>Select component</option>
+                                            <option v-for="component in components"
+                                                    :key="component.id"
+                                                    :value="component.component_id">
+                                                @{{ component.name }}
+                                            </option>
+                                        </select>
                                             </td>
 
                                             <!-- Quantity -->
@@ -227,7 +227,7 @@
                                 </table>
                             </div>
                         </div>
-                        <<div class="row">
+                        <div class="row">
                             <div class="col-md-12 mt-4">
                                 <label>Remarks</label>
                                 <input type="text" class="form-control" v-model="form.remarks">
@@ -253,7 +253,7 @@ window.preloadedData = {
                 'id'            => $recipe->id,
                 'component_id'  => $recipe->component_id,
                 'name'          => $recipe->component->name ?? '',
-                'unit'          => $recipe->component->unit ?? '',
+                'unit'          => $recipe->component->unit ? $recipe->component->unit->name : '',
                 'quantity'      => $recipe->quantity,
                 'stock_on_hand' => $recipe->component->onhand ?? 0,
             ];
@@ -309,12 +309,19 @@ new Vue({
         },
 
         updateRow(row) {
-            const selected = this.components.find(c => c.id === row.component_id);
-            if (selected) {
-                row.component_name = selected.name;
-                row.unit = selected.unit;
-            }
-        },
+    // Find the branch component by component_id
+    const selected = this.components.find(c => c.component_id === row.component_id);
+
+    if (selected) {
+        row.component_name = selected.name; // Display name
+        row.unit = selected.unit;           // Display unit
+        row.stock_on_hand = selected.onhand ?? 0; // Optional: stock on hand
+    } else {
+        row.unit = '';
+        row.component_name = '';
+        row.stock_on_hand = 0;
+    }
+},
         // Always multiply recipe quantity by target output
         computeRequired(item) {
             const target = parseFloat(this.form.quantity) || 0;
@@ -337,34 +344,44 @@ new Vue({
             return 0;
         },
         fetchIngredients() {
-            // Clear ingredients if no product selected
-            if (!this.form.product_id) {
-                this.form.ingredients = [];
-                return;
-            }
 
-            // Find the selected product
-            const product = this.preloadedProducts.find(p => p.id == this.form.product_id);
-            if (!product || !product.recipes) {
-                this.form.ingredients = [];
-                return;
-            }
+    if (!this.form.product_id) {
+        this.form.ingredients = [];
+        return;
+    }
 
-            // Map each recipe to include component details
-            this.form.ingredients = product.recipes.map(recipeItem => {
-                const component = this.preloadedComponents.find(c => c.id == recipeItem.component_id);
+    const product = this.preloadedProducts.find(p => p.id == this.form.product_id);
 
-                return {
-                    id: recipeItem.id,
-                    component_id: recipeItem.component_id,
-                    product_id: recipeItem.product_id,
-                    quantity: recipeItem.quantity,
-                    name: component ? component.name : '',
-                    unit: component && component.unit ? component.unit : '',
-                    stock_on_hand: component ? component.onhand : 0
-                };
-            });
-        },
+    if (!product || !product.recipes) {
+        this.form.ingredients = [];
+        return;
+    }
+
+    this.form.ingredients = product.recipes.map(recipeItem => {
+
+        const branchComponent = this.preloadedComponents.find(
+            c => c.component_id == recipeItem.component_id
+        );
+
+        return {
+            id: recipeItem.id,
+            component_id: recipeItem.component_id,
+            product_id: recipeItem.product_id,
+            quantity: recipeItem.quantity,
+
+            // from component
+            name: branchComponent?.component?.name || '',
+
+            // component -> unit -> name
+            unit: branchComponent?.component?.unit?.name || '',
+
+            // from branch_components
+            stock_on_hand: branchComponent?.onhand || 0
+        };
+
+    });
+
+},
         selectProduct(productId) {
             const product = this.products.find(p => p.id === productId)
             console.log('seelcted prd', this.form)
@@ -598,6 +615,8 @@ new Vue({
     },
 
     mounted() {
+        console.log(@json($products))
+        console.log(@json($components))
     // if (!this.form.items.length) {
     //     this.addItem();
     // }
