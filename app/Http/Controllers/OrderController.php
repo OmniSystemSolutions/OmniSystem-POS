@@ -269,59 +269,66 @@ class OrderController extends Controller
 
     public function billout(Request $request, $orderId)
 {
+    
     $order = Order::findOrFail($orderId);
 
-    // Validate everything that comes from the form
     $validated = $request->validate([
-        'gross_amount'     => 'nullable|numeric|min:0',
-        'srPwdBill'        => 'nullable|numeric|min:0',       // SR/PWD Bill
-        'regBill'          => 'nullable|numeric|min:0',       // Regular Bill
-        'discount20'       => 'nullable|numeric|min:0',       // 20% discount amount
-        'netBill'          => 'nullable|numeric|min:0',       // Net Bill after SR/PWD discount
-        'vatable'          => 'nullable|numeric|min:0',
-        'vat12'            => 'nullable|numeric|min:0',
-        'totalCharge'      => 'required|numeric|min:0',       // Final total charge
-        'otherDiscount'    => 'nullable|numeric|min:0',
-        'vat_exempt_12'    => 'nullable|numeric|min:0',
+        'grossCharge' => 'nullable|numeric|min:0',
+        'srPwdBill' => 'nullable|numeric|min:0',
+        'regBill' => 'nullable|numeric|min:0',
+        'discount20' => 'nullable|numeric|min:0',
+        'netBill' => 'nullable|numeric|min:0',
+        'vatable' => 'nullable|numeric|min:0',
+        'vat12' => 'nullable|numeric|min:0',
+        'totalCharge' => 'required|numeric|min:0',
+        'otherDiscount' => 'nullable|numeric|min:0',
+        'vat_exempt_12' => 'nullable|numeric|min:0',
         'charges_description' => 'nullable|string|max:500',
-        'persons'          => 'nullable|json',
+        'persons' => 'nullable|json'
     ]);
 
-    // Save ALL the calculated fields
+    // dd($validated);
+
     $order->update([
-        'gross_amount'     => $request->input('gross_amount', 0),
-        'sr_pwd_discount'  => $request->input('srPwdBill', 0),      // ← SR/PWD portion
-        'other_discounts'  => $request->input('otherDiscount', 0),
-        'net_amount'       => $request->input('netBill', 0),        // ← Net after SR/PWD discount
-        'vatable'          => $request->input('vatable', 0),
-        'vat_12'           => $request->input('vat12', 0),
-        'vat_exempt_12'    => $request->input('vat_exempt_12', 0),  // from your previous update
-        'total_charge'     => $request->input('totalCharge', 0),
-        'charges_description' => $request->input('charges_description'),
-        'discount20'       => $request->input('discount20', 0),
-        'status'           => 'billout',
-        'cashier_id'       => auth()->id(),
+        'gross_amount' => $validated['grossCharge'] ?? 0,
+        'sr_pwd_bill' => $validated['srPwdBill'] ?? 0,
+        'sr_pwd_discount' => $validated['discount20'] ?? 0,
+        'other_discounts' => $validated['otherDiscount'] ?? 0,
+        'net_amount' => $validated['netBill'] ?? 0,
+        'regular_bill' => $validated['regBill'] ?? 0,
+        'vatable' => $validated['vatable'] ?? 0,
+        'vat_12' => $validated['vat12'] ?? 0,
+        'vat_exempt_12' => $validated['vat_exempt_12'] ?? 0,
+        'total_charge' => $validated['totalCharge'],
+        'charges_description' => $validated['charges_description'] ?? null,
+        'status' => 'billout',
+        'cashier_id' => auth()->id(),
     ]);
 
-    // Handle discount entries (persons with name & ID)
-    if ($request->filled('persons')) {
-        $persons = json_decode($request->persons, true);
+    if (!empty($validated['persons'])) {
+
+        $persons = json_decode($validated['persons'], true);
+
         foreach ($persons as $person) {
+
             if (!empty($person['discount_id']) && !empty($person['name'])) {
+
                 DiscountEntry::create([
-                    'order_id'         => $order->id,
-                    'discount_id'      => $person['discount_id'],
-                    'person_name'      => $person['name'],
-                    'person_id_number' => $person['id_number'] ?? null,
+                    'order_id' => $order->id,
+                    'discount_id' => $person['discount_id'],
+                    'person_name' => $person['name'],
+                    'person_id_number' => $person['id_number'] ?? null
                 ]);
+
             }
+
         }
+
     }
 
-    // Return the updated order so frontend can show correct preview
     return response()->json([
         'success' => true,
-        'order'   => $order->fresh(['details', 'discountEntries', 'paymentDetails'])
+        'order' => $order->fresh(['details','discountEntries','paymentDetails'])
     ]);
 }
     

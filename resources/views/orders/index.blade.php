@@ -131,7 +131,7 @@
                               <div class="row mb-3">
                                  <div class="col-md-3">
                                     <label class="form-label">SR/PWD Bill</label>
-                                    <input type="text" id="pay_srPwdBill_{{ $order->id }}" class="form-control" value="{{ $order->sr_pwd_discount ?? '' }}" readonly>
+                                    <input type="text" id="pay_srPwdBill_{{ $order->id }}" class="form-control" value="{{ $order->sr_pwd_bill ?? '' }}" readonly>
                                  </div>
                                  <div class="col-md-3">
                                     <label class="form-label">Net Bill</label>
@@ -139,7 +139,7 @@
                                  </div>
                                  <div class="col-md-3">
                                     <label class="form-label">Reg Bill</label>
-                                    <input type="text" id="pay_regBill_{{ $order->id }}" class="form-control" value="{{ $order->vatable ?? '' }}" readonly>
+                                    <input type="text" id="pay_regBill_{{ $order->id }}" class="form-control" value="{{ $order->regular_bill ?? '' }}" readonly>
                                  </div>
                                  <div class="col-md-3">
                                     <label class="form-label">Other Discount</label>
@@ -967,7 +967,7 @@ function updateSelectedDiscounts(orderId) {
 </div>
 
 <form id="billOutForm_{{ $order->id }}" 
-      action="/orders/{{ $order->id }}/billout" 
+      action="{{ route('orders.billout', $order->id) }}" 
       method="POST">
    @csrf
    <input type="hidden" name="order_id" value="{{ $order->id }}">
@@ -989,6 +989,7 @@ function updateSelectedDiscounts(orderId) {
          <input type="text" id="discount20_{{ $order->id }}" class="form-control" readonly>
       </div>
    </div>
+   <input type="hidden" id="grossCharge_{{ $order->id }}" value="{{ number_format($order->details->sum(fn($d) => ($d->price * $d->quantity) - ($d->discount ?? 0)), 2) }}"class="form-control" readonly>
 
    <div class="row mt-2">
       <div class="col-md-4">
@@ -1121,16 +1122,10 @@ function updateSelectedDiscounts(orderId) {
                 <tr>
                     <td>Less Discount</td>
                     <td class="text-right less-discount">
-                        @php
-                            // VAT Exempt 12% (already stored in database)
-                            $vatExempt12 = $order->vat_exempt_12 ?? 0;
-
-                            // 20% Discount should be computed from the VAT-exempt portion (default 20%)
-                            // If you have a stored discount percentage field in the future, use that instead.
-                            $discount20 = ($vatExempt12) * 0.20;
-
-                            // Less Discount = VAT Exempt 12% + 20% Discount
-                            $lessDiscount = $vatExempt12 + $discount20;
+                       @php
+                            $grossCharge = $order->gross_amount;
+                            $totalCharge = $order->total_charge ?? $order->net_amount ?? 0;
+                            $lessDiscount = $grossCharge - $totalCharge;
                         @endphp
                         ₱{{ number_format($lessDiscount, 2) }}
                     </td>
@@ -1157,7 +1152,7 @@ function updateSelectedDiscounts(orderId) {
                         <tr>
                             <td>SR/PWD Bill</td>
                             <td class="text-right sr-pwd-bill">
-                                ₱{{ number_format($order->sr_pwd_discount ?? 0, 2) }}
+                                ₱{{ number_format($order->sr_pwd_bill ?? 0, 2) }}
                             </td>
                         </tr>
                         <tr>
@@ -1508,24 +1503,27 @@ function confirmBillOut(orderId) {
         return;
     }
 
-    const form = document.getElementById('billOutForm_' + orderId);
+     const form = document.getElementById('billOutForm_' + orderId);
     if (!form) {
         console.error('Form not found:', 'billOutForm_' + orderId);
         alert('Form not found. Please refresh the page.');
-        return;
+        return null;
     }
 
     const formData = new FormData(form);
 
-    // Include computed discount and billing fields
-    const fields = [
-        'srPwdBill', 'discount20', 'otherDiscount',
-        'netBill', 'vatable', 'vat12', 'totalCharge'
+    // List of fields to normalize and send
+    const numericFields = [
+        'srPwdBill', 'discount20', 'otherDiscount', 'netBill',
+        'vatable', 'vat12', 'totalCharge', 'grossCharge', 'regBill', 'vat_exempt_12'
     ];
-    fields.forEach(f => {
+
+    numericFields.forEach(f => {
         const el = document.getElementById(f + '_' + orderId);
         if (el) {
-            formData.append(f, el.value || '0');
+            // Remove commas and default to '0'
+            const value = (el.value || '0').replace(/,/g, '');
+            formData.set(f, value);
         }
     });
 
@@ -1542,7 +1540,9 @@ function confirmBillOut(orderId) {
             });
         });
     }
-    formData.append('persons', JSON.stringify(personsData));
+
+    formData.set('persons', JSON.stringify(personsData));
+             
 
     // Get CSRF token
     const csrfToken = document.querySelector('meta[name="csrf-token"]');
@@ -1556,7 +1556,8 @@ function confirmBillOut(orderId) {
     fetch(form.action, {
         method: 'POST',
         headers: {
-            'X-CSRF-TOKEN': csrfToken.content
+            'X-CSRF-TOKEN': csrfToken.content,
+            'Accept': 'application/json'
         },
         body: formData
     })
@@ -1667,7 +1668,7 @@ function showUpdatedBillOutPreview(orderId, orderData) {
         discount20Val = Number((vatExempt * 0.20) || 0);
     }
 
-    const lessDiscountVal = Number(vatExempt + discount20Val);
+    const lessDiscountVal = Number(gross - orderData.total_charge);
     setText('less-discount', lessDiscountVal);
 
     setText('vatable', orderData.vatable || 0);
@@ -1678,7 +1679,7 @@ function showUpdatedBillOutPreview(orderId, orderData) {
     const vatableVal = Number(orderData.vatable || 0);
     const computedRegBill = Number((vatableVal * (1 + vatRate)).toFixed(2));
     setText('reg-bill', computedRegBill);
-    setText('sr-pwd-bill', orderData.sr_pwd_discount || 0);
+    setText('sr-pwd-bill', orderData.sr_pwd_bill || 0);
     setText('total-due strong', orderData.total_charge || gross);
 
     // Force show the modal
@@ -2201,7 +2202,7 @@ function updateDestOptions(orderId, rowId, paymentMethodId) {
                             <td>Less Discount</td>
                             <td class="text-right">
                                 @php
-                                    $grossCharge = $order->details->sum(fn($d) => ($d->price * $d->quantity) - ($d->discount ?? 0));
+                                    $grossCharge = $order->gross_amount;
                                     $totalCharge = $order->total_charge ?? $order->net_amount ?? 0;
                                     $lessDiscount = $grossCharge - $totalCharge;
                                 @endphp
@@ -2223,7 +2224,7 @@ function updateDestOptions(orderId, rowId, paymentMethodId) {
                         </tr>
                         <tr>
                            <td>SR/PWD Bill</td>
-                           <td class="text-right">₱{{ number_format($order->sr_pwd_discount ?? 0,2) }}</td>
+                           <td class="text-right">₱{{ number_format($order->sr_pwd_bill ?? 0,2) }}</td>
                         </tr>
                         <tr>
                            <td><strong>Total</strong></td>
@@ -2310,7 +2311,7 @@ function updateDestOptions(orderId, rowId, paymentMethodId) {
     }) ?? collect();
 
     $hasSrpwd = $srpwdEntries->isNotEmpty();
-    $totalBill = $order->sr_pwd_discount ?? 0;
+    $totalBill = $order->sr_pwd_bill ?? 0;
     $lessVatExempt = $order->vat_exempt_12 ?? 0;
     $srPwdVatable = $totalBill / 1.12; 
     $discount20 = $srPwdVatable * 0.20;  // ← update this
@@ -2479,7 +2480,7 @@ window.openInvoiceModalFromResponse = function(orderData) {
 
         if (hasAckCondition && hasPayments) {
             const nf = new Intl.NumberFormat('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            const totalBill = Number(orderData.sr_pwd_discount || 0) || 0;   // ← changed: use sr_pwd_discount
+            const totalBill = Number(orderData.sr_pwd_bill || 0) || 0;   // ← changed: use sr_pwd_discount
             const lessVatExempt = Number(orderData.vat_exempt_12 || 0) || 0;
             const srPwdVatable = totalBill / 1.12;
             const discount20 = srPwdVatable * 0.20; 
@@ -2630,7 +2631,7 @@ window.openInvoiceModalFromResponse = function(orderData) {
                                 </tr>
                                 <tr>
                                     <td>Less Discount</td>
-                                    <td style="text-align:right">₱${(gross - Number(orderData.total_charge || orderData.net_amount || 0)).toFixed(2)}</td>
+                                    <td style="text-align:right">₱${(gross - Number(orderData.total_charge || 0)).toFixed(2)}</td>
                                 </tr>
                                 <tr>
                                     <td>Vatable</td>
@@ -2646,7 +2647,7 @@ window.openInvoiceModalFromResponse = function(orderData) {
                                 </tr>
                                 <tr>
                                     <td>SR/PWD Bill</td>
-                                    <td style="text-align:right">₱${Number(orderData.sr_pwd_discount || 0).toFixed(2)}</td>
+                                    <td style="text-align:right">₱${Number(orderData.sr_pwd_bill || 0).toFixed(2)}</td>
                                 </tr>
                                 <tr>
                                     <td><strong>Total</strong></td>
