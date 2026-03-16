@@ -3,7 +3,7 @@
 <style>
     .receipt-divider{
     border-top:1px dashed #000;
-    margin:-10px 0px 20px 0px;
+    margin: 30px 0px 10px 0px;
 }
 </style>
 <div class="main-content">
@@ -111,8 +111,8 @@
           <p><strong>Date:</strong> <span id="zReportDate"></span></p>
           <p><strong>Time:</strong> <span id="ztime"></span></p>
 
-          <p><strong>SALES SUMMARY</strong></p>
           <div class="receipt-divider"></div>
+          <p><strong>SALES SUMMARY</strong></p>
           <div style="display:flex; justify-content:space-between;">
             <span>Total Orders</span>
             <span id="zTotalOrders">0.00</span>
@@ -134,12 +134,12 @@
             <span id="zTax">0.00</span>
           </div>
           
-          <p><strong>PAYMENT METHODS</strong></p>
           <div class="receipt-divider"></div>
+          <p><strong>PAYMENT METHODS</strong></p>
           <div id="zPaymentMethods"></div>
 
-          <p><strong>ITEM SOLD</strong></p>
           <div class="receipt-divider"></div>
+          <p><strong>ITEM SOLD</strong></p>
           <div id="zItemsSold"></div>
 
         </div>
@@ -233,9 +233,9 @@
             <span>Cashier:</span> 
             <span id="xCashier"></span>
           </div>
-
-          <p><strong>SUMARRY</strong></p>
+          
           <div class="receipt-divider"></div>
+          <p><strong>SUMARRY</strong></p>
           <div style="display:flex; justify-content:space-between;">
             <span>Total Orders</span>
             <span id="totalOrders">0</span>
@@ -257,12 +257,12 @@
             <span id="xTax">0.00</span>
           </div>
 
-          <p><strong>PAYMENT METHODS</strong></p>
           <div class="receipt-divider"></div>
+          <p><strong>PAYMENT METHODS</strong></p>
           <div id="xPaymentMethods"></div>
 
-          <p><strong>ITEM SOLD</strong></p>
           <div class="receipt-divider"></div>
+          <p><strong>ITEM SOLD</strong></p>
           <div id="xItemsSold"></div>
 
           <hr>
