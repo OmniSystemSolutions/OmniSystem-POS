@@ -1,9 +1,14 @@
 @extends('layouts.app')
 @section('content')
+<style>
+    .dropdown-menu {
+        position: relative;
+    }
+</style>
 <div class="main-content" id="app">
   <div>
       <div class="breadcrumb">
-          <h1 class="mr-3">Reports</h1>
+          <h1 class="mr-3">Inventory</h1>
           <ul>
           <li><a href=""> PRF - Procurement Request Form</a></li>
           <!----> <!---->
@@ -11,6 +16,45 @@
           <div class="breadcrumb-action"></div>
       </div>
       <div class="separator-breadcrumb border-top"></div>
+  </div>
+  <div class="modal fade" id="ItemDetailsModal" tabindex="-1" aria-labelledby="ItemDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+        
+            <div class="modal-header">
+                <h5 class="modal-title" id="ItemDetailsModalLabel">PRF Details</h5>
+            </div>
+
+            <div class="modal-body">
+                <div class="list-group">
+                    <div class="list-group-item p-0">
+                        <table class="table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Sub Type</th>
+                                    <th>SKU</th>
+                                    <th>Name</th>
+                                    <th>Quantity</th>
+                                    <th>Category</th>
+                                    <th>Unit</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(item, index) in modalItems" :key="index">
+                                    <td>@{{ item.subtype }}</td>
+                                    <td>@{{ item.code }}</td>
+                                    <td>@{{ item.name }}</td>
+                                    <td>@{{ item.quantity }}</td>
+                                    <td>@{{ item.category }}</td>
+                                    <td>@{{ item.unit?.name }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
   </div>
   <div class="wrapper">
       <div class="card-body">
@@ -30,6 +74,33 @@
       </div>
       <div class="card-body">
         <div class="vgt-wrap">
+            <div class="vgt-global-search vgt-clearfix">
+                     <div class="vgt-global-search__input vgt-pull-left">
+                        <form role="search">
+                           <label for="vgt-search">
+                              <span aria-hidden="true" class="input_icon">
+                                 <div class="magnifying-glass">
+                                 </div>
+                              </span>
+                              <span class="sr-only">Search:</span>
+                           </label>
+                           <input id="vgt-search" type="text" placeholder="Search this table" class="vgt-input vgt-pull-left">
+                        </form>
+                     </div>
+                     <div class="vgt-global-search__actions vgt-pull-right">
+                        <div class="mt-2 mb-3">
+                           <button type="button" class="btn btn-outline-info ripple m-1 btn-sm collapsed" aria-expanded="false" aria-controls="sidebar-right" style="overflow-anchor: none;"><i class="i-Filter-2"></i>
+                           Filter
+                           </button> <button type="button" class="btn btn-outline-success ripple m-1 btn-sm"><i class="i-File-Copy"></i> PDF
+                           </button> <button class="btn btn-sm btn-outline-danger ripple m-1"><i class="i-File-Excel"></i> EXCEL
+                           </button>
+                           <button class="btn btn-primary btn-rounded btn-icon m-1"
+                              onclick="window.location='{{ route('procurement-request.create') }}'">
+                           <i class="i-Add"></i> Add
+                           </button>
+                        </div>
+                     </div>
+                  </div>
             <div class="vgt-fixed-header">
             </div>
                 <div class="vgt-responsive">
@@ -37,7 +108,6 @@
                     <thead>
                         <tr>
                         <th class="vgt-left-align text-left">Date and Time Created</th>
-                        <th class="vgt-left-align text-left">Created By</th>
                         <th class="vgt-left-align text-left">Requested By</th>
                         <th class="vgt-left-align text-left">Department</th>
                         <th class="vgt-left-align text-left">PRF Reference #</th>
@@ -53,7 +123,6 @@
                     <tbody>
                         <tr v-for="row in records" :key="row.id">
                         <td class="vgt-left-align text-left w-190px"> @{{ row.requested_datetime }}</td>
-                        <td class="vgt-left-align text-left w-190px"> @{{ row.created_by }}</td>
                         <td class="vgt-left-align text-left w-190px"> @{{ row.requested_by }}</td>
                         <td class="vgt-left-align text-left w-190px"> @{{ row.department }}</td>
                         <td class="vgt-left-align text-left w-190px"> @{{ row.prf_reference_no }}</td>
@@ -62,16 +131,18 @@
                         <td class="vgt-left-align text-left w-190px"> @{{ row.origin }}</td>
                         <td class="vgt-left-align text-left w-190px"> @{{ row.requesting_branch }}</td>
                         <td class="vgt-left-align text-left w-190px"> @{{ row.status }}</td>
-                        <td class="vgt-left-align text-left w-190px"> @{{ row.details }}</td>
+                        <td><button class="btn btn-sm btn-primary" @click="openModal(row.items)">View</button></td>
+                        {{-- <td class="vgt-left-align text-left w-190px"> @{{ row.details }}</td> --}}
                         <td class="vgt-left-align text-right">
                                 <actions-dropdown :row="row" 
-                                @add-attachment="viewInvoice"
-                                @view-attached-file="editTransfer"
-                                @edit-prf="addViewAttachedFiles"
-                                @move-to-canvassing="approveTransfer"
-                                @disapprove-prf="disapproveTransfer"
-                                @log-prf="archiveTransfer"
-                                @remarks-prf="restoreTransfer"
+                                @add-attachment="addAttachment"
+                                @view-attached-file="viewAttachedFiles"
+                                @edit-prf="edit"
+                                @move-to-canvassing="moveToCanvassing"
+                                @disapprove-prf="disapprove"
+                                @log-prf="log"
+                                @remarks-prf="remarks"
+                                @status-updated="fetchRecords()"
                                 ></actions-dropdown>
                             </td>
                         </tr>
@@ -155,7 +226,7 @@
            </li>
            <!-- Edit -->
            <li>
-               <a class="dropdown-item" :href="`#`">
+               <a class="dropdown-item" :href="`/inventory/procurement-request/${row.id}/edit`">
                    <i class="nav-icon i-Edit font-weight-bold mr-2"></i>
                    Edit
                </a>
@@ -213,56 +284,57 @@
            };
        },
        methods: {
-           toggleDropdown() { this.isOpen = !this.isOpen; },
+           toggleDropdown() { 
+            this.isOpen = !this.isOpen; 
+        },
            handleClickOutside(event) {
                if (!this.$refs.dropdown?.contains(event.target)) this.isOpen = false;
            },
            changeStatus(id, newStatus) {
-       Swal.fire({
-           title: 'Are you sure?',
-           text: `Do you want to change the status to "${newStatus}"?`,
-           icon: 'question',
-           showCancelButton: true,
-           confirmButtonText: 'Yes, change it!',
-           cancelButtonText: 'Cancel',
-       }).then((result) => {
-           if (result.isConfirmed) {
-               axios.put(`{{ url('/reports/procurement-request') }}/${id}/update-status`, {
-                   status: newStatus
-               })
-               .then(response => {
-                   const res = response.data;
-   
-                   let message = `Status updated successfully.`;
-   
-                   // If approved, show nicely formatted message
-                   if (res.status === 'approved' && res.approved_by_name && res.approved_datetime) {
-                       message = `
-                           Status updated to APPROVED.
-                           Approved by: ${res.approved_by_name}
-                           At: ${res.approved_datetime}`;
-                   }
-   
-                   Swal.fire({
-                       icon: 'success',
-                       title: 'Updated!',
-                       html: message.replace(/\n/g, '<br>'), // preserve line breaks
-                       showConfirmButton: true,
-                   });
-   
-                   this.$emit('status-updated');
-               })
-               .catch(error => {
-                   console.error("Error updating status:", error);
-                   Swal.fire({
-                       icon: 'error',
-                       title: 'Failed!',
-                       text: 'Failed to update status.'
-                   });
-               });
-           }
-       });
-   },
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: `Do you want to change the status to "${newStatus}"?`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, change it!',
+                    cancelButtonText: 'Cancel',
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        axios.put(`{{ url('/inventory/procurement-request') }}/${id}/update-status`, {
+                            status: newStatus
+                        })
+                        .then(response => {
+                            const res = response.data;
+            
+                            let message = `Status updated successfully.`;
+            
+                            // If approved, show nicely formatted message
+                            if (res.status === 'canvassing') {
+                                message = `
+                                    Status updated to CANVASSING.
+                                    At: ${res.updated_at}`;
+                            }
+            
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Updated!',
+                                html: message.replace(/\n/g, '<br>'), // preserve line breaks
+                                showConfirmButton: true,
+                            });
+            
+                            this.$emit('status-updated');
+                        })
+                        .catch(error => {
+                            console.error("Error updating status:", error);
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Failed!',
+                                text: 'Failed to update status.'
+                            });
+                        });
+                    }
+                });
+            }
        },
        mounted() {
            document.addEventListener("click", this.handleClickOutside);
@@ -275,6 +347,15 @@
 new Vue({
   el: "#app",
   data: {
+     records: [], 
+     pagination: {
+        current_page: 1,
+        per_page: 10,
+        total: 0,
+        from: 0,
+        to: 0,
+        last_page: 1
+    },
     statusFilter: 'pending',
     statusList: [
         { label: 'Pending', value: 'pending' },
@@ -284,7 +365,69 @@ new Vue({
         { label: 'Disapproved', value: 'disapproved' },
         { label: 'Archived', value: 'archived' },
     ],
-  }
+    allItems: {
+        products: [],
+        components: []
+        },
+    modalItems: [],
+  },
+    mounted() {
+        this.fetchRecords();
+    },
+  methods: {
+           fetchRecords(page = 1) {
+               axios.get("{{ route('procurement-request.fetch') }}", {
+                   params: {
+                       status: this.statusFilter,
+                       page: page,
+                       per_page: this.pagination.per_page,
+                   }
+               })
+               .then(response => {
+   
+                   const res = response.data;
+   
+                   // Main data
+                   this.records = res.data || res;
+   
+                   console.log("✅ Fetched records:", this.records);
+   
+                   // Pagination (if API paginated)
+                   if (res.current_page) {
+                       this.pagination.current_page = res.current_page;
+                       this.pagination.per_page = res.per_page;
+                       this.pagination.total = res.total;
+                       this.pagination.from = res.from;
+                       this.pagination.to = res.to;
+                       this.pagination.last_page = res.last_page;
+                   }
+               })
+               .catch(error => {
+                   console.error("❌ Error fetching records:", error);
+               });
+           },
+           setStatus(status) {
+               this.statusFilter = status;
+   
+                // ✅ Remember last opened tab
+               localStorage.setItem('inventory_transfer_last_tab', status);
+               this.fetchRecords(1);
+           },
+            openModal(items) {
+                if (!items) {
+                    this.modalItems = [];
+                } else {
+                    this.modalItems = [
+                        ...(items.products || []),
+                        ...(items.components || [])
+                    ];
+                }
+
+                console.log('MODAL:', this.modalItems); // debug
+
+                new bootstrap.Modal(document.getElementById('ItemDetailsModal')).show();
+            }
+       },
 })
 </script>
 @endsection

@@ -26,6 +26,8 @@ class GeneralLedgerController extends Controller
                 return $ce;
             });
 
+            // dd($cash_equivalents);
+
         return view('reports.general-ledger.index', [
             'cashEquivalents' => $cash_equivalents
         ]);

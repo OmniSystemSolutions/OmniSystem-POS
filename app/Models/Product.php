@@ -76,9 +76,18 @@ class Product extends Model
                     ->where('item_type', 'component');
     }
     public function details()
-{
-    return $this->hasMany(OrderDetail::class, 'product_id');
-}
+    {
+        return $this->hasMany(OrderDetail::class, 'product_id');
+    }
 
-    
+    public function branchStockForCurrent()
+    {
+        return $this->hasOne(BranchProduct::class)
+                    ->where('branch_id', current_branch_id());
+    }
+
+    public function onhandForCurrentBranch()
+    {
+        return $this->branchStockForCurrent()->value('quantity') ?? 0;
+    }
 }

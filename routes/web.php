@@ -745,21 +745,21 @@ Route::prefix('/reports/general-ledger')->name('general-ledger.')->group(functio
     Route::get('/fetch', [GeneralLedgerController::class, 'fetchRequests'])->name('fetch');
 });
 
-Route::prefix('/reports/procurement-request')->name('procurement-request.')->group(function () {
+Route::prefix('/inventory/procurement-request')->name('procurement-request.')->group(function () {
     Route::get('/', [ProcurementRequestController::class, 'index'])->name('index');
     Route::get('/fetch', [ProcurementRequestController::class, 'fetchRequests'])->name('fetch');
+    Route::get('/fetchItems', [ProcurementRequestController::class, 'fetchItems'])->name('fetchItems');
 
-    // Route::get('/create', [KitchenmrpController::class, 'create'])->name('create');
-    // Route::post('/', [KitchenmrpController::class, 'store'])->name('store');
-    // Route::get('/{id}/edit', [KitchenmrpController::class, 'edit'])->name('edit');
-    // Route::get('/{id}/logGoods', [KitchenmrpController::class, 'isLogProcess'])->name('logGoods');
-    // Route::put('/{id}', [KitchenmrpController::class, 'update']);
+    Route::get('/create', [ProcurementRequestController::class, 'create'])->name('create');
+    Route::post('/', [ProcurementRequestController::class, 'store'])->name('store');
+    Route::get('/{id}/edit', [ProcurementRequestController::class, 'edit'])->name('edit');
+    Route::put('/{id}', [ProcurementRequestController::class, 'update'])->name('update');
 
     Route::put('/{id}/update-status', [ProcurementRequestController::class, 'updateStatus']);
 
-    // Route::put('/{id}/archive', [KitchenmrpController::class, 'archive'])->name('archive');
-    // Route::put('/{id}/restore', [KitchenmrpController::class, 'restore'])->name('restore');
+    // Route::put('/{id}/archive', [ProcurementRequestController::class, 'archive'])->name('archive');
+    // Route::put('/{id}/restore', [ProcurementRequestController::class, 'restore'])->name('restore');
 
-    // Route::delete('/{id}', [KitchenmrpController::class, 'destroy']);
+    // Route::delete('/{id}', [ProcurementRequestController::class, 'destroy']);
 
 });
