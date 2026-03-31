@@ -215,12 +215,6 @@
                         <span class="item-name">General Ledger</span>
                      </a>
                   </li>
-                  <li class="nav-item">
-                     <a href="{{ route('procurement-request.index') }}" class="">
-                        <i class="fa-regular fa-file-lines" style="font-size:20px;"></i>
-                        <span class="item-name" style="margin-left: 5px;">PRF - Procurement Request Form</span>
-                     </a>
-                  </li>
                </ul>
             </li>
          </ul>
@@ -270,6 +264,12 @@
          <ul data-parent="Inventory" class="childNav d-none">
             <li class="nav-item"><a href="/products" class=""><i class="nav-icon i-Posterous"></i> <span class="item-name">Products and Components</span></a></li>
             <li class="nav-item"><a href="/app/inventory/adjustments" class=""><i class="nav-icon i-Laptop-Secure"></i> <span class="item-name">Inventory Adjustments</span></a></li>
+            <li class="nav-item">
+               <a href="{{ route('procurement-request.index') }}" class="">
+                  <i class="fa-regular fa-file-lines" style="font-size:20px;"></i>
+                  <span class="item-name" style="margin-left: 5px;">PRF - Procurement Request Form</span>
+               </a>
+            </li>
             {{-- <li class="nav-item"><a href="/app/inventory/procurements" class=""><i class="nav-icon i-Computer-Secure"></i> <span class="item-name">PRF - Procurement Request Form</span></a></li> --}}
             <li class="nav-item">
                <a href="{{ route('inventory_purchase_orders.index') }}" class="{{ request()->routeIs('inventory_purchase_orders.*') ? 'active' : '' }}">
