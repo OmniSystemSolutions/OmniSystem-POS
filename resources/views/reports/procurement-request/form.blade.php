@@ -189,7 +189,6 @@
                                              class="form-control"
                                              :value="quantities[item._type][item.id] ?? 0"
                                              min="0"
-                                             :max="item.onhand"
                                              step="0.01"
                                              @input="onQuantityInput($event, item)"
                                              >
@@ -454,29 +453,26 @@ new Vue({
             },
             // ----------------- Quantity -----------------
             incrementQuantity(item) {
-                const type = item._type;
-                const max = Number(item.onhand) || 0;
-    
-                let value = this.quantities[type][item.id] ?? 0;
-    
-                if (value >= max) return;
-    
-                value = +(value + 1).toFixed(2);
-    
-                this.$set(this.quantities[type], item.id, value);
-             },
-              decrementQuantity(item) {
-               const type = item._type;
-   
-               let value = this.quantities[type][item.id] ?? 0;
-   
-               if (value <= 0) return;
-   
-               value = +(value - 1).toFixed(2);
-               if (value < 0) value = 0;
-   
-               this.$set(this.quantities[type], item.id, value);
-           },
+    const type = item._type;
+
+    let value = this.quantities[type][item.id] ?? 0;
+
+    value = +(value + 1).toFixed(2);
+
+    this.$set(this.quantities[type], item.id, value);
+},
+
+decrementQuantity(item) {
+    const type = item._type;
+
+    let value = this.quantities[type][item.id] ?? 0;
+
+    value = +(value - 1).toFixed(2);
+
+    if (value < 0) value = 0;
+
+    this.$set(this.quantities[type], item.id, value);
+},
    
            removeItem(item) {
                const type = item._type;

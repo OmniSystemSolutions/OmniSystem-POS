@@ -89,7 +89,7 @@ class ProcurementRequestController extends Controller
         // Get next AUTO_INCREMENT value
         $nextId = DB::table('information_schema.TABLES')
             ->where('TABLE_SCHEMA', DB::getDatabaseName())
-            ->where('TABLE_NAME', 'inventory_transfers')
+            ->where('TABLE_NAME', 'procurement_requests')
             ->value('AUTO_INCREMENT');
             
         $reference_no = sprintf(
@@ -174,6 +174,7 @@ public function store(Request $request)
             'reference_no' => 'required|string',
             'requested_datetime' => 'required|date',
             'requested_by' => 'required|exists:users,id',
+            'requesting_branch_id' => 'required|exists:branches,id',
             'type' => 'required|string',
             'subtype' => 'nullable|string',
             'origin' => 'required|string',
@@ -184,7 +185,7 @@ public function store(Request $request)
         $prf = ProcurementRequest::create([
             'reference_no' => $data['reference_no'],
             'requested_datetime' => $data['requested_datetime'],
-            'requesting_branch_id' => current_branch_id(),
+            'requesting_branch_id' => $data['requesting_branch_id'],
             'requested_by' => $data['requested_by'],
             'department_id' => optional(
                                     auth()->user()->employeeWorkInformations()->latest()->first()
