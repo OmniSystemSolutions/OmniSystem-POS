@@ -52,6 +52,7 @@ class ComponentController extends Controller
             ->where('components.status', $status)
             ->with(['category', 'subcategory', 'unit']);
 
+
         $query->when($search, function ($query) use ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('components.name', 'like', "%{$search}%")

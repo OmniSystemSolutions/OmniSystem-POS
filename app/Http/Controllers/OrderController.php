@@ -18,6 +18,7 @@ use App\Models\CashAudit;
 use App\Models\OrderDetail;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
+use App\Models\FundTransfer;
 
 class OrderController extends Controller
 {
@@ -130,11 +131,67 @@ class OrderController extends Controller
 
     public function index(Request $request)
     {
+<<<<<<< Updated upstream
         $orders = collect();
         return view('orders.index', compact('orders'));
+=======
+        // Default to 'serving' tab
+        $status = $request->query('status', 'serving');
+
+        // Allow only specific statuses
+        $allowedStatuses = ['serving', 'billout', 'payments'];
+        if (!in_array($status, $allowedStatuses)) {
+            $status = 'serving';
+        }
+
+        // Get current branch (GLOBAL HELPER)
+        $currentBranchId = current_branch_id();
+
+        // Fetch orders filtered by status
+        $orders = Order::with([
+                'details' => function ($query) {
+                    $query->where('status', '!=', 'walked');
+                },
+                'details.product',
+                'details.component',
+                'user',
+                'paymentDetails.payment',
+                'cashier',
+                'discountEntries',
+                'reservation',          // ← load linked reservation so blade can show badge
+            ])
+            ->where('branch_id', $currentBranchId)
+            ->when($status === 'serving', function ($q) {
+                // ✅ FIX: wrap in a grouped where so branch_id filter is NOT bypassed
+                $q->where(function ($inner) {
+                    $inner->where('status', 'serving')
+                          ->orWhere('status', 'served');
+                });
+                })
+            ->when($status === 'billout',   fn($q) => $q->where('status', 'billout'))
+            ->when($status === 'payments',  fn($q) => $q->where('status', 'payments'))
+            ->orderByDesc('created_at')
+            ->get();
+
+        // Load active discounts
+        $discounts = Discount::where('status', 'active')->orderBy('name')->get();
+
+        // Load payment methods and cash equivalents for Payment modal
+        $paymentMethods  = Payment::where('status', 'active')->orderBy('name')->get();
+        $cashEquivalents = CashEquivalent::where('status', 'active')->orderBy('name')->get();
+
+
+        // Current branch info
+        $branch = Branch::find($currentBranchId);
+
+        return view('orders.index', compact(
+            'orders', 'discounts', 'status',
+            'paymentMethods', 'cashEquivalents', 'branch'
+        ));
+>>>>>>> Stashed changes
     }
 
-   public function create()
+    public function create()
     {
         // ✅ Fetch categories with subcategories (include all products, filter components)
         $categories = Category::with([
@@ -227,168 +284,165 @@ class OrderController extends Controller
     }
 
     public function store(Request $request)
-{
+    {
 
-    $validated = $request->validate([
-        'user_id' => 'required|exists:users,id',
-        'table_no' => 'required|integer|min:1',
-        'number_pax' => 'required|integer|min:1',
-        'status' => 'required|in:serving,billout,payments,closed,cancelled',
-        'order_details' => 'required|array|min:1',
-        'order_type' => 'required|string|in:Dine-In,Take-Out,Delivery',
-        'gross_amount' => 'required|numeric|min:0',
+        $validated = $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'table_no' => 'required|integer|min:1',
+            'number_pax' => 'required|integer|min:1',
+            'status' => 'required|in:serving,billout,payments,closed,cancelled',
+            'order_details' => 'required|array|min:1',
+            'order_type' => 'required|string|in:Dine-In,Take-Out,Delivery',
+            'gross_amount' => 'required|numeric|min:0',
 
-        // allow either product_id OR component_id
-        'order_details.*.product_id'   => 'nullable|exists:products,id',
-        'order_details.*.component_id' => 'nullable|exists:components,id',
+            // allow either product_id OR component_id
+            'order_details.*.product_id'   => 'nullable|exists:products,id',
+            'order_details.*.component_id' => 'nullable|exists:components,id',
 
-        'order_details.*.quantity' => 'required|integer|min:1',
-        'order_details.*.price'    => 'required|numeric|min:0',
-        'order_details.*.discount' => 'nullable|numeric|min:0',
-        'order_details.*.notes' => 'nullable|string|max:255',
+            'order_details.*.quantity' => 'required|integer|min:1',
+            'order_details.*.price'    => 'required|numeric|min:0',
+            'order_details.*.discount' => 'nullable|numeric|min:0',
+            'order_details.*.notes' => 'nullable|string|max:255',
 
-         // ✅ validation for discount entries
-        'discount_entries' => 'nullable|array',
-        'discount_entries.*.discount_id' => 'required|exists:discounts,id',
-        'discount_entries.*.person_name' => 'nullable|string|max:255',
-        'discount_entries.*.person_id_number' => 'nullable|string|max:100',
-        'discount_entries.*.quantity' => 'required|integer|min:1',
-    ]);
+            // ✅ validation for discount entries
+            'discount_entries' => 'nullable|array',
+            'discount_entries.*.discount_id' => 'required|exists:discounts,id',
+            'discount_entries.*.person_name' => 'nullable|string|max:255',
+            'discount_entries.*.person_id_number' => 'nullable|string|max:100',
+            'discount_entries.*.quantity' => 'required|integer|min:1',
+        ]);
 
-    // ✅ Extra validation: must have at least one of product_id or component_id
-    foreach ($validated['order_details'] as $detail) {
-        if (empty($detail['product_id']) && empty($detail['component_id'])) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Each order item must have either a product_id or component_id.'
-            ], 422);
+        // ✅ Extra validation: must have at least one of product_id or component_id
+        foreach ($validated['order_details'] as $detail) {
+            if (empty($detail['product_id']) && empty($detail['component_id'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Each order item must have either a product_id or component_id.'
+                ], 422);
+            }
         }
-    }
 
-    $branchId = $validated['branch_id'] ?? current_branch_id();
+        $branchId = $validated['branch_id'] ?? current_branch_id();
 
-    // Create the order
-    $order = Order::create([
-        'user_id'   => $validated['user_id'],
-        'branch_id' => $branchId,
-        'table_no'  => $validated['table_no'],
-        'number_pax'=> $validated['number_pax'],
-        'status'    => $validated['status'],
-        'time_submitted' => $request->input('time_submitted'),
-        'order_type' => $validated['order_type'],
-        'gross_amount'   => $validated['gross_amount'],
-        'cashier_id' => auth()->user()->id,
-    ]);
+        // Create the order
+        $order = Order::create([
+            'user_id'   => $validated['user_id'],
+            'branch_id' => $branchId,
+            'table_no'  => $validated['table_no'],
+            'number_pax' => $validated['number_pax'],
+            'status'    => $validated['status'],
+            'time_submitted' => $request->input('time_submitted'),
+            'order_type' => $validated['order_type'],
+            'gross_amount'   => $validated['gross_amount'],
+            'cashier_id' => auth()->user()->id,
+        ]);
 
-    // Attach order details
-    foreach ($validated['order_details'] as $detail) {
-        $order->details()->create([
-            'product_id'   => $detail['product_id']   ?? null,
-            'component_id' => $detail['component_id'] ?? null,
-            'quantity'     => $detail['quantity'],
-            'price'        => $detail['price'],
-            'discount'     => $detail['discount'] ?? 0,
-            'notes'        => $detail['notes'] ?? null,
-            'status'       => 'serving', // 👈 default here
+        // Attach order details
+        foreach ($validated['order_details'] as $detail) {
+            $order->details()->create([
+                'product_id'   => $detail['product_id']   ?? null,
+                'component_id' => $detail['component_id'] ?? null,
+                'quantity'     => $detail['quantity'],
+                'price'        => $detail['price'],
+                'discount'     => $detail['discount'] ?? 0,
+                'notes'        => $detail['notes'] ?? null,
+                'status'       => 'serving', // 👈 default here
+            ]);
+        }
+
+        // ✅ Attach discount entries (if any)
+        if (!empty($validated['discount_entries'])) {
+            foreach ($validated['discount_entries'] as $entry) {
+                $order->discountEntries()->create([
+                    'discount_id'     => $entry['discount_id'],
+                    'person_name'     => $entry['person_name'] ?? null,
+                    'person_id_number' => $entry['person_id_number'] ?? null,
+                    'quantity'        => $entry['quantity'],
+                ]);
+            }
+        }
+
+        // ✅ Attach discount entries (if any)
+        if (!empty($validated['discount_entries'])) {
+            foreach ($validated['discount_entries'] as $entry) {
+                $order->discountEntries()->create([
+                    'discount_id'     => $entry['discount_id'],
+                    'person_name'     => $entry['person_name'] ?? null,
+                    'person_id_number' => $entry['person_id_number'] ?? null,
+                    'quantity'        => $entry['quantity'],
+                ]);
+            }
+        }
+
+        return response()->json([
+            'success'  => true,
+            'message'  => 'Order created successfully!',
+            'redirect' => route('orders.index')
         ]);
     }
 
-    // ✅ Attach discount entries (if any)
-    if (!empty($validated['discount_entries'])) {
-        foreach ($validated['discount_entries'] as $entry) {
-            $order->discountEntries()->create([
-                'discount_id'     => $entry['discount_id'],
-                'person_name'     => $entry['person_name'] ?? null,
-                'person_id_number'=> $entry['person_id_number'] ?? null,
-                'quantity'        => $entry['quantity'],
-            ]);
-        }
-    }
-
-    // ✅ Attach discount entries (if any)
-    if (!empty($validated['discount_entries'])) {
-        foreach ($validated['discount_entries'] as $entry) {
-            $order->discountEntries()->create([
-                'discount_id'     => $entry['discount_id'],
-                'person_name'     => $entry['person_name'] ?? null,
-                'person_id_number'=> $entry['person_id_number'] ?? null,
-                'quantity'        => $entry['quantity'],
-            ]);
-        }
-    }
-
-    return response()->json([
-        'success'  => true,
-        'message'  => 'Order created successfully!',
-        'redirect' => route('orders.index')
-    ]);
-    }
-
     public function billout(Request $request, $orderId)
-{
-    
-    $order = Order::findOrFail($orderId);
+    {
 
-    $validated = $request->validate([
-        'grossCharge' => 'nullable|numeric|min:0',
-        'srPwdBill' => 'nullable|numeric|min:0',
-        'regBill' => 'nullable|numeric|min:0',
-        'discount20' => 'nullable|numeric|min:0',
-        'netBill' => 'nullable|numeric|min:0',
-        'vatable' => 'nullable|numeric|min:0',
-        'vat12' => 'nullable|numeric|min:0',
-        'totalCharge' => 'required|numeric|min:0',
-        'otherDiscount' => 'nullable|numeric|min:0',
-        'vat_exempt_12' => 'nullable|numeric|min:0',
-        'charges_description' => 'nullable|string|max:500',
-        'persons' => 'nullable|json'
-    ]);
+        $order = Order::findOrFail($orderId);
 
-    // dd($validated);
+        $validated = $request->validate([
+            'grossCharge' => 'nullable|numeric|min:0',
+            'srPwdBill' => 'nullable|numeric|min:0',
+            'regBill' => 'nullable|numeric|min:0',
+            'discount20' => 'nullable|numeric|min:0',
+            'netBill' => 'nullable|numeric|min:0',
+            'vatable' => 'nullable|numeric|min:0',
+            'vat12' => 'nullable|numeric|min:0',
+            'totalCharge' => 'required|numeric|min:0',
+            'otherDiscount' => 'nullable|numeric|min:0',
+            'vat_exempt_12' => 'nullable|numeric|min:0',
+            'charges_description' => 'nullable|string|max:500',
+            'persons' => 'nullable|json'
+        ]);
 
-    $order->update([
-        'gross_amount' => $validated['grossCharge'] ?? 0,
-        'sr_pwd_bill' => $validated['srPwdBill'] ?? 0,
-        'sr_pwd_discount' => $validated['discount20'] ?? 0,
-        'other_discounts' => $validated['otherDiscount'] ?? 0,
-        'net_amount' => $validated['netBill'] ?? 0,
-        'regular_bill' => $validated['regBill'] ?? 0,
-        'vatable' => $validated['vatable'] ?? 0,
-        'vat_12' => $validated['vat12'] ?? 0,
-        'vat_exempt_12' => $validated['vat_exempt_12'] ?? 0,
-        'total_charge' => $validated['totalCharge'],
-        'charges_description' => $validated['charges_description'] ?? null,
-        'status' => 'billout',
-        'cashier_id' => auth()->id(),
-    ]);
+        // dd($validated);
 
-    if (!empty($validated['persons'])) {
+        $order->update([
+            'gross_amount' => $validated['grossCharge'] ?? 0,
+            'sr_pwd_bill' => $validated['srPwdBill'] ?? 0,
+            'sr_pwd_discount' => $validated['discount20'] ?? 0,
+            'other_discounts' => $validated['otherDiscount'] ?? 0,
+            'net_amount' => $validated['netBill'] ?? 0,
+            'regular_bill' => $validated['regBill'] ?? 0,
+            'vatable' => $validated['vatable'] ?? 0,
+            'vat_12' => $validated['vat12'] ?? 0,
+            'vat_exempt_12' => $validated['vat_exempt_12'] ?? 0,
+            'total_charge' => $validated['totalCharge'],
+            'charges_description' => $validated['charges_description'] ?? null,
+            'status' => 'billout',
+            'cashier_id' => auth()->id(),
+        ]);
 
-        $persons = json_decode($validated['persons'], true);
+        if (!empty($validated['persons'])) {
 
-        foreach ($persons as $person) {
+            $persons = json_decode($validated['persons'], true);
 
-            if (!empty($person['discount_id']) && !empty($person['name'])) {
+            foreach ($persons as $person) {
 
-                DiscountEntry::create([
-                    'order_id' => $order->id,
-                    'discount_id' => $person['discount_id'],
-                    'person_name' => $person['name'],
-                    'person_id_number' => $person['id_number'] ?? null
-                ]);
+                if (!empty($person['discount_id']) && !empty($person['name'])) {
 
+                    DiscountEntry::create([
+                        'order_id' => $order->id,
+                        'discount_id' => $person['discount_id'],
+                        'person_name' => $person['name'],
+                        'person_id_number' => $person['id_number'] ?? null
+                    ]);
+                }
             }
-
         }
 
+        return response()->json([
+            'success' => true,
+            'order' => $order->fresh(['details', 'discountEntries', 'paymentDetails'])
+        ]);
     }
 
-    return response()->json([
-        'success' => true,
-        'order' => $order->fresh(['details','discountEntries','paymentDetails'])
-    ]);
-}
-    
     public function edit($id)
     {
         // ✅ Fetch the order with its relations
@@ -458,20 +512,20 @@ class OrderController extends Controller
         $allItems = $productsTransformed->merge($componentsTransformed)->values();
 
         $orderDetails = $order->details->map(function ($detail) {
-    return [
-        'order_detail_id' => $detail->id, // 🔥 THIS IS THE IMPORTANT PART
-        'product_id'      => $detail->product_id,
-        'component_id'    => $detail->component_id,
-        'id'              => $detail->product_id ?? $detail->component_id,
-        'type'            => $detail->product_id ? 'product' : 'component',
-        'sku'             => $detail->product->code ?? $detail->component->code,
-        'name'            => $detail->product->name ?? $detail->component->name,
-        'qty'             => $detail->quantity,
-        'price'           => $detail->price,
-        'status'          => $detail->status,
-        'notes'           => $detail->notes,
-    ];
-});
+            return [
+                'order_detail_id' => $detail->id, // 🔥 THIS IS THE IMPORTANT PART
+                'product_id'      => $detail->product_id,
+                'component_id'    => $detail->component_id,
+                'id'              => $detail->product_id ?? $detail->component_id,
+                'type'            => $detail->product_id ? 'product' : 'component',
+                'sku'             => $detail->product->code ?? $detail->component->code,
+                'name'            => $detail->product->name ?? $detail->component->name,
+                'qty'             => $detail->quantity,
+                'price'           => $detail->price,
+                'status'          => $detail->status,
+                'notes'           => $detail->notes,
+            ];
+        });
 
         // ✅ Return same view as create
         return view('orders.form', [
@@ -513,48 +567,47 @@ class OrderController extends Controller
 
         $existingIds = $order->details()->pluck('id')->toArray();
 
-$submittedIds = collect($validated['order_details'])
-    ->pluck('detail_id')
-    ->filter()
-    ->toArray();
+        $submittedIds = collect($validated['order_details'])
+            ->pluck('detail_id')
+            ->filter()
+            ->toArray();
 
-$idsToDelete = array_diff($existingIds, $submittedIds);
+        $idsToDelete = array_diff($existingIds, $submittedIds);
 
-$order->details()
-    ->whereIn('id', $idsToDelete)
-    ->delete();
+        $order->details()
+            ->whereIn('id', $idsToDelete)
+            ->delete();
 
-foreach ($validated['order_details'] as $detail) {
+        foreach ($validated['order_details'] as $detail) {
 
-    if (!empty($detail['detail_id'])) {
+            if (!empty($detail['detail_id'])) {
 
-        $existingDetail = $order->details()->find($detail['detail_id']);
+                $existingDetail = $order->details()->find($detail['detail_id']);
 
-        if ($existingDetail) {
-            $existingDetail->fill([
-                'quantity' => $detail['quantity'],
-                'price' => $detail['price'],
-                'status' => $detail['status'],
-                'notes' => $detail['notes'] ?? null,
-            ]);
+                if ($existingDetail) {
+                    $existingDetail->fill([
+                        'quantity' => $detail['quantity'],
+                        'price' => $detail['price'],
+                        'status' => $detail['status'],
+                        'notes' => $detail['notes'] ?? null,
+                    ]);
 
-            if ($existingDetail->isDirty()) {
-                $existingDetail->save();
+                    if ($existingDetail->isDirty()) {
+                        $existingDetail->save();
+                    }
+                }
+            } else {
+
+                $order->details()->create([
+                    'product_id' => $detail['product_id'] ?? null,
+                    'component_id' => $detail['component_id'] ?? null,
+                    'quantity' => $detail['quantity'],
+                    'price' => $detail['price'],
+                    'status' => $detail['status'],
+                    'notes' => $detail['notes'] ?? null,
+                ]);
             }
         }
-
-    } else {
-
-        $order->details()->create([
-            'product_id' => $detail['product_id'] ?? null,
-            'component_id' => $detail['component_id'] ?? null,
-            'quantity' => $detail['quantity'],
-            'price' => $detail['price'],
-            'status' => $detail['status'],
-            'notes' => $detail['notes'] ?? null,
-        ]);
-    }
-}
 
         return response()->json([
             'success' => true,
@@ -562,16 +615,16 @@ foreach ($validated['order_details'] as $detail) {
             'redirect' => route('orders.index')
         ]);
     }
-public function show($id)
-{
-    $order = Order::with([
-        'details.product',
-        'details.component',
-        'user'
-    ])->findOrFail($id);
+    public function show($id)
+    {
+        $order = Order::with([
+            'details.product',
+            'details.component',
+            'user'
+        ])->findOrFail($id);
 
-    return response()->json($order);
-}
+        return response()->json($order);
+    }
 
     public function payment(Request $request, $orderId)
     {
@@ -665,7 +718,6 @@ public function show($id)
             'total_paid' => $totalPaid,
             'change' => $changeAmount,
         ]);
-
     }
 
     public function getAllStatusPayments(Request $request)
@@ -696,7 +748,7 @@ public function show($id)
         $paymentDetails = PaymentDetail::with(['cashEquivalent', 'payment'])
             ->whereHas('order', function ($q) use ($cashierId, $branchId) {
                 $q->where('cashier_id', $cashierId)
-                  ->where('branch_id', $branchId);
+                    ->where('branch_id', $branchId);
             })
             ->whereBetween('created_at', [$start, $end])
             ->get();
@@ -705,8 +757,8 @@ public function show($id)
         $totals = $paymentDetails->groupBy(function ($pd) {
             // 1. Try cash equivalent (GCash, Maya, Card, etc.)
             // 2. Fallback to payment type (Cash, Cash on Hand, etc.)
-            $name = $pd->payment?->name 
-                ?? $pd->cashEquivalent?->name 
+            $name = $pd->payment?->name
+                ?? $pd->cashEquivalent?->name
                 ?? 'Unknown';
 
             return strtolower(trim($name));
@@ -718,7 +770,7 @@ public function show($id)
                 // Only subtract change for cash-based payments
                 $isCash = str_contains($key, 'cash');
 
-                return $isCash 
+                return $isCash
                     ? ($amountPaid - $changeAmount)
                     : $amountPaid;
             });
@@ -743,77 +795,76 @@ public function show($id)
     }
 
 
-//    public function checkUnpaidOrders(Request $request)
-// {
-//     // Get the currently logged-in cashier
-//     $cashierId = Auth::id();
+    //    public function checkUnpaidOrders(Request $request)
+    // {
+    //     // Get the currently logged-in cashier
+    //     $cashierId = Auth::id();
 
-//     // Find the active (open) cash audit session for this cashier
-//     $session = CashAudit::where('cashier_id', $cashierId)
-//         ->where('status', 'open')
-//         ->first();
+    //     // Find the active (open) cash audit session for this cashier
+    //     $session = CashAudit::where('cashier_id', $cashierId)
+    //         ->where('status', 'open')
+    //         ->first();
 
-//     if (!$session) {
-//         return response()->json([
-//             'has_unpaid_orders' => false,
-//             'message' => 'No active POS session found.'
-//         ]);
-//     }
+    //     if (!$session) {
+    //         return response()->json([
+    //             'has_unpaid_orders' => false,
+    //             'message' => 'No active POS session found.'
+    //         ]);
+    //     }
 
-//     // Define the session timeframe
-//     $sessionStart = Carbon::parse($session->created_at);
-//     $sessionEnd = $session->closed_at
-//         ? Carbon::parse($session->closed_at)
-//         : Carbon::now();
+    //     // Define the session timeframe
+    //     $sessionStart = Carbon::parse($session->created_at);
+    //     $sessionEnd = $session->closed_at
+    //         ? Carbon::parse($session->closed_at)
+    //         : Carbon::now();
 
-//     // ✅ Check unpaid orders ONLY for the current branch
-//     $hasUnpaidOrders = Order::where('branch_id', current_branch_id())
-//         ->whereBetween('created_at', [$sessionStart, $sessionEnd])
-//         ->where('status', '!=', 'payments')
-//         ->exists();
+    //     // ✅ Check unpaid orders ONLY for the current branch
+    //     $hasUnpaidOrders = Order::where('branch_id', current_branch_id())
+    //         ->whereBetween('created_at', [$sessionStart, $sessionEnd])
+    //         ->where('status', '!=', 'payments')
+    //         ->exists();
 
-//     return response()->json([
-//         'has_unpaid_orders' => $hasUnpaidOrders,
-//         'session_start' => $sessionStart->toDateTimeString(),
-//         'session_end' => $sessionEnd->toDateTimeString(),
-//     ]);
-// }
+    //     return response()->json([
+    //         'has_unpaid_orders' => $hasUnpaidOrders,
+    //         'session_start' => $sessionStart->toDateTimeString(),
+    //         'session_end' => $sessionEnd->toDateTimeString(),
+    //     ]);
+    // }
 
-public function checkUnpaidOrders(Request $request)
-{
-    $branchId = current_branch_id();
+    public function checkUnpaidOrders(Request $request)
+    {
+        $branchId = current_branch_id();
 
-   // ✅ Check unpaid orders
-$hasUnpaidOrders = Order::where('branch_id', $branchId)
-    ->where('status', '!=', 'payments')
-    ->exists();
+        // ✅ Check unpaid orders
+        $hasUnpaidOrders = Order::where('branch_id', $branchId)
+            ->where('status', '!=', 'payments')
+            ->exists();
 
-// ✅ Check unserved products
-$hasUnservedProducts = OrderDetail::whereHas('order', function ($q) use ($branchId) {
-        $q->where('branch_id', $branchId);
-    })
-    ->where('status', 'serving') // FIXED
-    ->exists();
+        // ✅ Check unserved products
+        $hasUnservedProducts = OrderDetail::whereHas('order', function ($q) use ($branchId) {
+            $q->where('branch_id', $branchId);
+        })
+            ->where('status', 'serving') // FIXED
+            ->exists();
 
 
-    return response()->json([
-        'has_unpaid_orders'     => $hasUnpaidOrders,
-        'has_unserved_products' => $hasUnservedProducts,
-    ]);
-}
+        return response()->json([
+            'has_unpaid_orders'     => $hasUnpaidOrders,
+            'has_unserved_products' => $hasUnservedProducts,
+        ]);
+    }
 
-public function showNote($orderDetailId)
-{
-    $detail = OrderDetail::findOrFail($orderDetailId);
-    return response()->json(['notes' => $detail->notes]);
-}
+    public function showNote($orderDetailId)
+    {
+        $detail = OrderDetail::findOrFail($orderDetailId);
+        return response()->json(['notes' => $detail->notes]);
+    }
 
-public function saveNote(Request $request, $orderDetailId)
-{
-    $detail = OrderDetail::findOrFail($orderDetailId);
-    $validated = $request->validate(['notes' => 'nullable|string|max:255']);
-    $detail->update(['notes' => $validated['notes']]);
-    return response()->json(['success' => true]);
-}
-
+    public function saveNote(Request $request, $orderDetailId)
+    {
+        $detail = OrderDetail::findOrFail($orderDetailId);
+        $validated = $request->validate(['notes' => 'nullable|string|max:255']);
+        $detail->update(['notes' => $validated['notes']]);
+        return response()->json(['success' => true]);
+    }
 }

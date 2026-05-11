@@ -14,38 +14,47 @@ class FundTransferController extends Controller
 {
     public function index(Request $request)
     {
+        // Fund Transfer Status
         $status = $request->get('status', 'pending');
-        
-        // Fund transfers query
-        $query = FundTransfer::with([
-            'createdBy', 
-            'methodOfTransfer', 
-            'fromCashEquivalent', 
+
+        // FUND TRANSFERS QUERY
+        $fundTransfers = FundTransfer::with([
+            'createdBy',
+            'methodOfTransfer',
+            'fromCashEquivalent',
             'toCashEquivalent'
-        ])->orderBy('created_at', 'desc');
+        ])
+            ->when($status, function ($query) use ($status) {
+                $query->where('status', $status);
+            })
+            ->orderByDesc('created_at')
+            ->paginate(25)
+            ->withQueryString();
 
-        if ($status) {
-            $query->where('status', $status);
-        }
+        // CASH EQUIVALENTS (FIXED)
+        $cashEquivalents = CashEquivalent::with('accountable:id,name')
+            ->where('status', 'active') // IMPORTANT FIX
+            ->orderBy('name')
+            ->get();
 
-        $fundTransfers = $query->paginate(25);
-
-        // Load cash equivalents and payments for the Add & Edit modals
-        $cashEquivalents = CashEquivalent::all();
+        // OTHER DATA
         $payments = Payment::all();
-        $users = User::where('status', 'active')->get();
+
+        $users = User::where('status', 'active')
+            ->select('id', 'name')
+            ->get();
 
         $branches = Branch::all();
         $currentBranchId = current_branch_id();
 
         return view('fund-transfers.index', compact(
-            'fundTransfers', 
-            'status', 
-            'cashEquivalents', 
-            'payments', 
+            'fundTransfers',
+            'status',
+            'cashEquivalents',
+            'payments',
             'users',
-            'branches', 
-            'currentBranchId',
+            'branches',
+            'currentBranchId'
         ));
     }
 

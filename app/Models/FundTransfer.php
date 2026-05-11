@@ -23,11 +23,11 @@ class FundTransfer extends Model
         'approved_by',
         'approved_datetime',
         'archived_by',
-        'archived_dateime'
+        'archived_datetime' // ✅ fixed
     ];
-    
+
     protected $casts = [
-    'attachments' => 'array',
+        'attachments' => 'array',
     ];
 
     // Relationships
@@ -35,7 +35,6 @@ class FundTransfer extends Model
     {
         return $this->belongsTo(User::class, 'created_by');
     }
-
 
     public function methodOfTransfer()
     {
@@ -57,7 +56,7 @@ class FundTransfer extends Model
         return $this->belongsTo(Branch::class);
     }
 
-     // Add relationships to users
+    // Add relationships to users
     public function approvedByUser()
     {
         return $this->belongsTo(User::class, 'approved_by');

@@ -38,7 +38,11 @@ class InventoryAuditController extends Controller
             $query->where('type', strtolower($type));
         }
 
-        $audits = $query->orderBy('entry_datetime', 'desc')->get();
+        $audits = $query->with('auditor')
+            ->orderBy('entry_datetime', 'desc')
+            ->get();    
+
+
 
         // Get all years in table (distinct) for dropdown
         $yearOptions = InventoryAudit::selectRaw('DISTINCT YEAR(entry_datetime) as year')
@@ -88,32 +92,32 @@ class InventoryAuditController extends Controller
     }
 
     public function fetchItems(Request $request)
-{
-    $type = strtolower($request->input('type', 'products'));
+    {
+        $type = strtolower($request->input('type', 'products'));
 
-    switch ($type) {
-        case 'components':
-            $items = Component::with(['category:id,name', 'subcategory:id,name'])
-                ->select('id', 'code', 'name', 'status', 'category_id', 'subcategory_id', 'onhand', 'unit')
-                ->get();
-            break;
+        switch ($type) {
+            case 'components':
+                $items = Component::with(['category:id,name', 'subcategory:id,name'])
+                    ->select('id', 'code', 'name', 'status', 'category_id', 'subcategory_id', 'onhand', 'unit_id')
+                    ->get();
+                break;
 
-        case 'products':
-            $items = Product::with(['category:id,name', 'subcategory:id,name'])
-                ->select('id', 'code', 'name', 'status', 'category_id', 'subcategory_id')
-                ->get();
-            break;
+            case 'products':
+                $items = Product::with(['category:id,name', 'subcategory:id,name'])
+                    ->select('id', 'code', 'name', 'status', 'category_id', 'subcategory_id', 'unit_id')
+                    ->get();
+                break;
 
-        case 'consumables':
-        case 'assets':
-        default:
-            // Just return an empty result for now
-            $items = collect();
-            break;
+            case 'consumables':
+            case 'assets':
+            default:
+                // Just return an empty result for now
+                $items = collect();
+                break;
+        }
+
+        return response()->json(['items' => $items]);
     }
-
-    return response()->json(['items' => $items]);
-}
 
 
 
@@ -126,8 +130,8 @@ class InventoryAuditController extends Controller
             'category:id,name',
             'subcategory:id,name'
         ])
-        ->select('id', 'code', 'name', 'status', 'category_id', 'subcategory_id')
-        ->get();
+            ->select('id', 'code', 'name', 'status', 'category_id', 'subcategory_id')
+            ->get();
 
         $mode = 'create';
         $audit = null; // <-- add this
@@ -136,7 +140,7 @@ class InventoryAuditController extends Controller
     }
 
 
-   public function store(Request $request)
+    public function store(Request $request)
     {
         $type = strtolower($request->input('type'));
 
@@ -198,12 +202,12 @@ class InventoryAuditController extends Controller
     public function edit($id)
     {
         $audit = InventoryAudit::with('items')->findOrFail($id);
-        $users = User::all(['id','name']);
-        $products = Product::with(['category:id,name','subcategory:id,name'])
-                    ->select('id','code','name','status','category_id','subcategory_id')
-                    ->get();
+        $users = User::all(['id', 'name']);
+        $products = Product::with(['category:id,name', 'subcategory:id,name'])
+            ->select('id', 'code', 'name', 'status', 'category_id', 'subcategory_id')
+            ->get();
         $mode = 'edit';
-        return view('inventory_audit.form', compact('users','products','audit','mode'));
+        return view('inventory_audit.form', compact('users', 'products', 'audit', 'mode'));
     }
 
     // Handle update
@@ -223,15 +227,15 @@ class InventoryAuditController extends Controller
             'items.*.quantity' => 'required|numeric|min:0',
         ];
 
-        if($type === 'products'){
+        if ($type === 'products') {
             $rules['items.*.product_id'] = 'required|exists:products,id';
-        } elseif($type === 'components'){
+        } elseif ($type === 'components') {
             $rules['items.*.component_id'] = 'required|exists:components,id';
         }
 
         $validated = $request->validate($rules);
 
-        DB::transaction(function() use ($audit, $validated, $type) {
+        DB::transaction(function () use ($audit, $validated, $type) {
             // Update main audit
             $audit->update([
                 'reference_no' => $validated['reference_no'],
@@ -244,7 +248,7 @@ class InventoryAuditController extends Controller
             // Replace items
             $audit->items()->delete();
 
-            foreach($validated['items'] as $item){
+            foreach ($validated['items'] as $item) {
                 // Prefer component onhand when available. Leave null otherwise.
                 $prevQuantity = null;
                 if (!empty($item['component_id'])) {
@@ -261,7 +265,7 @@ class InventoryAuditController extends Controller
             }
         });
 
-        return response()->json(['message'=>'Audit updated successfully']);
+        return response()->json(['message' => 'Audit updated successfully']);
     }
 
     public function show($id)
@@ -305,7 +309,7 @@ class InventoryAuditController extends Controller
         // Use a server-rendered Blade view tailored for PDFs
         $pdf = PDF::loadView('inventory_audit.report_pdf', compact('audit'));
 
-        return $pdf->download('audit-report-'.$audit->id.'.pdf');
+        return $pdf->download('audit-report-' . $audit->id . '.pdf');
     }
 
     /**

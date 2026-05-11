@@ -125,6 +125,16 @@ class PosSessionController extends Controller
             ->where('status', 'open')
             ->first();
 
+
+        $startingFund = DB::table('fund_transfers as ft')
+            ->leftJoin('cash_equivalents as ce', 'ft.to_cash_equivalent_id', '=', 'ce.id')
+            ->leftJoin('users as u', 'u.id', '=', 'ce.accountable_id')
+            ->where('ft.status', 'approved')
+            ->where('u.id', $cashierId) // important
+            ->latest('ft.id')
+            ->value('ft.amount');
+
+
         if ($conflictSession) {
             return response()->json([
                 'has_open_session' => false,
@@ -140,6 +150,7 @@ class PosSessionController extends Controller
             'has_open_session' => false,
             'conflict'         => false,
             'transaction_datetime' => null,
+            'starting_fund' => $startingFund ?? 0,
             'message'          => 'No active session.',
         ]);
     }
@@ -192,7 +203,7 @@ class PosSessionController extends Controller
                 ->get();
 
             // Inside closeSession() — after $paymentDetails query
-           $breakdown = [];
+            $breakdown = [];
 
             foreach ($paymentDetails as $pd) {
                 $amountPaid = $pd->amount_paid ?? 0;
@@ -273,7 +284,7 @@ class PosSessionController extends Controller
             $totalSales = collect($breakdown)->sum(fn($item) => is_array($item) ? ($item['total'] ?? 0) : $item);
 
             $reference_no = sprintf('TRN-%02d-%05d', $branchId, $session->id);
-            
+
             // Save
             $session->update([
                 'transaction_datetime' => $closeTime,
@@ -311,7 +322,6 @@ class PosSessionController extends Controller
                 'message' => 'Session closed successfully!',
                 'reference_no' => $session->reference_no
             ]);
-
         } catch (\Exception $e) {
             DB::rollBack();
             \Log::error('Close Session Failed: ' . $e->getMessage(), $request->all());
@@ -325,8 +335,7 @@ class PosSessionController extends Controller
 
     private function calculateTotalCashCounted(array $data): float
     {
-        return
-            ($data['d_1000'] ?? 0) * 1000 +
+        return ($data['d_1000'] ?? 0) * 1000 +
             ($data['d_500']  ?? 0) * 500  +
             ($data['d_200']  ?? 0) * 200  +
             ($data['d_100']  ?? 0) * 100  +

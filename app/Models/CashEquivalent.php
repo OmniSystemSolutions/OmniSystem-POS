@@ -26,6 +26,7 @@ class CashEquivalent extends Model
     {
         return $this->belongsTo(User::class, 'created_by');
     }
+
     public function accountable()
     {
         return $this->belongsTo(User::class, 'accountable_id');

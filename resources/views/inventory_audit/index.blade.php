@@ -172,7 +172,9 @@
                                     <th class="vgt-checkbox-col"><input type="checkbox" /></th>
                                     <td class="vgt-left-align text-left">@{{ audit.entry_datetime }}</td>
                                     <td class="vgt-left-align text-left">@{{ audit.audit_datetime }}</td>
-                                    <td class="vgt-left-align text-left">@{{ audit.audited_by }}</td>
+                          <td class="vgt-left-align text-left">
+    @{{ audit.auditor ? audit.auditor.name : '-' }}
+</td>
                                     <td class="vgt-left-align text-left">@{{ audit.reference_no }}</td>
                                     <td class="vgt-left-align text-left">@{{ audit.warehouse }}</td>
                                     <td class="vgt-left-align text-right">

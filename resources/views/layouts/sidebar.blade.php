@@ -6,53 +6,55 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <style>
    .sidebar-left {
-  height: 100vh;           /* Full screen height */
-  overflow: hidden;        /* Let Perfect Scrollbar handle scrolling */
-  position: relative;
-}
+      height: 100vh;
+      /* Full screen height */
+      overflow: hidden;
+      /* Let Perfect Scrollbar handle scrolling */
+      position: relative;
+   }
 
-.sidebar-left .navigation-left {
-  padding: 0;
-  margin: 0;
-  list-style: none;
-}
-/* Sidebar */
-.side-content-wrap {
-  width: 240px;
-  transition: transform 0.3s ease;
-}
+   .sidebar-left .navigation-left {
+      padding: 0;
+      margin: 0;
+      list-style: none;
+   }
 
-/* On small screens, hide by default */
-@media (max-width: 1199px) {
-  .side-content-wrap {
-    transform: translateX(-100%);
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 100%;
-    background: #fff; /* adjust for your theme */
-    z-index: 99;
-  }
+   /* Sidebar */
+   .side-content-wrap {
+      width: 240px;
+      transition: transform 0.3s ease;
+   }
 
-  .side-content-wrap.active {
-    transform: translateX(0);
-  }
+   /* On small screens, hide by default */
+   @media (max-width: 1199px) {
+      .side-content-wrap {
+         transform: translateX(-100%);
+         position: fixed;
+         top: 0;
+         left: 0;
+         height: 100%;
+         background: #fff;
+         /* adjust for your theme */
+         z-index: 99;
+      }
 
-  /* Overlay */
-  .sidebar-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: none;
-    z-index: 1040;
-  }
+      .side-content-wrap.active {
+         transform: translateX(0);
+      }
 
-  .sidebar-overlay.active {
-    display: block;
-  }
-}
+      /* Overlay */
+      .sidebar-overlay {
+         position: fixed;
+         inset: 0;
+         background: rgba(0, 0, 0, 0.5);
+         display: none;
+         z-index: 1040;
+      }
 
-
+      .sidebar-overlay.active {
+         display: block;
+      }
+   }
 </style>
 <div class="side-content-wrap" id="startEndApp">
    <section class="ps-container sidebar-left rtl-ps-none ps scroll open ps--active-y">
@@ -60,67 +62,67 @@
          <ul class="navigation-left">
             @if($user->hasRole('Administrator') || $user->can('view Dashboard'))
             <li data-item="dashboard" data-submenu="true" class="nav-item">
-               <a href="/" class="nav-item-hold"><i class="nav-icon i-Bar-Chart"></i> <span class="nav-text">Dashboard</span></a> 
+               <a href="/" class="nav-item-hold"><i class="nav-icon i-Bar-Chart"></i> <span class="nav-text">Dashboard</span></a>
                <div class="triangle"></div>
             </li>
             @endif
 
-             @if($user->hasRole('Administrator') || $user->can('view POS'))
+            @if($user->hasRole('Administrator') || $user->can('view POS'))
             <li data-item="Sales" data-submenu="true" class="nav-item">
-               <a href="#" class="nav-item-hold"><i class="nav-icon i-Full-Basket"></i> <span class="nav-text">Sales</span></a> 
+               <a href="#" class="nav-item-hold"><i class="nav-icon i-Full-Basket"></i> <span class="nav-text">Sales</span></a>
                <div class="triangle"></div>
             </li>
             @endif
 
             @if($user->hasRole('Administrator') || $user->can('view Inventory'))
             <li data-item="Inventory" data-submenu="true" class="nav-item">
-               <a href="#" class="nav-item-hold"><i class="nav-icon i-Building"></i> <span class="nav-text">Inventory</span></a> 
+               <a href="#" class="nav-item-hold"><i class="nav-icon i-Building"></i> <span class="nav-text">Inventory</span></a>
                <div class="triangle"></div>
             </li>
             @endif
 
             <li data-item="EmployeeProfile" data-submenu="true" class="nav-item" style="display: none;">
-               <a href="#" class="nav-item-hold"><i class="nav-icon i-ID-2"></i> <span class="nav-text">My Profile</span></a> 
+               <a href="#" class="nav-item-hold"><i class="nav-icon i-ID-2"></i> <span class="nav-text">My Profile</span></a>
                <div class="triangle"></div>
             </li>
 
             @if($user->hasRole('Administrator') || $user->can('view People'))
             <li data-item="EmployeeSubordinates" data-submenu="true" class="nav-item" style="display: none;"><a href="#" class="nav-item-hold"><i class="nav-icon i-Business-Mens"></i> <span class="nav-text">My Subordinates</span></a></li>
             <li data-item="People" data-submenu="true" class="nav-item">
-               <a href="#" class="nav-item-hold"><i class="nav-icon i-Business-Mens"></i> <span class="nav-text">People</span></a> 
+               <a href="#" class="nav-item-hold"><i class="nav-icon i-Business-Mens"></i> <span class="nav-text">People</span></a>
                <div class="triangle"></div>
             </li>
             @endif
 
             @if($user->hasRole('Administrator') || $user->can('view Workforce'))
             <li data-item="Workforce" data-submenu="true" class="nav-item">
-               <a href="#" class="nav-item-hold"><i class="nav-icon i-Library"></i> <span class="nav-text">Workforce</span></a> 
+               <a href="#" class="nav-item-hold"><i class="nav-icon i-Library"></i> <span class="nav-text">Workforce</span></a>
                <div class="triangle"></div>
             </li>
             @endif
 
             @if($user->hasRole('Administrator') || $user->can('view Accounting'))
             <li data-item="Accounting" data-submenu="true" class="nav-item">
-               <a href="#" class="nav-item-hold"><i class="nav-icon i-Edit-Map"></i> <span class="nav-text">Accounting</span></a> 
+               <a href="#" class="nav-item-hold"><i class="nav-icon i-Edit-Map"></i> <span class="nav-text">Accounting</span></a>
                <div class="triangle"></div>
             </li>
             @endif
 
             @if($user->hasRole('Administrator') || $user->can('view Reports'))
             <li data-item="reports" data-submenu="true" class="nav-item">
-               <a href="#" class="nav-item-hold"><i class="nav-icon i-Line-Chart"></i> <span class="nav-text">Reports</span></a> 
+               <a href="#" class="nav-item-hold"><i class="nav-icon i-Line-Chart"></i> <span class="nav-text">Reports</span></a>
                <div class="triangle"></div>
             </li>
             @endif
 
             @if($user->hasRole('Administrator') || $user->can('view Settings'))
             <li data-item="settings" data-submenu="true" class="nav-item">
-               <a href="#" class="nav-item-hold"><i class="nav-icon i-Data-Settings"></i> <span class="nav-text">Settings</span></a> 
+               <a href="#" class="nav-item-hold"><i class="nav-icon i-Data-Settings"></i> <span class="nav-text">Settings</span></a>
                <div class="triangle"></div>
             </li>
             @endif
 
-            
+
          </ul>
       </div>
       <div class="ps__rail-x" style="left: 0px; bottom: 0px;">
@@ -134,47 +136,47 @@
       <div>
 
          <ul data-parent="dashboard" class="childNav d-none">
-               <li class="nav-item"><a href="/" class=""><i class="nav-icon i-Bar-Chart"></i> <span class="item-name">Branch</span></a> </li>
-               <li class="nav-item dropdown-sidemenu">
-                  <a href="#">
-                     <i class="nav-icon i-Line-Chart"></i>
-                     <span class="item-name">Global</span>
-                     <i class="dd-arrow i-Arrow-Down"></i>
-                  </a>
-                  <ul class="submenu">
-                     <li class="nav-item">
-                        <a href="#" class="">
-                           <i class="nav-icon i-Library"></i>
-                           <span class="item-name">Workforce</span>
-                        </a>
-                     </li>
-                     <li class="nav-item">
-                        <a href="#" class="">
-                           <i class="nav-icon i-Building"></i>
-                           <span class="item-name">Inventory</span>
-                        </a>
-                     </li>
-                     <li class="nav-item">
-                        <a href="#" class="">
-                           <i class="nav-icon i-Full-Basket"></i>
-                           <span class="item-name">Sales</span>
-                        </a>
-                     </li>
-                     <li class="nav-item">
-                        <a href="#" class="">
-                           <i class="nav-icon i-Edit-Map"></i>
-                           <span class="item-name">Accounting</span>
-                        </a>
-                     </li>
-                     <li class="nav-item">
-                        <a href="#" class="">
-                           <i class="nav-icon i-Business-Mens"></i>
-                           <span class="item-name">People</span>
-                        </a>
-                     </li>
-                  </ul>
-               </li>
-               <li class="nav-item"><a href="#" class=""><i class="nav-icon i-Administrator"></i> <span class="item-name">Log History</span></a> </li>
+            <li class="nav-item"><a href="/" class=""><i class="nav-icon i-Bar-Chart"></i> <span class="item-name">Branch</span></a> </li>
+            <li class="nav-item dropdown-sidemenu">
+               <a href="#">
+                  <i class="nav-icon i-Line-Chart"></i>
+                  <span class="item-name">Global</span>
+                  <i class="dd-arrow i-Arrow-Down"></i>
+               </a>
+               <ul class="submenu">
+                  <li class="nav-item">
+                     <a href="#" class="">
+                        <i class="nav-icon i-Library"></i>
+                        <span class="item-name">Workforce</span>
+                     </a>
+                  </li>
+                  <li class="nav-item">
+                     <a href="#" class="">
+                        <i class="nav-icon i-Building"></i>
+                        <span class="item-name">Inventory</span>
+                     </a>
+                  </li>
+                  <li class="nav-item">
+                     <a href="#" class="">
+                        <i class="nav-icon i-Full-Basket"></i>
+                        <span class="item-name">Sales</span>
+                     </a>
+                  </li>
+                  <li class="nav-item">
+                     <a href="#" class="">
+                        <i class="nav-icon i-Edit-Map"></i>
+                        <span class="item-name">Accounting</span>
+                     </a>
+                  </li>
+                  <li class="nav-item">
+                     <a href="#" class="">
+                        <i class="nav-icon i-Business-Mens"></i>
+                        <span class="item-name">People</span>
+                     </a>
+                  </li>
+               </ul>
+            </li>
+            <li class="nav-item"><a href="#" class=""><i class="nav-icon i-Administrator"></i> <span class="item-name">Log History</span></a> </li>
          </ul>
 
          <ul data-parent="EmployeeProfile" class="childNav d-none">
@@ -204,7 +206,7 @@
             <li class="nav-item"><a href="/app/reports/y-reading" class=""><i class="nav-icon i-Library"></i> <span class="item-name">Workforce</span></a> </li>
             <li class="nav-item dropdown-sidemenu">
                <a href="#">
-                  <i class="nav-icon i-Receipt-3"></i> 
+                  <i class="nav-icon i-Receipt-3"></i>
                   <span class="item-name">Accounting</span>
                   <i class="dd-arrow i-Arrow-Down"></i>
                </a>
@@ -314,18 +316,18 @@
                   <span class="item-name">Start / End of the Day</span>
                </a>
             </li>
-            
+
             <!-- POS link -->
             <li class="nav-item">
-            <a href="/orders" class="posLink">
-               <i class="nav-icon i-Receipt"></i>
-               <span class="item-name">POS</span>
-            </a>
+               <a href="/orders" class="posLink">
+                  <i class="nav-icon i-Receipt"></i>
+                  <span class="item-name">POS</span>
+               </a>
             </li>
             <li class="nav-item"><a href="order-reservations" class=""><i class="nav-icon i-Jeep"></i> <span class="item-name">Orders and Reservations</span></a></li>
             <li class="nav-item">
                <a href="#" class="checkUnpaidTrigger">
-                  <i class="nav-icon i-Hand"></i> 
+                  <i class="nav-icon i-Hand"></i>
                   <span class="item-name">Closing</span>
                </a>
             </li>
@@ -366,18 +368,18 @@
                   </a>
                </li>
                <li class="nav-item"><a href="{{ route('branches.index') }}" class=""><i class="nav-icon i-Location-2"></i> <span class="item-name">Branches</span></a></li>
-               
+
                <li class="nav-item"><a href="/permission" class=""><i class="nav-icon i-Key"></i> <span class="item-name">Permission</span></a></li>
                <li class="nav-item"><a href="/settings/table-layouts" class=""><i class="fas fa-layer-group"></i> <span class="item-name">Table Layouts Settings</span></a></li>
-               
+
                <li class="nav-item dropdown-sidemenu">
-                  <a href="#"><i class="nav-icon i-Gear"></i> <span class="item-name">Kitchen Display Settings</span> <i class="dd-arrow i-Arrow-Down"></i></a> 
+                  <a href="#"><i class="nav-icon i-Gear"></i> <span class="item-name">Kitchen Display Settings</span> <i class="dd-arrow i-Arrow-Down"></i></a>
                   <ul class="submenu">
                      <li class="nav-item">
-                           <a href="settings/stations">
-                              <i class="nav-icon i-Bar-Chart"></i>
-                              <span class="item-name">Station</span>
-                           </a>
+                        <a href="settings/stations">
+                           <i class="nav-icon i-Bar-Chart"></i>
+                           <span class="item-name">Station</span>
+                        </a>
                         </a>
                      </li>
                   </ul>
@@ -385,9 +387,9 @@
                <li class="nav-item"><a href="/app/settings/general/accounting" class=""><i class="nav-icon i-Data-Backup"></i> <span class="item-name">Back-Up Database</span></a></li>
             </ul>
             <li class="nav-item dropdown-sidemenu">
-               <a href="#"><i class="nav-icon i-Gear"></i> <span class="item-name">General Settings</span> <i class="dd-arrow i-Arrow-Down"></i></a> 
+               <a href="#"><i class="nav-icon i-Gear"></i> <span class="item-name">General Settings</span> <i class="dd-arrow i-Arrow-Down"></i></a>
                <ul class="submenu">
-                   <li class="nav-item dropdown-sidemenu">
+                  <li class="nav-item dropdown-sidemenu">
                      <a href="#">
                         <i class="nav-icon i-Library"></i>
                         <span class="item-name">Workforce</span>
@@ -412,7 +414,7 @@
                               <span class="item-name">Status</span>
                            </a>
                         </li>
-                         <li class="nav-item">
+                        <li class="nav-item">
                            <a href="{{ route('shifts.index') }}">
                               <i class="nav-icon i-Chef"></i>
                               <span class="item-name">Shifts</span>
@@ -559,605 +561,639 @@
 
 
 <script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const sidebar = document.querySelector(".sidebar-left");
-    if (sidebar) {
-      new PerfectScrollbar(sidebar, {
-        wheelPropagation: true,   // lets the mouse wheel work properly
-        suppressScrollX: true     // disable horizontal scrollbar
-      });
-    }
-  });
-  
+   document.addEventListener("DOMContentLoaded", function() {
+      const sidebar = document.querySelector(".sidebar-left");
+      if (sidebar) {
+         new PerfectScrollbar(sidebar, {
+            wheelPropagation: true, // lets the mouse wheel work properly
+            suppressScrollX: true // disable horizontal scrollbar
+         });
+      }
+   });
 </script>
 
 <script>
-document.addEventListener("DOMContentLoaded", function () {
-  const toggleBtn = document.querySelector(".menu-toggle");
-  const sidebar = document.getElementById("sidebar");
+   document.addEventListener("DOMContentLoaded", function() {
+      const toggleBtn = document.querySelector(".menu-toggle");
+      const sidebar = document.getElementById("sidebar");
 
-  if (toggleBtn && sidebar) {
-    toggleBtn.addEventListener("click", function () {
-      sidebar.classList.toggle("active");
-    });
-  }
-  const modal = document.getElementById('startPOSModal');
-  if (!modal) return;
+      if (toggleBtn && sidebar) {
+         toggleBtn.addEventListener("click", function() {
+            sidebar.classList.toggle("active");
+         });
+      }
+      const modal = document.getElementById('startPOSModal');
+      if (!modal) return;
 
-  const unpaidModal = document.getElementById('checkUnpaidModal');
-  if (!unpaidModal) return;
+      const unpaidModal = document.getElementById('checkUnpaidModal');
+      if (!unpaidModal) return;
 
-  const body = modal.querySelector('.modal-body');
+      const body = modal.querySelector('.modal-body');
 
-  const unpaidModalBody = unpaidModal.querySelector('.modal-body');
 
-  // If mouse wheel isn't scrolling, forward wheel events to the modal body.
-  modal.addEventListener('wheel', function(e) {
-    if (!body) return;
+      const unpaidModalBody = unpaidModal.querySelector('.modal-body');
 
-    const maxScrollTop = body.scrollHeight - body.clientHeight;
-    const current = body.scrollTop;
-    const delta = e.deltaY;
+      // If mouse wheel isn't scrolling, forward wheel events to the modal body.
+      modal.addEventListener('wheel', function(e) {
+         if (!body) return;
 
-    // Determine if the body can scroll in the requested direction
-    const scrollingDown = delta > 0;
-    const canScrollDown = current < maxScrollTop;
-    const canScrollUp = current > 0;
+         const maxScrollTop = body.scrollHeight - body.clientHeight;
+         const current = body.scrollTop;
+         const delta = e.deltaY;
 
-    // If the body can scroll in the wheel direction, scroll it and prevent the event bubbling to parent
-    if ((scrollingDown && canScrollDown) || (!scrollingDown && canScrollUp)) {
-      body.scrollTop = Math.min(Math.max(0, current + delta), maxScrollTop);
-      e.preventDefault(); // stop outer scrolling
-    }
-    // else allow it to bubble (optional) so page/backdrop could handle it
-  }, { passive: false }); // must be non-passive to call preventDefault()
+         // Determine if the body can scroll in the requested direction
+         const scrollingDown = delta > 0;
+         const canScrollDown = current < maxScrollTop;
+         const canScrollUp = current > 0;
 
-});
+         // If the body can scroll in the wheel direction, scroll it and prevent the event bubbling to parent
+         if ((scrollingDown && canScrollDown) || (!scrollingDown && canScrollUp)) {
+            body.scrollTop = Math.min(Math.max(0, current + delta), maxScrollTop);
+            e.preventDefault(); // stop outer scrolling
+         }
+         // else allow it to bubble (optional) so page/backdrop could handle it
+      }, {
+         passive: false
+      }); // must be non-passive to call preventDefault()
 
+   });
 </script>
 
 <script>
-const now = new Date();
-window.userName = "{{ auth()->user()->name }}";
+   const now = new Date();
+   window.userName = "{{ auth()->user()->name }}";
 
-new Vue({
-  el: "#startEndApp",
-  data: {
-    modalMode: 'open',
-    endStep: 'confirm',
-    unpaidStatus: '',
-    sessionData: null,
-    terminal_no: '',
-    startingFund: '',
-    tip: '',
-    transferTo: '',
-    transferAmount: '',
-    remarks: '',
-    closingDateTime: '',
-    manualTimeEdit: false,
-    loginDate: '', 
-    loginTime: '',
-    isProcessing: false,
+   new Vue({
+      el: "#startEndApp",
+      data: {
+         modalMode: 'open',
+         endStep: 'confirm',
+         unpaidStatus: '',
+         sessionData: null,
+         terminal_no: '',
+         startingFund: '',
+         tip: '',
+         transferTo: '',
+         transferAmount: '',
+         remarks: '',
+         closingDateTime: '',
+         manualTimeEdit: false,
+         loginDate: '',
+         loginTime: '',
+         isProcessing: false,
 
-    // Denominations
-    denom_1000: '', denom_500: '', denom_200: '', denom_100: '',
-    denom_50: '',   denom_20: '',  denom_10: '', denom_5: '',
-    denom_1: '',    denom_050: '', denom_025: '', denom_010: '', denom_005: '',
+         // Denominations
+         denom_1000: '',
+         denom_500: '',
+         denom_200: '',
+         denom_100: '',
+         denom_50: '',
+         denom_20: '',
+         denom_10: '',
+         denom_5: '',
+         denom_1: '',
+         denom_050: '',
+         denom_025: '',
+         denom_010: '',
+         denom_005: '',
 
-    allPayments: [],
-    manualBreakdown: {},
+         allPayments: [],
+         manualBreakdown: {},
 
-    hasStartedPOS: localStorage.getItem('hasStartedPOS') === '1' ? 1 : 0,
-  },
+         hasStartedPOS: localStorage.getItem('hasStartedPOS') === '1' ? 1 : 0,
+      },
 
-  mounted() {
-    this.setInitialDateTime();
-    this.detectTerminalName();
-    this.startAutoTimeUpdate();
-    this.fetchAllPayments();
-    this.setNow();
-    setInterval(() => {
-      if (!this.manualTimeEdit) this.setNow();
-    }, 30000);
+      mounted() {
+         this.setInitialDateTime();
+         this.detectTerminalName();
+         this.startAutoTimeUpdate();
+         this.fetchAllPayments();
+         this.setNow();
+         setInterval(() => {
+            if (!this.manualTimeEdit) this.setNow();
+         }, 30000);
 
-    // Attach listeners
-    document.querySelector('.startEndTrigger')?.addEventListener('click', (e) => {
-      e.preventDefault();
-      this.promptStartEndModal();
-    });
+         // Attach listeners
+         document.querySelector('.startEndTrigger')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.promptStartEndModal();
+         });
 
-    document.querySelector('.posLink')?.addEventListener('click', (e) => {
-      e.preventDefault();
-      this.handlePOSNavigation('/orders');
-    });
+         document.querySelector('.posLink')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.handlePOSNavigation('/orders');
+         });
 
-    if (window.location.pathname === '/orders') {
-      this.handlePOSNavigation('/orders', true);
-    }
+         if (window.location.pathname === '/orders') {
+            this.handlePOSNavigation('/orders', true);
+         }
 
-    // Attach listeners for checkUnpaidTrigger
-    document.querySelector('.checkUnpaidTrigger')?.addEventListener('click', (e) => {
-      e.preventDefault();
-      this.promptcheckUnpaidModal();
-    });
-  },
+         // Attach listeners for checkUnpaidTrigger
+         document.querySelector('.checkUnpaidTrigger')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.promptcheckUnpaidModal();
+         });
+      },
 
-  computed: {
-    transaction_datetime() {
-      return this.closingDateTime ? this.closingDateTime.replace('T', ' ') + ':00' : null;
-    },
-    denominationTotal() {
-      const total =
-        (parseInt(this.denom_1000) || 0) * 1000 +
-        (parseInt(this.denom_500)  || 0) * 500 +
-        (parseInt(this.denom_200)  || 0) * 200 +
-        (parseInt(this.denom_100)  || 0) * 100 +
-        (parseInt(this.denom_50)   || 0) * 50 +
-        (parseInt(this.denom_20)   || 0) * 20 +
-        (parseInt(this.denom_10)   || 0) * 10 +
-        (parseInt(this.denom_5)    || 0) * 5 +
-        (parseInt(this.denom_1)    || 0) * 1 +
-        (parseInt(this.denom_050)  || 0) * 0.5 +
-        (parseInt(this.denom_025)  || 0) * 0.25 +
-        (parseInt(this.denom_010)  || 0) * 0.1 +
-        (parseInt(this.denom_005)  || 0) * 0.05;
-      return parseFloat(total.toFixed(2));
-    },
-    paymentBreakdown() {
-      const breakdown = {};
-      this.allPayments.forEach(p => {
-        const key = this.slugify(p.payment_name);
-        breakdown[key] = parseFloat(p.total_amount || 0);
-      });
-      Object.assign(breakdown, this.manualBreakdown);
-      return breakdown;
-    },
-    cashSales() {
-    const cashItem = this.allPayments.find(p =>
-      /\bcash\b/i.test(p.payment_name)
-      );
-    const amount = cashItem ? parseFloat(cashItem.total_amount) || 0 : 0;
+      computed: {
+         transaction_datetime() {
+            return this.closingDateTime ? this.closingDateTime.replace('T', ' ') + ':00' : null;
+         },
+         denominationTotal() {
+            const total =
+               (parseInt(this.denom_1000) || 0) * 1000 +
+               (parseInt(this.denom_500) || 0) * 500 +
+               (parseInt(this.denom_200) || 0) * 200 +
+               (parseInt(this.denom_100) || 0) * 100 +
+               (parseInt(this.denom_50) || 0) * 50 +
+               (parseInt(this.denom_20) || 0) * 20 +
+               (parseInt(this.denom_10) || 0) * 10 +
+               (parseInt(this.denom_5) || 0) * 5 +
+               (parseInt(this.denom_1) || 0) * 1 +
+               (parseInt(this.denom_050) || 0) * 0.5 +
+               (parseInt(this.denom_025) || 0) * 0.25 +
+               (parseInt(this.denom_010) || 0) * 0.1 +
+               (parseInt(this.denom_005) || 0) * 0.05;
+            return parseFloat(total.toFixed(2));
+         },
+         paymentBreakdown() {
+            const breakdown = {};
+            this.allPayments.forEach(p => {
+               const key = this.slugify(p.payment_name);
+               breakdown[key] = parseFloat(p.total_amount || 0);
+            });
+            Object.assign(breakdown, this.manualBreakdown);
+            return breakdown;
+         },
+         cashSales() {
+            const cashItem = this.allPayments.find(p =>
+               /\bcash\b/i.test(p.payment_name)
+            );
+            const amount = cashItem ? parseFloat(cashItem.total_amount) || 0 : 0;
 
-    // FIX: Round to 2 decimals to kill floating-point bugs
-    const cleanAmount = Math.round(amount * 100) / 100;
+            // FIX: Round to 2 decimals to kill floating-point bugs
+            const cleanAmount = Math.round(amount * 100) / 100;
 
-   //  console.log('%cCash Sales (clean):', 'color: lime; font-weight: bold;', cleanAmount);
-    return cleanAmount;
-  },
+            //  console.log('%cCash Sales (clean):', 'color: lime; font-weight: bold;', cleanAmount);
+            return cleanAmount;
+         },
 
-  // 2. EXPECTED CASH IN DRAWER — now 100% accurate
-  expectedCashInDrawer() {
-    const starting = parseFloat(this.startingFund) || 0;
-    const expected = starting + this.cashSales;
+         // 2. EXPECTED CASH IN DRAWER — now 100% accurate
+         expectedCashInDrawer() {
+            const starting = parseFloat(this.startingFund) || 0;
+            const expected = starting + this.cashSales;
 
-    // FINAL FIX: Round to 2 decimals
-    const clean = Math.round(expected * 100) / 100;
+            // FINAL FIX: Round to 2 decimals
+            const clean = Math.round(expected * 100) / 100;
 
-   //  console.log('%cExpected Cash in Drawer:', 'color: gold; font-weight: bold;', clean);
-    return clean;
-  },
+            //  console.log('%cExpected Cash in Drawer:', 'color: gold; font-weight: bold;', clean);
+            return clean;
+         },
 
-  // 3. SHORTAGE & OVERAGE — now perfect
-  shortage() {
-    const diff = this.denominationTotal - this.expectedCashInDrawer;
-    return diff < -0.01 ? Math.abs(diff).toFixed(2) : '0.00'; // tolerance 1 cent
-  },
+         // 3. SHORTAGE & OVERAGE — now perfect
+         shortage() {
+            const diff = this.denominationTotal - this.expectedCashInDrawer;
+            return diff < -0.01 ? Math.abs(diff).toFixed(2) : '0.00'; // tolerance 1 cent
+         },
 
-  overage() {
-    const diff = this.denominationTotal - this.expectedCashInDrawer;
-    return diff > 0.01 ? diff.toFixed(2) : '0.00'; // tolerance 1 cent
-  }
-},
+         overage() {
+            const diff = this.denominationTotal - this.expectedCashInDrawer;
+            return diff > 0.01 ? diff.toFixed(2) : '0.00'; // tolerance 1 cent
+         }
+      },
 
-  methods: {
-    slugify(text) {
-      return text.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/(^_|_$)/g, '');
-    },
+      methods: {
+         slugify(text) {
+            return text.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/(^_|_$)/g, '');
+         },
 
-    setNow() {
-      const now = new Date();
-      const offset = now.getTimezoneOffset() * 60000;
-      const local = new Date(now.getTime() - offset);
-      this.closingDateTime = local.toISOString().slice(0, 16);
-    },
+         setNow() {
+            const now = new Date();
+            const offset = now.getTimezoneOffset() * 60000;
+            const local = new Date(now.getTime() - offset);
+            this.closingDateTime = local.toISOString().slice(0, 16);
+         },
 
-    detectTerminalName() {
-      const platform = /win/i.test(navigator.userAgent) ? 'Windows' :
-                       /mac/i.test(navigator.userAgent) ? 'MacOS' :
-                       /linux/i.test(navigator.userAgent) ? 'Linux' :
-                       /android/i.test(navigator.userAgent) ? 'Android' : 'iOS';
-      this.terminal_no = `${platform}_${window.userName || 'User'}`;
-    },
+         detectTerminalName() {
+            const platform = /win/i.test(navigator.userAgent) ? 'Windows' :
+               /mac/i.test(navigator.userAgent) ? 'MacOS' :
+               /linux/i.test(navigator.userAgent) ? 'Linux' :
+               /android/i.test(navigator.userAgent) ? 'Android' : 'iOS';
+            this.terminal_no = `${platform}_${window.userName || 'User'}`;
+         },
 
-    setInitialDateTime() {
-      const now = new Date();
-      this.closingDateTime = now.toISOString().slice(0, 16);
-    },
+         setInitialDateTime() {
+            const now = new Date();
+            this.closingDateTime = now.toISOString().slice(0, 16);
+         },
 
-    startAutoTimeUpdate() {
-      setInterval(() => {
-        if (!this.manualTimeEdit) this.setNow();
-      }, 1000);
-    },
+         startAutoTimeUpdate() {
+            setInterval(() => {
+               if (!this.manualTimeEdit) this.setNow();
+            }, 1000);
+         },
 
-    setLoginDateTime(datetime) {
-    if (!datetime) {
-      const now = new Date();
-      this.loginDate = now.toISOString().split('T')[0];
-      this.loginTime = now.toTimeString().slice(0, 5);
-      // console.log('No datetime → using current time:', this.loginDate, this.loginTime);
-      return;
-    }
+         setLoginDateTime(datetime) {
+            if (!datetime) {
+               const now = new Date();
+               this.loginDate = now.toISOString().split('T')[0];
+               this.loginTime = now.toTimeString().slice(0, 5);
+               // console.log('No datetime → using current time:', this.loginDate, this.loginTime);
+               return;
+            }
 
-    let datePart, timePart;
+            let datePart, timePart;
 
-    // Case 1: ISO format → "2025-12-05T03:08:46.000000Z"
-    if (datetime.includes('T')) {
-      const [date, time] = datetime.split('T');
-      datePart = date;                                      // "2025-12-05"
-      timePart = time.split('.')[0].slice(0, 8);            // "03:08:46" → "03:08"
-      
-      // Optional: Convert UTC to local time (recommended!)
-      const local = new Date(datetime);
-      datePart = local.toISOString().split('T')[0];
-      timePart = local.toTimeString().slice(0, 5);          // "10:59" in your timezone
-    } 
-    // Case 2: Old format → "2025-12-05 10:59:46"
-    else if (datetime.includes(' ')) {
-      const [date, time] = datetime.split(' ');
-      datePart = date;
-      timePart = time.slice(0, 5);
-    } 
-    else {
-      console.warn('Invalid datetime format:', datetime);
-      datePart = new Date().toISOString().split('T')[0];
-      timePart = '00:00';
-    }
+            // Case 1: ISO format → "2025-12-05T03:08:46.000000Z"
+            if (datetime.includes('T')) {
+               const [date, time] = datetime.split('T');
+               datePart = date; // "2025-12-05"
+               timePart = time.split('.')[0].slice(0, 8); // "03:08:46" → "03:08"
 
-    this.loginDate = datePart;
-    this.loginTime = timePart;
+               // Optional: Convert UTC to local time (recommended!)
+               const local = new Date(datetime);
+               datePart = local.toISOString().split('T')[0];
+               timePart = local.toTimeString().slice(0, 5); // "10:59" in your timezone
+            }
+            // Case 2: Old format → "2025-12-05 10:59:46"
+            else if (datetime.includes(' ')) {
+               const [date, time] = datetime.split(' ');
+               datePart = date;
+               timePart = time.slice(0, 5);
+            } else {
+               console.warn('Invalid datetime format:', datetime);
+               datePart = new Date().toISOString().split('T')[0];
+               timePart = '00:00';
+            }
 
-  },
+            this.loginDate = datePart;
+            this.loginTime = timePart;
 
-    // MAIN LOGIC: Check session and decide what to show
-    async checkExistingSession() {
-      try {
-        const { data } = await axios.get('/pos/session/check', {
-          params: { terminal_no: this.terminal_no }
-        });
+         },
 
-        // FIRST: Extract and set login date/time
-        this.setLoginDateTime(data.transaction_datetime || null);
+         // MAIN LOGIC: Check session and decide what to show
+         async checkExistingSession() {
+            try {
+               const {
+                  data
+               } = await axios.get('/pos/session/check', {
+                  params: {
+                     terminal_no: this.terminal_no
+                  }
+               });
 
-        // 1. Already open on THIS terminal → resume
-        if (data.has_open_session && data.on_this_terminal) {
-          this.hasStartedPOS = 1;
-          this.sessionData = data.session;
-          this.startingFund = data.session.starting_fund || 0;
-          localStorage.setItem('hasStartedPOS', '1');
-          this.modalMode = 'close';
-          return;
-        }
+               console.log('%c[Session Check] Response:', 'color: cyan; font-weight: bold;', data);
 
-        // 2. Conflict: open session on different terminal → BLOCK + warn
-        if (data.conflict) {
-          this.hasStartedPOS = 0;
-          localStorage.removeItem('hasStartedPOS');
-          this.modalMode = 'open';
+               // FIRST: Extract and set login date/time
+               this.setLoginDateTime(data.transaction_datetime || null);
 
-          await Swal.fire({
-            icon: 'warning',
-            title: 'Cannot Start Session',
-            html: `
+               // 1. Already open on THIS terminal → resume
+               //   if (data.has_open_session && data.on_this_terminal) {
+               //     this.hasStartedPOS = 1;
+               //     this.sessionData = data.session;
+               //     this.startingFund = data.session.starting_fund || 0;
+               //     localStorage.setItem('hasStartedPOS', '1');
+               //     this.modalMode = 'close';
+               //     return;
+               //   }
+
+               // 1. Resume session
+               if (data.has_open_session && data.on_this_terminal) {
+                  this.hasStartedPOS = 1;
+                  this.sessionData = data.session;
+                  this.startingFund = data.session.starting_fund || 0;
+                  localStorage.setItem('hasStartedPOS', '1');
+                  this.modalMode = 'close';
+                  return;
+               }
+
+               // 2. No session → use DB fund
+               if (!data.has_open_session && !data.conflict) {
+                  this.hasStartedPOS = 0;
+                  this.startingFund = parseFloat(data.starting_fund) || 0;
+                  this.modalMode = 'open';
+                  return;
+               }
+
+               // 2. Conflict: open session on different terminal → BLOCK + warn
+               if (data.conflict) {
+                  this.hasStartedPOS = 0;
+                  localStorage.removeItem('hasStartedPOS');
+                  this.modalMode = 'open';
+
+                  await Swal.fire({
+                     icon: 'warning',
+                     title: 'Cannot Start Session',
+                     html: `
               <p>You already have an <strong>open session</strong> on:</p>
               <h4 class="text-danger fw-bold mb-3">${data.old_terminal}</h4>
               <p>Please <strong>close the session</strong> on that terminal first.</p>
             `,
-            confirmButtonText: 'Understood',
-            allowOutsideClick: false,
-            allowEscapeKey: false,
-          });
-          return;
-        }
+                     confirmButtonText: 'Understood',
+                     allowOutsideClick: false,
+                     allowEscapeKey: false,
+                  });
+                  return;
+               }
 
-        // 3. All clear → allow start
-        this.hasStartedPOS = 0;
-        localStorage.removeItem('hasStartedPOS');
-        this.modalMode = 'open';
-        this.startingFund = ''; // reset
+               // 3. All clear → allow start
+               this.hasStartedPOS = 0;
+               localStorage.removeItem('hasStartedPOS');
+               this.modalMode = 'open';
+               this.startingFund = ''; // reset
 
-      } catch (err) {
-        console.error('Session check failed:', err);
-        this.modalMode = 'open';
-      }
-    },
+            } catch (err) {
+               console.error('Session check failed:', err);
+               this.modalMode = 'open';
+            }
+         },
 
-    promptStartEndModal() {
-      this.checkExistingSession().then(() => {
-        const modal = new bootstrap.Modal(document.getElementById('startPOSModal'));
-        modal.show();
-      });
-    },
-      async promptcheckUnpaidModal() {
+         promptStartEndModal() {
+            this.checkExistingSession().then(() => {
+               const modal = new bootstrap.Modal(document.getElementById('startPOSModal'));
+               modal.show();
+            });
+         },
+         async promptcheckUnpaidModal() {
 
-           const result = await this.checkUnpaidOrders();
+            const result = await this.checkUnpaidOrders();
 
-           if (result.has_unpaid_orders || result.has_unserved_products) {
+            if (result.has_unpaid_orders || result.has_unserved_products) {
 
-            this.unpaidStatus = result;
+               this.unpaidStatus = result;
 
-         const modal = new bootstrap.Modal(document.getElementById('checkUnpaidModal'));
-         modal.show();
-           } else {
-            window.location.href = '/pos-clossing';
-           }
+               const modal = new bootstrap.Modal(document.getElementById('checkUnpaidModal'));
+               modal.show();
+            } else {
+               window.location.href = '/pos-clossing';
+            }
+         },
+
+         async handlePOSNavigation(url, auto = false) {
+            await this.checkExistingSession();
+            if (this.hasStartedPOS) {
+               if (!auto) window.location.href = url;
+            } else {
+               const modal = new bootstrap.Modal(document.getElementById('startPOSModal'));
+               modal.show();
+            }
+         },
+         async handleConfirmEndDay() {
+            //       const unpaidOrders = await this.checkUnpaidOrders();
+            //       if (unpaidOrders) {
+            //         this.endStep = 'unpaid';
+            //       } else {
+            this.endStep = 'form';
+            //       }
+
+            // THIS IS THE MISSING LINE!!!
+            //  console.log('%c[END DAY] No unpaid orders → Loading payment breakdown now!', 'color: lime; font-size: 16px; background: black;');
+            await this.fetchAllPayments();
+         },
+         handleUnpaidOk() {
+            // Close the modal
+            const modalEl = document.getElementById('startPOSModal');
+            const modalInstance = bootstrap.Modal.getInstance(modalEl);
+            modalInstance.hide();
+            // Reset for next open
+            this.endStep = 'confirm';
+         },
+         async checkUnpaidOrders() {
+            try {
+               const res = await axios.get('/check-unpaid-orders');
+               return res.data;
+            } catch (error) {
+               console.error('Error checking unpaid orders:', error);
+               return {
+                  has_unpaid_orders: false,
+                  has_unserved_products: false
+               };
+            }
+         },
+
+         async fetchAllPayments() {
+
+            try {
+               const response = await axios.get('/get-all-payments');
+               const payments = response.data.order?.totals_by_payment || [];
+
+               if (payments.length === 0) {
+                  console.warn('%c[POS] No payments found for this session yet.', 'color: #FF5722;');
+                  this.allPayments = [];
+                  return;
+               }
+
+               // Map and clean the data
+               this.allPayments = payments.map(p => {
+                  const cleaned = {
+                     payment_name: p.payment_name || 'Unknown',
+                     total_amount: parseFloat(p.total_amount || 0)
+                  };
+                  return cleaned;
+               });
+
+            } catch (err) {
+               console.error('%c[POS] Failed to fetch payments!', 'color: #F44336; font-weight: bold;', err);
+               console.error('Error response:', err.response?.data);
+               console.error('Status:', err.response?.status);
+
+               this.allPayments = [];
+               //  console.log(this.allPayments)
+            }
+         },
+
+         // SUCCESS + ERROR with SweetAlert2
+         async submitStartPOS() {
+            try {
+               // Close modal immediately
+               const modalElement = document.getElementById('startPOSModal');
+               const modalInstance = bootstrap.Modal.getInstance(modalElement);
+               if (modalInstance) modalInstance.hide();
+
+               await axios.post('/pos/session/open', {
+                  terminal_no: this.terminal_no,
+                  cash_fund: this.startingFund,
+                  transaction_datetime: new Date().toISOString().slice(0, 19).replace('T', ' '),
+               });
+
+               await Swal.fire({
+                  icon: 'success',
+                  title: 'POS Session Started!',
+                  text: `Fund: ₱${this.startingFund.toLocaleString()}`,
+                  timer: 1500,
+                  showConfirmButton: false,
+                  allowOutsideClick: false
+               });
+
+               this.hasStartedPOS = 1;
+               localStorage.setItem('hasStartedPOS', '1');
+               //   this.modalMode = 'close';
+
+               window.location.href = '/orders';
+
+            } catch (err) {
+               const msg = err.response?.data?.message || 'Failed to start session.';
+               Swal.fire({
+                  icon: 'error',
+                  title: 'Error',
+                  text: msg,
+                  confirmButtonText: 'OK'
+               });
+            }
+         },
+
+         validateBeforeSubmit() {
+            const denom = Number(this.denominationTotal) || 0;
+            const transfer = Number(this.transferAmount) || 0;
+            const shortage = Number(this.shortage) || 0;
+            const overage = Number(this.overage) || 0;
+            const remarks = this.remarks ? this.remarks.trim() : '';
+
+            if (denom !== transfer) {
+               Swal.fire({
+                  icon: 'error',
+                  title: 'Mismatch Detected',
+                  text: `Denomination total must match the transfer amount`,
+               });
+               return false;
+            }
+
+            if ((shortage !== 0 || overage !== 0) && remarks === '') {
+               Swal.fire({
+                  icon: 'warning',
+                  title: 'Remarks Required',
+                  text: 'Please enter remarks when there is a shortage or overage.',
+               });
+               return false;
+            }
+
+            return true;
+         },
+
+         async submitEndPOS() {
+            // 🔹 VALIDATION: Require transfer_to + amount
+            if (!this.transferTo) {
+               return Swal.fire({
+                  icon: 'warning',
+                  title: 'Missing Transfer Account',
+                  text: 'Please select a "Transfer To" account.',
+               });
+            }
+
+            if (!this.transferAmount || parseFloat(this.transferAmount) <= 0) {
+               return Swal.fire({
+                  icon: 'warning',
+                  title: 'Invalid Amount',
+                  text: 'Please enter a valid transfer amount.',
+               });
+            }
+
+            if (!this.validateBeforeSubmit()) return;
+
+            // 🔰 Confirmation dialog
+            const confirmResult = await Swal.fire({
+               title: 'Are you sure?',
+               text: 'Do you really want to close this session?',
+               icon: 'warning',
+               showCancelButton: true,
+               confirmButtonText: 'Yes, close it',
+               cancelButtonText: 'Cancel'
+            });
+
+            if (!confirmResult.isConfirmed) return;
+
+
+            // 1. Immediately hide + disable the modal to prevent any flash
+            const modalElement = document.getElementById('startPOSModal');
+            const modalInstance = bootstrap.Modal.getInstance(modalElement);
+            if (modalInstance) {
+               modalInstance.hide();
+            }
+
+            modalElement.style.pointerEvents = 'none';
+            modalElement.querySelector('.modal-content').style.opacity = '0.6';
+
+            const payload = {
+               terminal_no: this.terminal_no,
+               transaction_datetime: this.transaction_datetime,
+               starting_fund: parseFloat(this.startingFund) || 0,
+               tip: parseFloat(this.tip) || 0,
+               transfer_to: this.transferTo || null,
+               transfer_amount: parseFloat(this.transferAmount) || 0,
+               remarks: this.remarks,
+
+               manual_breakdown: Object.keys(this.manualBreakdown || {}).length > 0 ?
+                  this.manualBreakdown :
+                  null,
+
+               d_1000: parseInt(this.denom_1000) || null,
+               d_500: parseInt(this.denom_500) || null,
+               d_200: parseInt(this.denom_200) || null,
+               d_100: parseInt(this.denom_100) || null,
+               d_50: parseInt(this.denom_50) || null,
+               d_20: parseInt(this.denom_20) || null,
+               d_10: parseInt(this.denom_10) || null,
+               d_5: parseInt(this.denom_5) || null,
+               d_1: parseInt(this.denom_1) || null,
+               d_050: parseInt(this.denom_050) || null,
+               d_025: parseInt(this.denom_025) || null,
+               d_010: parseInt(this.denom_010) || null,
+               d_005: parseInt(this.denom_005) || null,
+            };
+
+            console.log('%c[END DAY] Closing payload:', 'color: cyan; font-weight: bold;', payload);
+
+            try {
+               // 🔰 Loading state
+               Swal.fire({
+                  title: 'Closing session...',
+                  text: 'Please wait',
+                  allowOutsideClick: false,
+                  didOpen: () => {
+                     Swal.showLoading();
+                  }
+               });
+
+               const res = await axios.post('/pos/session/close', payload);
+               console.log('%c[END DAY] Close response:', 'color: lime; font-weight: bold;', res.data);
+
+               // 🔰 Success alert
+               if (res.data.success) {
+                  await Swal.fire({
+                     icon: 'success',
+                     title: 'Session Closed',
+                     text: 'Session closed successfully!',
+                     timer: 2000,
+                     timerProgressBar: true,
+                     showConfirmButton: false,
+                     allowOutsideClick: false,
+                     allowEscapeKey: false
+                  });
+
+                  // Update UI
+                  this.hasStartedPOS = 0;
+                  localStorage.removeItem('hasStartedPOS');
+                  // this.modalMode = 'open';
+                  // bootstrap.Modal.getInstance(document.getElementById('endOfDayModal'))?.hide();
+                  window.location.href = '/orders';
+               }
+
+            } catch (err) {
+               // Re-enable modal on error
+               const modalElement = document.getElementById('startPOSModal');
+               modalElement.style.pointerEvents = '';
+               modalElement.querySelector('.modal-content').style.opacity = '';
+
+               const msg = err.response?.data?.message || 'Failed to end session.';
+               Swal.fire('Error', msg, 'error');
+            }
+         }
       },
 
-    async handlePOSNavigation(url, auto = false) {
-      await this.checkExistingSession();
-      if (this.hasStartedPOS) {
-        if (!auto) window.location.href = url;
-      } else {
-        const modal = new bootstrap.Modal(document.getElementById('startPOSModal'));
-        modal.show();
-      }
-    },
-    async handleConfirmEndDay() {
-//       const unpaidOrders = await this.checkUnpaidOrders();
-//       if (unpaidOrders) {
-//         this.endStep = 'unpaid';
-//       } else {
-        this.endStep = 'form';
-//       }
-
-// THIS IS THE MISSING LINE!!!
-   //  console.log('%c[END DAY] No unpaid orders → Loading payment breakdown now!', 'color: lime; font-size: 16px; background: black;');
-    await this.fetchAllPayments();
-    },
-    handleUnpaidOk() {
-    // Close the modal
-    const modalEl = document.getElementById('startPOSModal');
-    const modalInstance = bootstrap.Modal.getInstance(modalEl);
-    modalInstance.hide();
-    // Reset for next open
-    this.endStep = 'confirm';
-  },
-async checkUnpaidOrders() {
-    try {
-        const res = await axios.get('/check-unpaid-orders');
-        return res.data;
-    } catch (error) {
-        console.error('Error checking unpaid orders:', error);
-        return {
-            has_unpaid_orders: false,
-            has_unserved_products: false
-        };
-    }
-},
-
-async fetchAllPayments() {
-
-  try {
-    const response = await axios.get('/get-all-payments');
-    const payments = response.data.order?.totals_by_payment || [];
-
-    if (payments.length === 0) {
-      console.warn('%c[POS] No payments found for this session yet.', 'color: #FF5722;');
-      this.allPayments = [];
-      return;
-    }
-
-    // Map and clean the data
-    this.allPayments = payments.map(p => {
-      const cleaned = {
-        payment_name: p.payment_name || 'Unknown',
-        total_amount: parseFloat(p.total_amount || 0)
-      };
-      return cleaned;
-    });
-
-  } catch (err) {
-    console.error('%c[POS] Failed to fetch payments!', 'color: #F44336; font-weight: bold;', err);
-    console.error('Error response:', err.response?.data);
-    console.error('Status:', err.response?.status);
-    
-    this.allPayments = [];
-   //  console.log(this.allPayments)
-  }
-},
-
-    // SUCCESS + ERROR with SweetAlert2
-    async submitStartPOS() {
-      try {
-      // Close modal immediately
-      const modalElement = document.getElementById('startPOSModal');
-      const modalInstance = bootstrap.Modal.getInstance(modalElement);
-      if (modalInstance) modalInstance.hide();
-
-        await axios.post('/pos/session/open', {
-          terminal_no: this.terminal_no,
-          cash_fund: this.startingFund,
-          transaction_datetime: new Date().toISOString().slice(0, 19).replace('T', ' '),
-        });
-
-        await Swal.fire({
-          icon: 'success',
-          title: 'POS Session Started!',
-          text: `Fund: ₱${this.startingFund.toLocaleString()}`,
-          timer: 1500,
-          showConfirmButton: false,
-          allowOutsideClick: false
-        });
-
-        this.hasStartedPOS = 1;
-        localStorage.setItem('hasStartedPOS', '1');
-      //   this.modalMode = 'close';
-
-        window.location.href = '/orders';
-
-      } catch (err) {
-        const msg = err.response?.data?.message || 'Failed to start session.';
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: msg,
-          confirmButtonText: 'OK'
-        });
-      }
-    },
-
-    validateBeforeSubmit() {
-        const denom = Number(this.denominationTotal) || 0;
-        const transfer = Number(this.transferAmount) || 0;
-        const shortage = Number(this.shortage) || 0;
-        const overage = Number(this.overage) || 0;
-        const remarks = this.remarks ? this.remarks.trim() : '';
-
-        if (denom !== transfer) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Mismatch Detected',
-                text: `Denomination total must match the transfer amount`,
-            });
-            return false;
-        }
-
-        if ((shortage !== 0 || overage !== 0) && remarks === '') {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Remarks Required',
-                text: 'Please enter remarks when there is a shortage or overage.',
-            });
-            return false;
-        }
-
-        return true;
-    },
-
-   async submitEndPOS() {
-   // 🔹 VALIDATION: Require transfer_to + amount
-   if (!this.transferTo) {
-      return Swal.fire({
-         icon: 'warning',
-         title: 'Missing Transfer Account',
-         text: 'Please select a "Transfer To" account.',
-      });
-   }
-
-   if (!this.transferAmount || parseFloat(this.transferAmount) <= 0) {
-      return Swal.fire({
-         icon: 'warning',
-         title: 'Invalid Amount',
-         text: 'Please enter a valid transfer amount.',
-      });
-   }
-
-   if (!this.validateBeforeSubmit()) return;
-
-   // 🔰 Confirmation dialog
-   const confirmResult = await Swal.fire({
-      title: 'Are you sure?',
-      text: 'Do you really want to close this session?',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Yes, close it',
-      cancelButtonText: 'Cancel'
-   });
-
-   if (!confirmResult.isConfirmed) return;
-
-   
-    // 1. Immediately hide + disable the modal to prevent any flash
-    const modalElement = document.getElementById('startPOSModal');
-    const modalInstance = bootstrap.Modal.getInstance(modalElement);
-    if (modalInstance) {
-      modalInstance.hide();
-    }
-
-    modalElement.style.pointerEvents = 'none';
-    modalElement.querySelector('.modal-content').style.opacity = '0.6';
-
-   const payload = {
-      terminal_no: this.terminal_no,
-      transaction_datetime: this.transaction_datetime,
-      starting_fund: parseFloat(this.startingFund) || 0,
-      tip: parseFloat(this.tip) || 0,
-      transfer_to: this.transferTo || null,
-      transfer_amount: parseFloat(this.transferAmount) || 0,
-      remarks: this.remarks,
-
-      manual_breakdown: Object.keys(this.manualBreakdown || {}).length > 0 
-      ? this.manualBreakdown 
-      : null,
-
-      d_1000: parseInt(this.denom_1000) || null,
-      d_500:  parseInt(this.denom_500)  || null,
-      d_200:  parseInt(this.denom_200)  || null,
-      d_100:  parseInt(this.denom_100)  || null,
-      d_50:   parseInt(this.denom_50)   || null,
-      d_20:   parseInt(this.denom_20)   || null,
-      d_10:   parseInt(this.denom_10)   || null,
-      d_5:    parseInt(this.denom_5)    || null,
-      d_1:    parseInt(this.denom_1)    || null,
-      d_050:  parseInt(this.denom_050)  || null,
-      d_025:  parseInt(this.denom_025)  || null,
-      d_010:  parseInt(this.denom_010)  || null,
-      d_005:  parseInt(this.denom_005)  || null,
-   };
-
-   console.log('%c[END DAY] Closing payload:', 'color: cyan; font-weight: bold;', payload);
-
-   try {
-      // 🔰 Loading state
-      Swal.fire({
-         title: 'Closing session...',
-         text: 'Please wait',
-         allowOutsideClick: false,
-         didOpen: () => {
-         Swal.showLoading();
+      watch: {
+         closingDateTime() {
+            this.manualTimeEdit = true;
          }
-      });
-
-      const res = await axios.post('/pos/session/close', payload);
-      console.log('%c[END DAY] Close response:', 'color: lime; font-weight: bold;', res.data);
-
-      // 🔰 Success alert
-      if (res.data.success) {
-         await Swal.fire({
-         icon: 'success',
-         title: 'Session Closed',
-         text: 'Session closed successfully!',
-         timer: 2000,
-         timerProgressBar: true,
-         showConfirmButton: false,
-         allowOutsideClick: false,
-         allowEscapeKey: false
-         });
-
-         // Update UI
-         this.hasStartedPOS = 0;
-         localStorage.removeItem('hasStartedPOS');
-         // this.modalMode = 'open';
-         // bootstrap.Modal.getInstance(document.getElementById('endOfDayModal'))?.hide();
-         window.location.href = '/orders';
       }
-
-   } catch (err) {
-      // Re-enable modal on error
-      const modalElement = document.getElementById('startPOSModal');
-      modalElement.style.pointerEvents = '';
-      modalElement.querySelector('.modal-content').style.opacity = '';
-
-      const msg = err.response?.data?.message || 'Failed to end session.';
-      Swal.fire('Error', msg, 'error');
-   }
-}
-  },
-
-  watch: {
-    closingDateTime() {
-      this.manualTimeEdit = true;
-    }
-  }
-});
+   });
 </script>
