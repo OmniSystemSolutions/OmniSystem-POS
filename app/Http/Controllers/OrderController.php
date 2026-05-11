@@ -21,60 +21,117 @@ use Illuminate\Http\Request;
 
 class OrderController extends Controller
 {
+    public function fetch(Request $request)
+    {
+        $status          = $request->get('status', 'serving');
+        $allowedStatuses = ['serving', 'billout', 'payments'];
+        if (!in_array($status, $allowedStatuses)) $status = 'serving';
+
+        $branchId = current_branch_id();
+
+        $orders = Order::with([
+                'details' => fn($q) => $q->where('status', '!=', 'walked')
+                    ->with(['product', 'component']),
+                'user',
+                'cashier',
+                'paymentDetails.payment',
+                'discountEntries.discount',
+                'reservation',
+            ])
+            ->where('branch_id', $branchId)
+            ->when($status === 'serving',  fn($q) => $q->where(fn($i) => $i->where('status','serving')->orWhere('status','served')))
+            ->when($status === 'billout',  fn($q) => $q->where('status', 'billout'))
+            ->when($status === 'payments', fn($q) => $q->where('status', 'payments'))
+            ->orderByDesc('created_at')
+            ->get()
+            ->map(fn($o) => [
+                'id'                    => $o->id,
+                'order_type'            => $o->order_type,
+                'table_no'              => $o->table_no,
+                'number_pax'            => $o->number_pax,
+                'status'                => $o->status,
+                'gross_amount'          => (float) ($o->gross_amount ?? 0),
+                'total_charge'          => (float) ($o->total_charge ?? 0),
+                'sr_pwd_bill'           => (float) ($o->sr_pwd_bill ?? 0),
+                'sr_pwd_discount'       => (float) ($o->sr_pwd_discount ?? 0),
+                'regular_bill'          => (float) ($o->regular_bill ?? 0),
+                'net_amount'            => (float) ($o->net_amount ?? 0),
+                'vatable'               => (float) ($o->vatable ?? 0),
+                'vat_12'                => (float) ($o->vat_12 ?? 0),
+                'vat_exempt_12'         => (float) ($o->vat_exempt_12 ?? 0),
+                'other_discounts'       => (float) ($o->other_discounts ?? 0),
+                'charges_description'   => $o->charges_description,
+                'total_payment_rendered'=> (float) ($o->total_payment_rendered ?? 0),
+                'change_amount'         => (float) ($o->change_amount ?? 0),
+                'created_at'            => $o->created_at->format('Y-m-d H:i:s'),
+                'user_name'             => $o->user?->name ?? 'N/A',
+                'cashier_name'          => $o->cashier?->name,
+                'reservation_id'        => $o->reservation_id,
+                'reservation_ref'       => $o->reservation?->reference_number,
+                'details' => $o->details->map(fn($d) => [
+                    'id'        => $d->id,
+                    'item_name' => $d->item_name,
+                    'code'      => $d->product?->code ?? $d->component?->code ?? 'N/A',
+                    'quantity'  => $d->quantity,
+                    'price'     => (float) $d->price,
+                    'discount'  => (float) ($d->discount ?? 0),
+                    'status'    => $d->status,
+                ])->values(),
+                'discount_entries' => $o->discountEntries->map(fn($de) => [
+                    'id'               => $de->id,
+                    'discount_id'      => $de->discount_id,
+                    'discount_name'    => $de->discount?->name,
+                    'discount_value'   => (float) ($de->discount?->value ?? 0),
+                    'person_name'      => $de->person_name,
+                    'person_id_number' => $de->person_id_number,
+                    'quantity'         => $de->quantity,
+                ])->values(),
+                'payment_details' => $o->paymentDetails->map(fn($pd) => [
+                    'id'           => $pd->id,
+                    'payment_name' => $pd->payment?->name ?? 'Unknown',
+                    'amount_paid'  => (float) ($pd->amount_paid ?? 0),
+                ])->values(),
+            ]);
+
+        $discounts = Discount::where('status', 'active')->orderBy('name')->get()
+            ->map(fn($d) => ['id' => $d->id, 'name' => $d->name, 'value' => (float) $d->value]);
+
+        $paymentMethods = Payment::where('status', 'active')->orderBy('name')->get()
+            ->map(fn($m) => ['id' => $m->id, 'name' => $m->name]);
+
+        $cashEquivalents = CashEquivalent::where('status', 'active')->orderBy('name')->get()
+            ->map(fn($c) => [
+                'id'             => $c->id,
+                'name'           => $c->name,
+                'account_number' => $c->account_number,
+                'created_by'     => $c->created_by,
+                'creator_name'   => $c->creator?->name,
+            ]);
+
+        $branch = Branch::find($branchId);
+
+        return response()->json([
+            'orders'          => $orders,
+            'discounts'       => $discounts,
+            'paymentMethods'  => $paymentMethods,
+            'cashEquivalents' => $cashEquivalents,
+            'branch'          => [
+                'id'            => $branch?->id,
+                'name'          => $branch?->name,
+                'address'       => $branch?->address,
+                'permit_number' => $branch?->permit_number,
+                'dti_issued'    => $branch?->dti_issued,
+                'pos_sn'        => $branch?->pos_sn,
+                'min_number'    => $branch?->min_number,
+            ],
+            'currentUserId' => auth()->id(),
+        ]);
+    }
+
     public function index(Request $request)
     {
-        // Default to 'serving' tab
-        $status = $request->query('status', 'serving');
-
-        // Allow only specific statuses
-        $allowedStatuses = ['serving', 'billout', 'payments'];
-        if (!in_array($status, $allowedStatuses)) {
-            $status = 'serving';
-        }
-
-        // Get current branch (GLOBAL HELPER)
-        $currentBranchId = current_branch_id();
-
-        // Fetch orders filtered by status
-        $orders = Order::with([
-                'details' => function ($query) {
-                    $query->where('status', '!=', 'walked');
-                },
-                'details.product',
-                'details.component',
-                'user',
-                'paymentDetails.payment',
-                'cashier',
-                'discountEntries',
-                'reservation',          // ← load linked reservation so blade can show badge
-            ])
-            ->where('branch_id', $currentBranchId)
-            ->when($status === 'serving', function ($q) {
-                // ✅ FIX: wrap in a grouped where so branch_id filter is NOT bypassed
-                $q->where(function ($inner) {
-                    $inner->where('status', 'serving')
-                          ->orWhere('status', 'served');
-                });
-                })
-            ->when($status === 'billout',   fn($q) => $q->where('status', 'billout'))
-            ->when($status === 'payments',  fn($q) => $q->where('status', 'payments'))
-            ->orderByDesc('created_at')
-            ->get();
-
-        // Load active discounts
-        $discounts = Discount::where('status', 'active')->orderBy('name')->get();
-
-        // Load payment methods and cash equivalents for Payment modal
-        $paymentMethods  = Payment::where('status', 'active')->orderBy('name')->get();
-        $cashEquivalents = CashEquivalent::where('status', 'active')->orderBy('name')->get();
-
-        // Current branch info
-        $branch = Branch::find($currentBranchId);
-
-        return view('orders.index', compact(
-            'orders', 'discounts', 'status',
-            'paymentMethods', 'cashEquivalents', 'branch'
-        ));
+        $orders = collect();
+        return view('orders.index', compact('orders'));
     }
 
    public function create()
