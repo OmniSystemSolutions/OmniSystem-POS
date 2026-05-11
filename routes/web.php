@@ -115,6 +115,7 @@ Route::put('/component-remarks/{id}/mark-unread', [ComponentRemarkController::cl
 // Route::post('/components/{component}/remarks/mark-read', [ComponentRemarkController::class, 'markRead']);
 
 Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+Route::get('/orders/fetch', [OrderController::class, 'fetch'])->name('orders.fetch');
 Route::get('/order/create', [OrderController::class, 'create'])->name('orders.create');
 Route::post('/orders/store', [OrderController::class, 'store'])->name('orders.store');
 Route::post('/orders/{order}/billout', [OrderController::class, 'billout'])->name('orders.billout');

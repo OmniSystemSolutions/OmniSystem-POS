@@ -223,6 +223,11 @@ tr:hover {
   padding: 0 14px 12px;
 }
 
+@keyframes livePulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.7); }
+}
+
 .k-card__item-count {
   font-size: 0.75rem;
   color: #9ca3af;
@@ -623,7 +628,15 @@ tr:hover {
                       </a>
                   </li>
                 </ul>
-                <div class="btn-group ms-auto" style="flex-shrink:0;">
+                <div class="d-flex align-items-center gap-2 ms-auto">
+                <span class="badge bg-success d-flex align-items-center gap-1" style="font-size:0.72rem;padding:5px 10px;">
+                  <span style="width:7px;height:7px;border-radius:50%;background:#fff;display:inline-block;animation:livePulse 1.4s ease-in-out infinite;"></span>
+                  LIVE
+                </span>
+                <span v-if="lastRefreshed" style="font-size:0.72rem;color:#6b7280;white-space:nowrap;">
+                  Updated @{{ lastRefreshed }}
+                </span>
+                <div class="btn-group" style="flex-shrink:0;">
                   <button type="button"
                     class="btn btn-sm"
                     :class="viewMode === 'table' ? 'btn-primary' : 'btn-outline-secondary'"
@@ -640,6 +653,7 @@ tr:hover {
                     <i class="i-Postcard"></i>
                       Card
                   </button>
+                </div>
                 </div>
             </nav>
 
@@ -970,10 +984,13 @@ tr:hover {
 new Vue({
   el: "#app",
   data: {
-    now: new Date(), // reactive timestamp that updates every second
-    viewMode: 'table', // 'table' | 'card'
+    now: new Date(),
+    viewMode: 'table',
     selectedOrder: null,
     modalMode: null,
+    pollingTimer: null,
+    isModalOpen: false,
+    lastRefreshed: null,
     orderItems: [],
     items: [],
     expandedOrderId: null,
@@ -1115,14 +1132,22 @@ groupedOrders() {
 },
 
   mounted() {
-    // 🕒 Update timer every second
-    setInterval(() => {
-      this.now = new Date();
-    }, 1000);
-    this.fetchItems()
+    setInterval(() => { this.now = new Date(); }, 1000);
+    this.fetchItems();
+    this.startPolling();
+
+    const modalEl = document.getElementById('updateModal');
+    modalEl.addEventListener('show.bs.modal',   () => { this.isModalOpen = true; });
+    modalEl.addEventListener('hidden.bs.modal', () => { this.isModalOpen = false; });
   },
 
   methods: {
+    startPolling() {
+      this.pollingTimer = setInterval(() => {
+        if (!this.isModalOpen) this.fetchItems();
+      }, 8000);
+    },
+
     isServedOrWalked(item) {
     return ['served', 'walked'].includes(item.status);
   },
@@ -1153,15 +1178,14 @@ groupedOrders() {
     this.stations         = res.data.stations;
     this.branchProducts   = res.data.branchProducts;
     this.branchComponents = res.data.branchComponents;
-    console.log('details:', this.orderItems);
-    // Restore expanded recipe if it still exists
+
     if (currentExpandedId && this.orderItems.some(i => i.order_detail_id === currentExpandedId)) {
       this.expandedOrderId = currentExpandedId;
     } else {
       this.expandedOrderId = null;
     }
 
-    console.log('data today:', this.orderItems);
+    this.lastRefreshed = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
   }).catch(err => console.error('Failed to fetch items:', err));
 },
 selectStation(station) {
