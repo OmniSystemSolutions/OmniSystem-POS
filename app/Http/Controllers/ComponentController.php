@@ -31,11 +31,67 @@ class ComponentController extends Controller
         ]);
     }
 
+    // public function fetchComponents(Request $request)
+    // {
+    //     $status   = $request->get('status', 'active');
+    //     $perPage  = $request->get('perPage', 10);
+    //     $search   = $request->get('search');
+    //     $branchId = current_branch_id();
+
+    //     $query = Component::query()
+    //         ->select([
+    //             'components.*',
+    //             'bc.onhand',
+    //             'bc.cost',
+    //             'bc.price',
+    //             'bc.for_sale',
+    //             'bc.status as status',
+    //         ])
+    //         ->join('branch_components as bc', 'bc.component_id', '=', 'components.id')
+    //         ->where('bc.branch_id', $branchId)
+    //         ->where('components.status', $status)
+    //         ->with(['category', 'subcategory', 'unit']);
+
+
+    //     $query->when($search, function ($query) use ($search) {
+    //         $query->where(function ($q) use ($search) {
+    //             $q->where('components.name', 'like', "%{$search}%")
+    //               ->orWhereHas('category',    fn ($q) => $q->where('name', 'like', "%{$search}%"))
+    //               ->orWhereHas('subcategory', fn ($q) => $q->where('name', 'like', "%{$search}%"));
+    //         });
+    //     });
+
+    //     $components = $query
+    //         ->orderBy('components.created_at', 'desc')
+    //         ->paginate($perPage);
+
+    //     // Map unit_id to unit name for frontend
+    //     $components->getCollection()->transform(function ($component) {
+    //         $component->unit = $component->unit?->name; // new field for Vue
+    //         return $component;
+    //     });
+
+    //     return response()->json($components);
+    // }
+
     public function fetchComponents(Request $request)
     {
-        $status   = $request->get('status', 'active');
-        $perPage  = $request->get('perPage', 10);
-        $search   = $request->get('search');
+        $status = $request->get('status', 'active');
+
+        $perPage = $request->get('perPage', 10);
+        $search = $request->get('search');
+
+        $category = $request->get('category');
+        $subcategory = $request->get('subcategory');
+
+        $costFrom = $request->get('cost_from');
+        $costTo = $request->get('cost_to');
+
+        $priceFrom = $request->get('price_from');
+        $priceTo = $request->get('price_to');
+
+        $forSale = $request->get('for_sale');
+
         $branchId = current_branch_id();
 
         $query = Component::query()
@@ -45,33 +101,83 @@ class ComponentController extends Controller
                 'bc.cost',
                 'bc.price',
                 'bc.for_sale',
-                'bc.status as status',
+                'bc.status as branch_status',
             ])
+
             ->join('branch_components as bc', 'bc.component_id', '=', 'components.id')
+
             ->where('bc.branch_id', $branchId)
+
             ->where('components.status', $status)
-            ->with(['category', 'subcategory', 'unit']);
 
+            ->with([
+                'category',
+                'subcategory',
+                'unit'
+            ])
 
-        $query->when($search, function ($query) use ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('components.name', 'like', "%{$search}%")
-                  ->orWhereHas('category',    fn ($q) => $q->where('name', 'like', "%{$search}%"))
-                  ->orWhereHas('subcategory', fn ($q) => $q->where('name', 'like', "%{$search}%"));
-            });
-        });
+            // SEARCH
+            ->when($search, function ($query) use ($search) {
 
-        $components = $query
+                $query->where(function ($q) use ($search) {
+
+                    $q->where('components.name', 'like', "%{$search}%")
+
+                        ->orWhere('components.code', 'like', "%{$search}%")
+
+                        ->orWhereHas('category', function ($q) use ($search) {
+                            $q->where('name', 'like', "%{$search}%");
+                        })
+
+                        ->orWhereHas('subcategory', function ($q) use ($search) {
+                            $q->where('name', 'like', "%{$search}%");
+                        })
+
+                        ->orWhereHas('unit', function ($q) use ($search) {
+                            $q->where('name', 'like', "%{$search}%");
+                        });
+                });
+            })
+
+            // CATEGORY
+            ->when($category, function ($q) use ($category) {
+                $q->where('components.category_id', $category);
+            })
+
+            // SUBCATEGORY
+            ->when($subcategory, function ($q) use ($subcategory) {
+                $q->where('components.subcategory_id', $subcategory);
+            })
+
+            // COST RANGE
+            ->when($costFrom !== null && $costFrom !== '', function ($q) use ($costFrom) {
+                $q->where('bc.cost', '>=', $costFrom);
+            })
+
+            ->when($costTo !== null && $costTo !== '', function ($q) use ($costTo) {
+                $q->where('bc.cost', '<=', $costTo);
+            })
+
+            // PRICE RANGE
+            ->when($priceFrom !== null && $priceFrom !== '', function ($q) use ($priceFrom) {
+                $q->where('bc.price', '>=', $priceFrom);
+            })
+
+            ->when($priceTo !== null && $priceTo !== '', function ($q) use ($priceTo) {
+                $q->where('bc.price', '<=', $priceTo);
+            })
+
+            // FOR SALE
+            ->when($forSale !== null && $forSale !== '', function ($q) use ($forSale) {
+                $q->where('bc.for_sale', filter_var($forSale, FILTER_VALIDATE_BOOLEAN));
+            })
+
             ->orderBy('components.created_at', 'desc')
+
             ->paginate($perPage);
 
-        // Map unit_id to unit name for frontend
-        $components->getCollection()->transform(function ($component) {
-            $component->unit = $component->unit?->name; // new field for Vue
-            return $component;
-        });
 
-        return response()->json($components);
+        return response()->json($query);
     }
 
     public function create()
@@ -151,76 +257,76 @@ class ComponentController extends Controller
     }
 
     public function update(Request $request, Component $component)
-{
-    $branch = current_branch_id();
-// dd($request->all());
-    $validated = $request->validate([
-        'code'           => 'required|string|unique:components,code,' . $component->id,
-        'name'           => 'required|string',
-        'brand_name'     => 'nullable|string|max:255',
-        'category_id'    => 'required|integer|exists:categories,id',
-        'subcategory_id' => 'nullable|integer|exists:subcategories,id',
-        'supplier_id'    => 'nullable|exists:suppliers,id',
-        'unit_id'        => 'required|integer|exists:units,id',
+    {
+        $branch = current_branch_id();
+        // dd($request->all());
+        $validated = $request->validate([
+            'code'           => 'required|string|unique:components,code,' . $component->id,
+            'name'           => 'required|string',
+            'brand_name'     => 'nullable|string|max:255',
+            'category_id'    => 'required|integer|exists:categories,id',
+            'subcategory_id' => 'nullable|integer|exists:subcategories,id',
+            'supplier_id'    => 'nullable|exists:suppliers,id',
+            'unit_id'        => 'required|integer|exists:units,id',
 
-        // Branch fields
-        'cost'     => 'required|numeric',
-        'price'    => 'required|numeric',
-        'onhand'   => 'required|numeric',
-        'for_sale' => 'nullable|boolean',
+            // Branch fields
+            'cost'     => 'required|numeric',
+            'price'    => 'required|numeric',
+            'onhand'   => 'required|numeric',
+            'for_sale' => 'nullable|boolean',
 
-        'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-    ]);
+            'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+        ]);
 
-    $validated['for_sale'] = $request->has('for_sale') ? 1 : 0;
+        $validated['for_sale'] = $request->has('for_sale') ? 1 : 0;
 
-    /*
+        /*
     |------------------------------------------
     | IMAGE (unchanged as requested)
     |------------------------------------------
     */
-    if ($request->hasFile('image')) {
-        if ($component->image && Storage::disk('public')->exists($component->image)) {
-            Storage::disk('public')->delete($component->image);
+        if ($request->hasFile('image')) {
+            if ($component->image && Storage::disk('public')->exists($component->image)) {
+                Storage::disk('public')->delete($component->image);
+            }
+
+            $validated['image'] = $request->file('image')->store('components', 'public');
         }
 
-        $validated['image'] = $request->file('image')->store('components', 'public');
-    }
-
-    /*
+        /*
     |------------------------------------------
     | UPDATE GLOBAL COMPONENT DATA
     |------------------------------------------
     */
-    $component->update([
-        'code'           => $validated['code'],
-        'name'           => $validated['name'],
-        'brand_name'     => $validated['brand_name'],
-        'category_id'    => $validated['category_id'],
-        'subcategory_id' => $validated['subcategory_id'],
-        'supplier_id'    => $validated['supplier_id'] ?? null,
-        'unit_id'        => $validated['unit_id'],
-        'image'          => $validated['image'] ?? $component->image,
-    ]);
+        $component->update([
+            'code'           => $validated['code'],
+            'name'           => $validated['name'],
+            'brand_name'     => $validated['brand_name'],
+            'category_id'    => $validated['category_id'],
+            'subcategory_id' => $validated['subcategory_id'],
+            'supplier_id'    => $validated['supplier_id'] ?? null,
+            'unit_id'        => $validated['unit_id'],
+            'image'          => $validated['image'] ?? $component->image,
+        ]);
 
-    /*
+        /*
     |------------------------------------------
     | UPDATE BRANCH COMPONENT ONLY
     |------------------------------------------
     */
-    BranchComponent::where('branch_id', $branch)
-        ->where('component_id', $component->id)
-        ->update([
-            'cost'     => $validated['cost'],
-            'price'    => $validated['price'],
-            'onhand'   => $validated['onhand'],
-            'for_sale' => $validated['for_sale'],
-        ]);
+        BranchComponent::where('branch_id', $branch)
+            ->where('component_id', $component->id)
+            ->update([
+                'cost'     => $validated['cost'],
+                'price'    => $validated['price'],
+                'onhand'   => $validated['onhand'],
+                'for_sale' => $validated['for_sale'],
+            ]);
 
-    return redirect()
-        ->route('components.index')
-        ->with('success', 'Component updated successfully!');
-}
+        return redirect()
+            ->route('components.index')
+            ->with('success', 'Component updated successfully!');
+    }
 
     public function destroy($id)
     {
@@ -258,10 +364,10 @@ class ComponentController extends Controller
 
         /* 1) AUDITS */
         $auditItems = \App\Models\InventoryAuditItem::where('component_id', $id)
-            ->whereHas('audit', fn ($q) => $q->where('status', 'completed'))
+            ->whereHas('audit', fn($q) => $q->where('status', 'completed'))
             ->with('audit')
             ->get()
-            ->map(fn ($item) => [
+            ->map(fn($item) => [
                 'entry_datetime' => $item->created_at,
                 'activity'       => 'AUDIT',
                 'reference_no'   => $item->audit ? $item->audit->reference_no : "AUDIT-{$item->id}",
@@ -272,7 +378,7 @@ class ComponentController extends Controller
         /* 2) DEDUCTIONS */
         $deductions = \App\Models\InventoryDeduction::where('component_id', $id)
             ->get()
-            ->map(fn ($d) => [
+            ->map(fn($d) => [
                 'entry_datetime' => $d->created_at,
                 'activity'       => $d->order_detail_id ? 'ORDER' : 'DEDUCTION',
                 'reference_no'   => $d->order_detail_id ? "ORD-{$d->order_detail_id}" : "DED-{$d->id}",
@@ -282,10 +388,10 @@ class ComponentController extends Controller
 
         /* 3) PO DETAILS */
         $poDetails = \App\Models\PoDetail::where('component_id', $id)
-            ->whereHas('purchaseOrder', fn ($q) => $q->whereIn('status', ['approved', 'completed']))
+            ->whereHas('purchaseOrder', fn($q) => $q->whereIn('status', ['approved', 'completed']))
             ->with('purchaseOrder')
             ->get()
-            ->map(fn ($item) => [
+            ->map(fn($item) => [
                 'entry_datetime' => $item->created_at,
                 'activity'       => 'PURCHASE',
                 'reference_no'   => $item->purchaseOrder ? $item->purchaseOrder->po_number : "PO-{$item->id}",
@@ -295,7 +401,8 @@ class ComponentController extends Controller
 
         /* 4) TRANSFERS */
         $transferMovements = \App\Models\InventoryTransferSendOut::whereHas(
-            'transfer', fn ($q) => $q->whereIn('status', ['in_transit', 'completed'])
+            'transfer',
+            fn($q) => $q->whereIn('status', ['in_transit', 'completed'])
         )->get()->flatMap(function ($sendOut) use ($id, $component) {
             $rows = [];
             foreach ($sendOut->items_onload as $item) {
@@ -338,167 +445,166 @@ class ComponentController extends Controller
     }
 
     public function verifyImport(Request $request)
-{
-    $rows = $request->input('rows', []);
-    $errors = [];
+    {
+        $rows = $request->input('rows', []);
+        $errors = [];
 
-    // Get current user's branch
-    $branch = auth()->user()->branches()->first();
-    $branchId = current_branch_id();
-    $codes = [];
+        // Get current user's branch
+        $branch = auth()->user()->branches()->first();
+        $branchId = current_branch_id();
+        $codes = [];
 
-    foreach ($rows as $index => $row) {
+        foreach ($rows as $index => $row) {
 
-        $rowErrors = [];
+            $rowErrors = [];
 
-        $code = $row['code'] ?? null;
-        $name = $row['name'] ?? null;
+            $code = $row['code'] ?? null;
+            $name = $row['name'] ?? null;
 
-        // Required fields
-        if (!$code) {
-            $rowErrors[] = 'SKU is required';
-        }
+            // Required fields
+            if (!$code) {
+                $rowErrors[] = 'SKU is required';
+            }
 
-        if (!$name) {
-            $rowErrors[] = 'Component name is required';
-        }
+            if (!$name) {
+                $rowErrors[] = 'Component name is required';
+            }
 
-        // Duplicate inside uploaded file
-        if (in_array($code, $codes)) {
-            $rowErrors[] = 'Duplicate SKU in file';
-        } else {
-            $codes[] = $code;
-        }
+            // Duplicate inside uploaded file
+            if (in_array($code, $codes)) {
+                $rowErrors[] = 'Duplicate SKU in file';
+            } else {
+                $codes[] = $code;
+            }
 
-        // Check if component exists
-        $component = Component::where('code', $code)->first();
+            // Check if component exists
+            $component = Component::where('code', $code)->first();
 
-        if ($component && $branchId) {
+            if ($component && $branchId) {
 
-            // Check if component already exists in this branch
-            $exists = BranchComponent::where('branch_id', $branchId)
-                ->where('component_id', $component->id)
-                ->exists();
+                // Check if component already exists in this branch
+                $exists = BranchComponent::where('branch_id', $branchId)
+                    ->where('component_id', $component->id)
+                    ->exists();
 
-            if ($exists) {
-                $rowErrors[] = 'Component already exists in this branch';
+                if ($exists) {
+                    $rowErrors[] = 'Component already exists in this branch';
+                }
+            }
+
+            if (!empty($rowErrors)) {
+                $errors[$index] = $rowErrors;
             }
         }
 
-        if (!empty($rowErrors)) {
-            $errors[$index] = $rowErrors;
-        }
+        return response()->json([
+            'success' => true,
+            'errors' => $errors
+        ]);
     }
 
-    return response()->json([
-        'success' => true,
-        'errors' => $errors
-    ]);
-}
-
     public function import(Request $request)
-{
-    try {
+    {
+        try {
 
-        $branch = current_branch_id();
+            $branch = current_branch_id();
 
-        if (!$branch) {
-            return response()->json([
-                'success' => false,
-                'message' => 'User has no branch assigned.'
-            ]);
-        }
-
-        $rows = $request->all();
-
-        foreach ($rows as $row) {
-
-            if (($row['status'] ?? '') !== 'ready') {
-                continue;
+            if (!$branch) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User has no branch assigned.'
+                ]);
             }
 
-            /*
+            $rows = $request->all();
+
+            foreach ($rows as $row) {
+
+                if (($row['status'] ?? '') !== 'ready') {
+                    continue;
+                }
+
+                /*
             |--------------------------------------------------------------------------
             | CATEGORY
             |--------------------------------------------------------------------------
             */
 
-            $category = Category::firstOrCreate([
-                'name' => $row['category']['name']
-            ]);
+                $category = Category::firstOrCreate([
+                    'name' => $row['category']['name']
+                ]);
 
-            /*
+                /*
             |--------------------------------------------------------------------------
             | SUBCATEGORY
             |--------------------------------------------------------------------------
             */
 
-            $subcategory = Subcategory::firstOrCreate([
-                'name' => $row['subcategory']['name'],
-                'category_id' => $category->id
-            ]);
+                $subcategory = Subcategory::firstOrCreate([
+                    'name' => $row['subcategory']['name'],
+                    'category_id' => $category->id
+                ]);
 
-            /*
+                /*
             |--------------------------------------------------------------------------
             | UNIT
             |--------------------------------------------------------------------------
             */
 
-            $unit = Unit::firstOrCreate([
-                'name' => $row['unit']
-            ]);
+                $unit = Unit::firstOrCreate([
+                    'name' => $row['unit']
+                ]);
 
-            /*
+                /*
             |--------------------------------------------------------------------------
             | COMPONENT
             |--------------------------------------------------------------------------
             */
 
-            $component = Component::firstOrCreate(
-                ['code' => $row['code']],
-                [
-                    'name' => $row['name'],
-                    'category_id' => $category->id,
-                    'subcategory_id' => $subcategory->id,
-                    'unit_id' => $unit->id
-                ]
-            );
+                $component = Component::firstOrCreate(
+                    ['code' => $row['code']],
+                    [
+                        'name' => $row['name'],
+                        'category_id' => $category->id,
+                        'subcategory_id' => $subcategory->id,
+                        'unit_id' => $unit->id
+                    ]
+                );
 
-            /*
+                /*
             |--------------------------------------------------------------------------
             | BRANCH COMPONENT
             |--------------------------------------------------------------------------
             */
 
-            $exists = BranchComponent::where('branch_id', $branch)
-                ->where('component_id', $component->id)
-                ->exists();
+                $exists = BranchComponent::where('branch_id', $branch)
+                    ->where('component_id', $component->id)
+                    ->exists();
 
-            if ($exists) {
-                continue;
+                if ($exists) {
+                    continue;
+                }
+
+                BranchComponent::create([
+                    'branch_id' => $branch,
+                    'component_id' => $component->id,
+                    'onhand' => floatval($row['onhand'] ?? 0),
+                    'cost' => floatval($row['cost'] ?? 0),
+                    'price' => floatval($row['price'] ?? 0),
+                    'status' => 'active',
+                    'for_sale' => $row['for_sale'] ?? false,
+                ]);
             }
 
-            BranchComponent::create([
-                'branch_id' => $branch,
-                'component_id' => $component->id,
-                'onhand' => floatval($row['onhand'] ?? 0),
-                'cost' => floatval($row['cost'] ?? 0),
-                'price' => floatval($row['price'] ?? 0),
-                'status' => 'active',
-                'for_sale' => $row['for_sale'] ?? false,
+            return response()->json([
+                'success' => true
+            ]);
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
             ]);
         }
-
-        return response()->json([
-            'success' => true
-        ]);
-
-    } catch (\Exception $e) {
-
-        return response()->json([
-            'success' => false,
-            'message' => $e->getMessage()
-        ]);
     }
-}
 }

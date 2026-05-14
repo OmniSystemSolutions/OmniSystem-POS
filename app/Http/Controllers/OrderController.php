@@ -131,64 +131,8 @@ class OrderController extends Controller
 
     public function index(Request $request)
     {
-<<<<<<< Updated upstream
         $orders = collect();
         return view('orders.index', compact('orders'));
-=======
-        // Default to 'serving' tab
-        $status = $request->query('status', 'serving');
-
-        // Allow only specific statuses
-        $allowedStatuses = ['serving', 'billout', 'payments'];
-        if (!in_array($status, $allowedStatuses)) {
-            $status = 'serving';
-        }
-
-        // Get current branch (GLOBAL HELPER)
-        $currentBranchId = current_branch_id();
-
-        // Fetch orders filtered by status
-        $orders = Order::with([
-                'details' => function ($query) {
-                    $query->where('status', '!=', 'walked');
-                },
-                'details.product',
-                'details.component',
-                'user',
-                'paymentDetails.payment',
-                'cashier',
-                'discountEntries',
-                'reservation',          // ← load linked reservation so blade can show badge
-            ])
-            ->where('branch_id', $currentBranchId)
-            ->when($status === 'serving', function ($q) {
-                // ✅ FIX: wrap in a grouped where so branch_id filter is NOT bypassed
-                $q->where(function ($inner) {
-                    $inner->where('status', 'serving')
-                          ->orWhere('status', 'served');
-                });
-                })
-            ->when($status === 'billout',   fn($q) => $q->where('status', 'billout'))
-            ->when($status === 'payments',  fn($q) => $q->where('status', 'payments'))
-            ->orderByDesc('created_at')
-            ->get();
-
-        // Load active discounts
-        $discounts = Discount::where('status', 'active')->orderBy('name')->get();
-
-        // Load payment methods and cash equivalents for Payment modal
-        $paymentMethods  = Payment::where('status', 'active')->orderBy('name')->get();
-        $cashEquivalents = CashEquivalent::where('status', 'active')->orderBy('name')->get();
-
-
-        // Current branch info
-        $branch = Branch::find($currentBranchId);
-
-        return view('orders.index', compact(
-            'orders', 'discounts', 'status',
-            'paymentMethods', 'cashEquivalents', 'branch'
-        ));
->>>>>>> Stashed changes
     }
 
     public function create()

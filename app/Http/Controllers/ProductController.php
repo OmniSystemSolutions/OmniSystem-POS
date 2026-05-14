@@ -18,23 +18,79 @@ use App\Models\Recipe;
 class ProductController extends Controller
 {
     public function index(Request $request)
-{
-    return view('products.index');
-}
+    {
+        return view('products.index');
+    }
 
-/**
- * Fetch products based on status, search, pagination, and branch
- */
+    /**
+     * Fetch products based on status, search, pagination, and branch
+     */
+    // public function fetchProducts(Request $request)
+    // {
+    // // 🔥 DEFAULT STATUS HANDLED HERE
+    // $status = $request->get('status', 'active');
+
+    //     $perPage     = $request->get('perPage', 10);
+    //     $search      = $request->get('search');
+    //     $category    = $request->get('category');
+    //     $subcategory = $request->get('subcategory');
+    //     $type       = $request->get('type');
+
+    //     $branchId = current_branch_id();
+
+    //     $products = Product::query()
+    //         ->select([
+    //             'products.*',
+    //             'bc.quantity',
+    //             'bc.price',
+    //             'bc.status as status'
+    //         ])
+    //         ->join('branch_products as bc', 'bc.product_id', '=', 'products.id')
+    //         ->where('bc.branch_id', $branchId)
+    //         ->where('products.status', $status)
+    //         ->with(['category', 'subcategory', 'unit', 'station'])
+    //         ->when($type, fn ($q) =>
+    //                 $q->where('products.type', $type)
+    //             )
+    //         ->when($search, function ($query, $search) {
+    //             $query->where(function ($q) use ($search) {
+    //                 $q->where('products.name', 'like', "%{$search}%")
+    //                     ->orWhereHas('category', fn ($q) =>
+    //                         $q->where('name', 'like', "%{$search}%")
+    //                     )
+    //                     ->orWhereHas('subcategory', fn ($q) =>
+    //                         $q->where('name', 'like', "%{$search}%")
+    //                     );
+    //             });
+    //         })
+    //         ->when($category, fn ($q) =>
+    //             $q->where('products.category_id', $category)
+    //         )
+    //         ->when($subcategory, fn ($q) =>
+    //             $q->where('products.subcategory_id', $subcategory)
+    //         )
+    //         ->orderBy('products.created_at', 'desc')
+    //         ->paginate($perPage);
+
+    //     return response()->json($products);
+    // }
+
+
     public function fetchProducts(Request $request)
     {
-    // 🔥 DEFAULT STATUS HANDLED HERE
-    $status = $request->get('status', 'active');
+        $status = $request->get('status', 'active');
 
-        $perPage     = $request->get('perPage', 10);
-        $search      = $request->get('search');
-        $category    = $request->get('category');
-        $subcategory = $request->get('subcategory');
-        $type       = $request->get('type');
+        $perPage       = $request->get('perPage', 10);
+        $search        = $request->get('search');
+        $category      = $request->get('category');
+        $subcategory   = $request->get('subcategory');
+        $type          = $request->get('type');
+
+        $quantityFrom  = $request->get('quantity_from');
+        $quantityTo    = $request->get('quantity_to');
+
+        $priceFrom     = $request->get('price_from');
+        $priceTo       = $request->get('price_to');
 
         $branchId = current_branch_id();
 
@@ -43,33 +99,74 @@ class ProductController extends Controller
                 'products.*',
                 'bc.quantity',
                 'bc.price',
-                'bc.status as status'
+                'bc.status as branch_status'
             ])
             ->join('branch_products as bc', 'bc.product_id', '=', 'products.id')
             ->where('bc.branch_id', $branchId)
             ->where('products.status', $status)
-            ->with(['category', 'subcategory', 'unit', 'station'])
-            ->when($type, fn ($q) =>
-                    $q->where('products.type', $type)
-                )
-            ->when($search, function ($query, $search) {
+
+            ->with([
+                'category',
+                'subcategory',
+                'unit',
+                'station'
+            ])
+
+            // Type Filter
+            ->when($type, function ($q) use ($type) {
+                $q->where('products.type', $type);
+            })
+
+            // Search Filter
+            ->when($search, function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('products.name', 'like', "%{$search}%")
-                        ->orWhereHas('category', fn ($q) =>
-                            $q->where('name', 'like', "%{$search}%")
-                        )
-                        ->orWhereHas('subcategory', fn ($q) =>
-                            $q->where('name', 'like', "%{$search}%")
-                        );
+                        ->orWhere('products.code', 'like', "%{$search}%")
+
+                        ->orWhereHas('category', function ($q) use ($search) {
+                            $q->where('name', 'like', "%{$search}%");
+                        })
+
+                        ->orWhereHas('subcategory', function ($q) use ($search) {
+                            $q->where('name', 'like', "%{$search}%");
+                        })
+
+                        ->orWhereHas('unit', function ($q) use ($search) {
+                            $q->where('name', 'like', "%{$search}%");
+                        });
                 });
             })
-            ->when($category, fn ($q) =>
-                $q->where('products.category_id', $category)
-            )
-            ->when($subcategory, fn ($q) =>
-                $q->where('products.subcategory_id', $subcategory)
-            )
+
+            // Category Filter
+            ->when($category, function ($q) use ($category) {
+                $q->where('products.category_id', $category);
+            })
+
+            // Subcategory Filter
+            ->when($subcategory, function ($q) use ($subcategory) {
+                $q->where('products.subcategory_id', $subcategory);
+            })
+
+            // Quantity Range
+            ->when($quantityFrom !== null && $quantityFrom !== '', function ($q) use ($quantityFrom) {
+                $q->where('bc.quantity', '>=', $quantityFrom);
+            })
+
+            ->when($quantityTo !== null && $quantityTo !== '', function ($q) use ($quantityTo) {
+                $q->where('bc.quantity', '<=', $quantityTo);
+            })
+
+            // Price Range
+            ->when($priceFrom !== null && $priceFrom !== '', function ($q) use ($priceFrom) {
+                $q->where('bc.price', '>=', $priceFrom);
+            })
+
+            ->when($priceTo !== null && $priceTo !== '', function ($q) use ($priceTo) {
+                $q->where('bc.price', '<=', $priceTo);
+            })
+
             ->orderBy('products.created_at', 'desc')
+
             ->paginate($perPage);
 
         return response()->json($products);
@@ -89,7 +186,7 @@ class ProductController extends Controller
         $components = BranchComponent::with('component.unit')
             ->where('branch_id', $branch)
             ->get()
-            ->map(function($bc) {
+            ->map(function ($bc) {
                 return [
                     'id' => $bc->component_id,
                     'name' => $bc->component->name,
@@ -107,213 +204,212 @@ class ProductController extends Controller
         ));
     }
 
-   public function store(Request $request)
-{
-    $validated = $request->validate([
-        'code' => 'required|string|unique:products,code',
-        'name' => 'required|string',
-        'price' => 'required|numeric',
-        'quantity' => 'required|numeric|min:0',
-        'station_id' => 'required|exists:stations,id',
-        'unit_id' => 'required|exists:units,id',
-        'category_id' => 'required|exists:categories,id',
-        'subcategory_id' => 'nullable|exists:subcategories,id',
-        'image' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
-        'recipes' => ['required', 'array', 'min:1'],
-        'recipes.*.component_id' => 'required|exists:components,id',
-        'recipes.*.quantity' => 'required|numeric|min:1',
-    ]);
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'code' => 'required|string|unique:products,code',
+            'name' => 'required|string',
+            'price' => 'required|numeric',
+            'quantity' => 'required|numeric|min:0',
+            'station_id' => 'required|exists:stations,id',
+            'unit_id' => 'required|exists:units,id',
+            'category_id' => 'required|exists:categories,id',
+            'subcategory_id' => 'nullable|exists:subcategories,id',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
+            'recipes' => ['required', 'array', 'min:1'],
+            'recipes.*.component_id' => 'required|exists:components,id',
+            'recipes.*.quantity' => 'required|numeric|min:1',
+        ]);
 
-    if ($request->hasFile('image')) {
-        $validated['image'] = $request->file('image')->store('products', 'public');
-    }
-
-    $product = Product::create($validated);
-
-    BranchProduct::create([
-        'branch_id' => current_branch_id(),
-        'product_id' => $product->id,
-        'station_id' => $product->station_id,
-        'unit_id' => $product->unit_id,
-        'quantity' => $product->quantity,
-        'price' => $product->price,
-        'status' => 'active',
-    ]);
-
-    // Save recipes
-    if ($request->has('recipes')) {
-        foreach ($request->recipes as $recipeData) {
-            if (empty($recipeData['component_id']) || empty($recipeData['quantity'])) continue;
-
-            $product->recipes()->create([
-                'component_id' => $recipeData['component_id'],
-                'quantity' => $recipeData['quantity'],
-            ]);
+        if ($request->hasFile('image')) {
+            $validated['image'] = $request->file('image')->store('products', 'public');
         }
-    }
 
-    return redirect()->route('products.index')->with('success', 'Product created with recipes.');
-}
+        $product = Product::create($validated);
+
+        BranchProduct::create([
+            'branch_id' => current_branch_id(),
+            'product_id' => $product->id,
+            'station_id' => $product->station_id,
+            'unit_id' => $product->unit_id,
+            'quantity' => $product->quantity,
+            'price' => $product->price,
+            'status' => 'active',
+        ]);
+
+        // Save recipes
+        if ($request->has('recipes')) {
+            foreach ($request->recipes as $recipeData) {
+                if (empty($recipeData['component_id']) || empty($recipeData['quantity'])) continue;
+
+                $product->recipes()->create([
+                    'component_id' => $recipeData['component_id'],
+                    'quantity' => $recipeData['quantity'],
+                ]);
+            }
+        }
+
+        return redirect()->route('products.index')->with('success', 'Product created with recipes.');
+    }
 
     public function edit($id)
-{
-    $branch = current_branch_id();
-
-    $branchProduct = BranchProduct::with(['product.recipes.component.unit'])
-        ->where('product_id', $id)
-        ->where('branch_id', $branch)
-        ->firstOrFail();
-
-    $product = $branchProduct->product;
-
-    $oldRecipes = $product->recipes->map(function ($r) use ($branch) {
-
-        $branchComponent = BranchComponent::where('component_id', $r->component_id)
-            ->where('branch_id', $branch)
-            ->first();
-
-        $cost = $branchComponent->cost ?? 0;
-
-        return [
-            'id' => $r->id,
-            'component_id' => $r->component_id,
-            'quantity' => $r->quantity,
-            'unit' => optional($r->component->unit)->name ?? null,
-            'cost' => $r->quantity * $cost,
-        ];
-    })->toArray();
-
-    $categories = Category::where('status', 'active')->get();
-    $subcategories = Subcategory::all();
-
-    $components = BranchComponent::with(['component.unit:id,name'])
-        ->where('branch_id', $branch)
-        ->get()
-        ->map(fn($bc) => [
-            'id' => $bc->component_id,
-            'name' => $bc->component->name,
-            'unit' => $bc->component->unit,
-            'cost' => $bc->cost
-        ]);
-
-    $units = Unit::all();
-    $stations = Station::all();
-
-    return view('products.edit', compact(
-        'product',
-        'branchProduct',
-        'categories',
-        'subcategories',
-        'components',
-        'units',
-        'stations',
-        'oldRecipes'
-    ));
-}
-
-    public function update(Request $request, $id)
-{
-    $product = Product::findOrFail($id);
-
-    $validated = $request->validate([
-        'code' => 'required|string|unique:products,code,' . $product->id,
-        'name' => 'required|string',
-        'price' => 'required|numeric',
-        'category_id' => 'required|exists:categories,id',
-        'subcategory_id' => 'nullable|exists:subcategories,id',
-        'image' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
-
-        'station_id' => 'required|exists:stations,id',
-        'quantity' => 'required|numeric|min:0',
-        'unit_id' => 'required|exists:units,id',
-
-        'recipes' => 'nullable|array',
-        'recipes.*.component_id' => 'required|exists:components,id',
-        'recipes.*.quantity' => 'required|numeric',
-        'recipes.*.unit' => 'required|string',
-        'recipes.*.cost' => 'nullable|numeric',
-    ]);
-
-    DB::beginTransaction();
-
-    try {
-        // ✅ ONLY product fields
-        $productData = Arr::only($validated, [
-            'code',
-            'name',
-            'category_id',
-            'subcategory_id',
-            'station_id',
-            'unit_id',
-        ]);
-
-        // image
-        if ($request->hasFile('image')) {
-            if ($product->image && Storage::disk('public')->exists($product->image)) {
-                Storage::disk('public')->delete($product->image);
-            }
-            $productData['image'] = $request->file('image')->store('products', 'public');
-        }
-
-        $product->update($productData);
-
-        // ✅ update branch_products
+    {
         $branch = current_branch_id();
 
-        $branchProduct = BranchProduct::where('product_id', $product->id)
+        $branchProduct = BranchProduct::with(['product.recipes.component.unit'])
+            ->where('product_id', $id)
             ->where('branch_id', $branch)
-            ->first();
+            ->firstOrFail();
 
-        if ($branchProduct) {
-            $branchProduct->update([
-                'price' => $validated['price'],
-                'quantity' => $validated['quantity'],
+        $product = $branchProduct->product;
+
+        $oldRecipes = $product->recipes->map(function ($r) use ($branch) {
+
+            $branchComponent = BranchComponent::where('component_id', $r->component_id)
+                ->where('branch_id', $branch)
+                ->first();
+
+            $cost = $branchComponent->cost ?? 0;
+
+            return [
+                'id' => $r->id,
+                'component_id' => $r->component_id,
+                'quantity' => $r->quantity,
+                'unit' => optional($r->component->unit)->name ?? null,
+                'cost' => $r->quantity * $cost,
+            ];
+        })->toArray();
+
+        $categories = Category::where('status', 'active')->get();
+        $subcategories = Subcategory::all();
+
+        $components = BranchComponent::with(['component.unit:id,name'])
+            ->where('branch_id', $branch)
+            ->get()
+            ->map(fn($bc) => [
+                'id' => $bc->component_id,
+                'name' => $bc->component->name,
+                'unit' => $bc->component->unit,
+                'cost' => $bc->cost
             ]);
-        } else {
-            BranchProduct::create([
-                'product_id' => $product->id,
-                'branch_id' => $branch,
-                'price' => $validated['price'],
-                'quantity' => $validated['quantity'],
+
+        $units = Unit::all();
+        $stations = Station::all();
+
+        return view('products.edit', compact(
+            'product',
+            'branchProduct',
+            'categories',
+            'subcategories',
+            'components',
+            'units',
+            'stations',
+            'oldRecipes'
+        ));
+    }
+
+    public function update(Request $request, $id)
+    {
+        $product = Product::findOrFail($id);
+
+        $validated = $request->validate([
+            'code' => 'required|string|unique:products,code,' . $product->id,
+            'name' => 'required|string',
+            'price' => 'required|numeric',
+            'category_id' => 'required|exists:categories,id',
+            'subcategory_id' => 'nullable|exists:subcategories,id',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
+
+            'station_id' => 'required|exists:stations,id',
+            'quantity' => 'required|numeric|min:0',
+            'unit_id' => 'required|exists:units,id',
+
+            'recipes' => 'nullable|array',
+            'recipes.*.component_id' => 'required|exists:components,id',
+            'recipes.*.quantity' => 'required|numeric',
+            'recipes.*.unit' => 'required|string',
+            'recipes.*.cost' => 'nullable|numeric',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            // ✅ ONLY product fields
+            $productData = Arr::only($validated, [
+                'code',
+                'name',
+                'category_id',
+                'subcategory_id',
+                'station_id',
+                'unit_id',
             ]);
-        }
 
-        // ✅ recipes (your logic is already good 👍)
-        if ($request->has('recipes')) {
-            $existingIds = $product->recipes()->pluck('id')->toArray();
-            $submittedIds = [];
+            // image
+            if ($request->hasFile('image')) {
+                if ($product->image && Storage::disk('public')->exists($product->image)) {
+                    Storage::disk('public')->delete($product->image);
+                }
+                $productData['image'] = $request->file('image')->store('products', 'public');
+            }
 
-            foreach ($validated['recipes'] as $recipeData) {
-                if (!empty($recipeData['id'])) {
-                    $recipe = $product->recipes()->find($recipeData['id']);
-                    if ($recipe) {
-                        $recipe->update($recipeData);
-                        $submittedIds[] = $recipe->id;
+            $product->update($productData);
+
+            // ✅ update branch_products
+            $branch = current_branch_id();
+
+            $branchProduct = BranchProduct::where('product_id', $product->id)
+                ->where('branch_id', $branch)
+                ->first();
+
+            if ($branchProduct) {
+                $branchProduct->update([
+                    'price' => $validated['price'],
+                    'quantity' => $validated['quantity'],
+                ]);
+            } else {
+                BranchProduct::create([
+                    'product_id' => $product->id,
+                    'branch_id' => $branch,
+                    'price' => $validated['price'],
+                    'quantity' => $validated['quantity'],
+                ]);
+            }
+
+            // ✅ recipes (your logic is already good 👍)
+            if ($request->has('recipes')) {
+                $existingIds = $product->recipes()->pluck('id')->toArray();
+                $submittedIds = [];
+
+                foreach ($validated['recipes'] as $recipeData) {
+                    if (!empty($recipeData['id'])) {
+                        $recipe = $product->recipes()->find($recipeData['id']);
+                        if ($recipe) {
+                            $recipe->update($recipeData);
+                            $submittedIds[] = $recipe->id;
+                        }
+                    } else {
+                        $newRecipe = $product->recipes()->create($recipeData);
+                        $submittedIds[] = $newRecipe->id;
                     }
-                } else {
-                    $newRecipe = $product->recipes()->create($recipeData);
-                    $submittedIds[] = $newRecipe->id;
+                }
+
+                $toDelete = array_diff($existingIds, $submittedIds);
+                if (!empty($toDelete)) {
+                    $product->recipes()->whereIn('id', $toDelete)->delete();
                 }
             }
 
-            $toDelete = array_diff($existingIds, $submittedIds);
-            if (!empty($toDelete)) {
-                $product->recipes()->whereIn('id', $toDelete)->delete();
-            }
+            DB::commit();
+
+            return redirect()->route('products.index')
+                ->with('success', 'Product updated successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withInput()->withErrors([
+                'error' => 'Failed to update product: ' . $e->getMessage()
+            ]);
         }
-
-        DB::commit();
-
-        return redirect()->route('products.index')
-            ->with('success', 'Product updated successfully.');
-
-    } catch (\Exception $e) {
-        DB::rollBack();
-        return back()->withInput()->withErrors([
-            'error' => 'Failed to update product: ' . $e->getMessage()
-        ]);
     }
-}
 
     public function destroy(Product $product)
     {
@@ -325,36 +421,36 @@ class ProductController extends Controller
      * Move the specified Product to archive (status change).
      */
     public function archive(Product $product)
-{
-    $product->update(['status' => 'archived']);
+    {
+        $product->update(['status' => 'archived']);
 
-    return response()->json([
-        'message' => 'Product moved to archive successfully.',
-        'status' => 'success',
-        'product_id' => $product->id
-    ]);
-}
+        return response()->json([
+            'message' => 'Product moved to archive successfully.',
+            'status' => 'success',
+            'product_id' => $product->id
+        ]);
+    }
 
 
     /**
      * Restore a product from archive.
      */
     public function restore(Product $product)
-{
-    $product->update([
-        'status' => 'active'
-    ]);
-
-    return response()->json([
-        'message' => 'Product restored to active successfully.',
-        'status' => 'success',
-        'product_id' => $product->id
-    ]);
-}
-
-   public function verify(Request $request)
     {
-       $request->validate([
+        $product->update([
+            'status' => 'active'
+        ]);
+
+        return response()->json([
+            'message' => 'Product restored to active successfully.',
+            'status' => 'success',
+            'product_id' => $product->id
+        ]);
+    }
+
+    public function verify(Request $request)
+    {
+        $request->validate([
             'rows' => 'required|array',
         ]);
 
@@ -370,12 +466,12 @@ class ProductController extends Controller
             if (!$code && !$name) continue;
 
             // Check if product exists in BranchProduct for this branch
-            $exists = BranchProduct::whereHas('product', function($q) use ($code, $name) {
+            $exists = BranchProduct::whereHas('product', function ($q) use ($code, $name) {
                 if ($code) $q->where('code', $code);
                 if ($name) $q->orWhere('name', $name);
             })
-            ->where('branch_id', $branchId)
-            ->exists();
+                ->where('branch_id', $branchId)
+                ->exists();
 
             if ($exists) {
                 $errors[$index] = "Duplicate SKU or Name found in this branch";
@@ -387,97 +483,96 @@ class ProductController extends Controller
 
 
     public function import(Request $request)
-{
-    $request->validate([
-        'rows' => 'required'
-    ]);
+    {
+        $request->validate([
+            'rows' => 'required'
+        ]);
 
-    $rows = json_decode($request->rows, true);
-    $branchId = current_branch_id();
+        $rows = json_decode($request->rows, true);
+        $branchId = current_branch_id();
 
-    DB::beginTransaction();
+        DB::beginTransaction();
 
-    try {
+        try {
 
-        foreach ($rows as $row) {
-    // 1️⃣ Create/get category
-    $category = !empty($row['category']['name'])
-        ? Category::firstOrCreate(['name' => $row['category']['name']], ['status' => 'active'])
-        : null;
+            foreach ($rows as $row) {
+                // 1️⃣ Create/get category
+                $category = !empty($row['category']['name'])
+                    ? Category::firstOrCreate(['name' => $row['category']['name']], ['status' => 'active'])
+                    : null;
 
-    // 2️⃣ Create/get subcategory
-    $subcategory = !empty($row['subcategory']['name']) && $category
-        ? Subcategory::firstOrCreate(
-            ['name' => $row['subcategory']['name'], 'category_id' => $category->id],
-            ['status' => 'active']
-          )
-        : null;
+                // 2️⃣ Create/get subcategory
+                $subcategory = !empty($row['subcategory']['name']) && $category
+                    ? Subcategory::firstOrCreate(
+                        ['name' => $row['subcategory']['name'], 'category_id' => $category->id],
+                        ['status' => 'active']
+                    )
+                    : null;
 
-    // 3️⃣ Create/get unit
-    $unit = !empty($row['unit']['name'])
-        ? Unit::firstOrCreate(['name' => $row['unit']['name']])
-        : null;
+                // 3️⃣ Create/get unit
+                $unit = !empty($row['unit']['name'])
+                    ? Unit::firstOrCreate(['name' => $row['unit']['name']])
+                    : null;
 
-    // 4️⃣ Create/update product
-    $product = Product::updateOrCreate(
-        ['code' => $row['code']],
-        [
-            'name' => $row['name'],
-            'category_id' => $category?->id,
-            'subcategory_id' => $subcategory?->id,
-            'status' => 'active'
-        ]
-    );
+                // 4️⃣ Create/update product
+                $product = Product::updateOrCreate(
+                    ['code' => $row['code']],
+                    [
+                        'name' => $row['name'],
+                        'category_id' => $category?->id,
+                        'subcategory_id' => $subcategory?->id,
+                        'status' => 'active'
+                    ]
+                );
 
-    // 5️⃣ Create/update branch product
-    BranchProduct::updateOrCreate(
-        [
-            'branch_id' => $branchId,
-            'product_id' => $product->id
-        ],
-        [
-            'unit_id' => $unit?->id,
-            'quantity' => $row['quantity'] ?? 0,
-            'cost' => $row['cost'] ?? 0,
-            'price' => $row['price'] ?? 0,
-            'status' => 'active',
-            'type' => 'simple'
-        ]
-    );
+                // 5️⃣ Create/update branch product
+                BranchProduct::updateOrCreate(
+                    [
+                        'branch_id' => $branchId,
+                        'product_id' => $product->id
+                    ],
+                    [
+                        'unit_id' => $unit?->id,
+                        'quantity' => $row['quantity'] ?? 0,
+                        'cost' => $row['cost'] ?? 0,
+                        'price' => $row['price'] ?? 0,
+                        'status' => 'active',
+                        'type' => 'simple'
+                    ]
+                );
 
-    // 6️⃣ Attach existing recipes
-    $product->recipes = Recipe::where('product_id', $product->id)->get();
+                // 6️⃣ Attach existing recipes
+                $product->recipes = Recipe::where('product_id', $product->id)->get();
 
-    // 7️⃣ Optional: Create branch components if recipe components exist
-    foreach ($product->recipes as $recipe) {
-        $component = BranchComponent::firstOrCreate(
-            [
-                'branch_id' => $branchId,
-                'component_id' => $recipe->component_id
-            ],
-            [
-                'onhand' => 0,
-                'cost' => $recipe->component->cost ?? 0,
-                'price' => $recipe->component->price ?? 0,
-                'for_sale' => $recipe->component->for_sale ?? false,
-                'status' => 'active'
-            ]
-        );
+                // 7️⃣ Optional: Create branch components if recipe components exist
+                foreach ($product->recipes as $recipe) {
+                    $component = BranchComponent::firstOrCreate(
+                        [
+                            'branch_id' => $branchId,
+                            'component_id' => $recipe->component_id
+                        ],
+                        [
+                            'onhand' => 0,
+                            'cost' => $recipe->component->cost ?? 0,
+                            'price' => $recipe->component->price ?? 0,
+                            'for_sale' => $recipe->component->for_sale ?? false,
+                            'status' => 'active'
+                        ]
+                    );
+                }
+            }
+
+            DB::commit();
+
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
-}
-
-        DB::commit();
-
-        return response()->json(['success' => true]);
-
-    } catch (\Exception $e) {
-
-        DB::rollBack();
-
-        return response()->json([
-            'success' => false,
-            'message' => $e->getMessage()
-        ], 500);
-    }
-}
 }

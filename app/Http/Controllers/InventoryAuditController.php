@@ -6,6 +6,7 @@ use App\Models\Component;
 use App\Models\InventoryAudit;
 use App\Models\InventoryAuditItem;
 use App\Models\Product;
+use App\Models\BranchComponent;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -40,7 +41,7 @@ class InventoryAuditController extends Controller
 
         $audits = $query->with('auditor')
             ->orderBy('entry_datetime', 'desc')
-            ->get();    
+            ->get();
 
 
 
@@ -84,7 +85,9 @@ class InventoryAuditController extends Controller
             $query->where('status', $status);
         }
 
-        $audits = $query->orderBy('entry_datetime', 'desc')->get();
+        $audits = $query->with('auditor')
+            ->orderBy('entry_datetime', 'desc')
+            ->get();
 
         return response()->json([
             'audits' => $audits
@@ -132,6 +135,8 @@ class InventoryAuditController extends Controller
         ])
             ->select('id', 'code', 'name', 'status', 'category_id', 'subcategory_id')
             ->get();
+
+
 
         $mode = 'create';
         $audit = null; // <-- add this
@@ -324,50 +329,99 @@ class InventoryAuditController extends Controller
         ]);
 
         $user = User::where('name', $data['username'])->first();
+
         if (!$user || !Hash::check($data['password'], $user->password)) {
-            return response()->json(['message' => 'Invalid credentials'], 422);
+            return response()->json([
+                'message' => 'Invalid credentials'
+            ], 422);
         }
+
+        /*
+    |--------------------------------------------------------------------------
+    | Load Audit
+    |--------------------------------------------------------------------------
+    */
 
         $audit = InventoryAudit::with('items.component')->findOrFail($id);
 
         DB::transaction(function () use ($audit, $user) {
+
             foreach ($audit->items as $item) {
+
+                /*
+            |--------------------------------------------------------------------------
+            | Components only
+            |--------------------------------------------------------------------------
+            */
+
                 if (!$item->component) {
-                    continue; // only adjust components
+                    continue;
                 }
 
-                $comp = $item->component;
-                // capture prev onhand into audit item before any changes
-                $prev = (float) $comp->onhand;
+                /*
+            |--------------------------------------------------------------------------
+            | Get branch component
+            |--------------------------------------------------------------------------
+            */
+
+                $branchComponent = BranchComponent::where('component_id', $item->component_id)
+                    ->first();
+
+                if (!$branchComponent) {
+                    continue;
+                }
+
+                /*
+            |--------------------------------------------------------------------------
+            | Previous stock from branch_components
+            |--------------------------------------------------------------------------
+            */
+
+                $prev = (float) $branchComponent->onhand;
+
+                /*
+            |--------------------------------------------------------------------------
+            | Save previous quantity
+            |--------------------------------------------------------------------------
+            */
+
                 $item->prev_quantity = $prev;
+
                 $item->save();
+
+                /*
+            |--------------------------------------------------------------------------
+            | Audit quantity
+            |--------------------------------------------------------------------------
+            */
+
                 $auditQty = (float) $item->quantity;
 
-                if ($prev > $auditQty) {
-                    // subtract the difference
-                    $quantityChanged = $prev - $auditQty; // positive
-                    $new = $prev - $quantityChanged; // equals $auditQty
-                } elseif ($prev < $auditQty) {
-                    // add the difference
-                    $quantityChanged = $auditQty - $prev; // positive
-                    $new = $prev + $quantityChanged; // equals $auditQty
-                } else {
-                    // no change
-                    $quantityChanged = 0;
-                    $new = $prev;
-                }
+                /*
+            |--------------------------------------------------------------------------
+            | Update branch_components onhand
+            |--------------------------------------------------------------------------
+            */
 
-                if ($quantityChanged > 0) {
-                    $comp->onhand = $new;
-                    $comp->save();
-                }
+                $branchComponent->onhand = $auditQty;
+
+                $branchComponent->save();
             }
-            // mark audit as completed
+
+            /*
+        |--------------------------------------------------------------------------
+        | Mark audit completed
+        |--------------------------------------------------------------------------
+        */
+
             $audit->status = 'completed';
+
             $audit->save();
         });
 
-        return response()->json(['message' => 'Adjustments applied successfully']);
+        return response()->json([
+            'message' => 'Adjustments applied successfully'
+        ]);
     }
 
     /**
