@@ -1,12 +1,94 @@
 @extends('layouts.app')
 @section('content')
 <style>
-       .modal-dialog {
-         max-width: 90%;
-       }
-        .dropdown-menu {
-        position: relative;
-    }
+   .modal-dialog {
+      max-width: 90%;
+   }
+
+   .sortable {
+      cursor: pointer;
+      position: relative;
+      user-select: none;
+      padding-right: 18px;
+   }
+
+   .sortable::after {
+      font-family: "Font Awesome 5 Free";
+      font-weight: 900;
+      content: "\f0dc";
+      /* fa-sort */
+      position: absolute;
+      right: 6px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 12px;
+      color: #6c757d;
+   }
+
+   /* Ascending */
+   .sortable.asc::after {
+      content: "\f0de";
+      /* fa-sort-up */
+   }
+
+   /* Descending */
+   .sortable.desc::after {
+      content: "\f0dd";
+      /* fa-sort-down */
+   }
+
+   .dropdown-menu {
+      position: absolute !important;
+      top: 100%;
+      right: 0;
+      z-index: 9999;
+
+      min-width: 240px;
+
+      border-radius: 14px;
+      border: 1px solid #f1f5f9;
+
+      background: #fff;
+
+      padding: 8px;
+
+      box-shadow:
+         0 10px 25px rgba(0, 0, 0, 0.10),
+         0 4px 10px rgba(0, 0, 0, 0.06);
+
+      animation: dropdownFade 0.18s ease;
+   }
+
+   .dropdown-item {
+      border-radius: 10px;
+      padding: 10px 14px;
+
+      font-size: 14px;
+      font-weight: 500;
+
+      transition: all 0.15s ease;
+   }
+
+   .dropdown-item:hover {
+      background: #f8fafc;
+      transform: translateX(2px);
+   }
+
+   #dropdown-form {
+      position: relative;
+   }
+
+   @keyframes dropdownFade {
+      from {
+         opacity: 0;
+         transform: translateY(-6px);
+      }
+
+      to {
+         opacity: 1;
+         transform: translateY(0);
+      }
+   }
 </style>
 <div class="main-content" id="app">
    <div>
@@ -39,17 +121,16 @@
                         <div class="d-flex align-items-center gap-3 flex-wrap">
                            <div class="flex-grow-1">
                               <label class="form-label">Choose CSV / Excel file</label>
-                             
+
                               <!-- File Input -->
                               <input
                                  type="file"
                                  ref="importFile"
                                  @change="handleFileUpload"
                                  accept=".csv, .xlsx"
-                                 class="form-control mb-3"
-                              />
+                                 class="form-control mb-3" />
                               <small class="text-muted" v-if="importFileName">
-                              Selected: @{{ importFileName }}
+                                 Selected: @{{ importFileName }}
                               </small>
                            </div>
                            <button type="button" @click="resetImport(true)" class="btn btn-secondary">
@@ -59,7 +140,7 @@
                               <a href="/import/product_sample/import_for_products.csv"
                                  class="btn btn-info btn-sm"
                                  download>
-                              Download Example
+                                 Download Example
                               </a>
                            </div>
                         </div>
@@ -93,12 +174,12 @@
                                           <td>@{{ row.price }}</td>
                                           <td>@{{ row.unit ? row.unit.name : '' }}</td>
                                           <td>
-                                          <span v-if="row.status === 'ready'" class="text-success font-weight-bold">✔ Ready</span>
-                                          <span v-else-if="row.status === 'duplicate'" class="text-danger font-weight-bold">⚠ Duplicate</span>
-                                          <span v-else class="text-muted">Pending</span>
+                                             <span v-if="row.status === 'ready'" class="text-success font-weight-bold">✔ Ready</span>
+                                             <span v-else-if="row.status === 'duplicate'" class="text-danger font-weight-bold">⚠ Duplicate</span>
+                                             <span v-else class="text-muted">Pending</span>
                                           </td>
                                           <td>
-                                          <button class="btn btn-sm btn-danger" @click="removeRow($event, index)">Remove</button>
+                                             <button class="btn btn-sm btn-danger" @click="removeRow($event, index)">Remove</button>
                                           </td>
                                        </tr>
                                     </tbody>
@@ -114,10 +195,10 @@
                               Verify
                            </button>
                            <button type="submit"
-                                 class="btn btn-primary"
-                                 :disabled="!canSubmit"
-                                 @click.prevent="submitImport">
-                           Submit
+                              class="btn btn-primary"
+                              :disabled="!canSubmit"
+                              @click.prevent="submitImport">
+                              Submit
                            </button>
                         </div>
                      </div>
@@ -132,14 +213,13 @@
       <div class="row">
          <div class="col-md-4">
             <label class="col-form-label pt-0">Select Type</label>
-            <v-select 
-               :options="types" 
-               label="label" 
-               :reduce="type => type.value" 
-               v-model="selectedType" 
-               @input="goToPage" 
-               placeholder="Select type" 
-               />
+            <v-select
+               :options="types"
+               label="label"
+               :reduce="type => type.value"
+               v-model="selectedType"
+               @input="goToPage"
+               placeholder="Select type" />
          </div>
       </div>
       <div class="card mt-4">
@@ -147,11 +227,11 @@
             <nav class="card-header">
                <ul class="nav nav-tabs card-header-tabs">
                   <li class="nav-item">
-                     <a href="#" 
+                     <a href="#"
                         class="nav-link"
                         :class="{ active: statusFilter === 'active' }"
                         @click.prevent="setStatus('active')">
-                     Active
+                        Active
                      </a>
                   </li>
                   <li class="nav-item">
@@ -159,7 +239,7 @@
                         class="nav-link"
                         :class="{ active: statusFilter === 'archived' }"
                         @click.prevent="setStatus('archived')">
-                     Archived
+                        Archived
                      </a>
                   </li>
                </ul>
@@ -174,28 +254,25 @@
                            </span>
                            <form role="search" method="GET" action="{{ route('products.index') }}" class="mb-3" style="position: relative;">
                               <label for="tableSearch" style="cursor: pointer;" onclick="this.closest('form').submit()">
-                              <span class="sr-only">Search</span>
+                                 <span class="sr-only">Search</span>
                               </label>
-                              <input 
-                                 id="tableSearch" 
-                                 name="search" 
-                                 type="text" 
-                                 value="{{ request('search') }}" 
-                                 placeholder="Search this table" 
-                                 class="vgt-input vgt-pull-left" 
-                                 onkeydown="if(event.key === 'Enter') this.form.submit()"
-                                 >
+                              <input
+                                 type="text"
+                                 v-model="search"
+                                 @input="fetchProducts(1)"
+                                 placeholder="Search this table"
+                                 class="vgt-input vgt-pull-left" />
                            </form>
                         </div>
                         <div class="vgt-global-search__actions vgt-pull-right">
                            <div>
-                              <div id="dropdown-form" class="dropdown b-dropdown mx-1 btn-group" :class="{ show: showColumnDropdown }">
-                                 <button 
-                                    type="button" 
-                                    class="btn dropdown-toggle btn-light dropdown-toggle-no-caret" 
-                                    @click="toggleDropdown" 
+                              <div id="dropdown-form" ref="dropdownWrapper" class="dropdown b-dropdown mx-1 btn-group" :class="{ show: showColumnDropdown }">
+                                 <button
+                                    type="button"
+                                    class="btn dropdown-toggle btn-light dropdown-toggle-no-caret"
+                                    @click="toggleDropdown"
                                     aria-haspopup="menu">
-                                 <i class="i-Gear"></i>
+                                    <i class="i-Gear"></i>
                                  </button>
                                  <ul class="dropdown-menu dropdown-menu-right" v-show="showColumnDropdown" role="menu" style="display: block;">
                                     <li role="presentation">
@@ -208,15 +285,14 @@
                                                 <ul class="list-unstyled">
                                                    <li v-for="col in columns" :key="col.field">
                                                       <div class="my-1 custom-control custom-checkbox">
-                                                         <input 
-                                                            type="checkbox" 
-                                                            class="custom-control-input" 
-                                                            :id="`col-${col.field}`" 
-                                                            :checked="!col.hidden" 
-                                                            @change="toggleColumn(col.field)"
-                                                            >
+                                                         <input
+                                                            type="checkbox"
+                                                            class="custom-control-input"
+                                                            :id="`col-${col.field}`"
+                                                            :checked="!col.hidden"
+                                                            @change="toggleColumn(col.field)">
                                                          <label class="custom-control-label" :for="`col-${col.field}`">
-                                                         @{{ col.label }}
+                                                            @{{ col.label }}
                                                          </label>
                                                       </div>
                                                    </li>
@@ -230,31 +306,28 @@
                               <button
                                  type="button"
                                  class="btn mx-1 btn-outline-info btn-sm"
-                                 @click="showFilterSidebar = true"
-                                 >
-                              <i class="i-Filter-2"></i> Filter
+                                 @click="showFilterSidebar = true">
+                                 <i class="i-Filter-2"></i> Filter
                               </button>
                               <button
                                  class="btn btn-sm btn-outline-danger ripple mx-1"
-                                 @click="exportExcel"
-                                 >
-                              <i class="i-File-Excel"></i> Export
+                                 @click="exportExcel">
+                                 <i class="i-File-Excel"></i> Export
                               </button>
                               {{-- Import button: hide if archived --}}
                               {{-- @if ($status !== 'archived') --}}
-                              <button 
+                              <button
                                  v-if="statusFilter !== 'archived'"
                                  type="button"
                                  class="btn btn-info m-1 btn-sm"
-                                 @click="openImportModal"
-                                 >
-                              <i class="i-Upload"></i> Import
+                                 @click="openImportModal">
+                                 <i class="i-Upload"></i> Import
                               </button>
                               {{-- @endif --}}
                               {{-- Add button: hide if archived --}}
                               {{-- @if ($status !== 'archived') --}}
                               <button type="button" class="btn mx-1 btn-btn btn-primary btn-icon" onclick="window.location='{{ url('products/create') }}'">
-                              <i class="i-Add"></i> Add
+                                 <i class="i-Add"></i> Add
                               </button>
                               {{-- @endif --}}
                               {{-- Stock Alert Summary: show only if not active and not archived --}}
@@ -277,16 +350,24 @@
                   </colgroup>
                   <thead>
                      <tr>
-                        <th v-for="col in visibleColumns" 
-                           :key="col.field" 
-                           class="vgt-left-align text-left sortable" 
-                           :data-column="col.field">
-                           <span>@{{ col.label }}</span>
+                        <th
+                           v-for="col in visibleColumns"
+                           :key="col.field"
+                           class="vgt-left-align text-left sortable"
+                           @click="sortBy(col.field)"
+                           style="cursor:pointer;">
+                           <span>
+                              @{{ col.label }}
+
+                              <span v-if="sortField === col.field">
+                                 @{{ sortDirection === 'asc' ? '↑' : '↓' }}
+                              </span>
+                           </span>
                         </th>
                      </tr>
                   </thead>
                   <tbody>
-                     <tr v-for="row in filteredRows" :key="row.id">
+                     <tr v-for="row in sortedRows" :key="row.id">
                         <td v-for="col in visibleColumns" :key="col.field" :data-column="col.field">
                            <template v-if="col.field === 'product_sku'">
                               @{{ row.code }}
@@ -310,22 +391,22 @@
                               @{{ row.unit?.name || 'N/A' }}
                            </template>
                            <template v-else-if="col.field === 'action'">
-                              <actions-dropdown 
-                              :row="row" 
-                              @edit-route="editRoute"
-                              @delete-route="deleteRoute"
-                              @archive-route="archiveRoute"
-                              @restore-route="restoreRoute"
-                              @stock-card-route="stockCardRoute"
-                              @logs-route="logsRoute"
-                              @remarks-route="remarksRoute"
-                              @open-remarks-modal="openRemarksModal"
-                              >
+                              <actions-dropdown
+                                 :row="row"
+                                 @edit-route="editRoute"
+                                 @delete-route="deleteRoute"
+                                 @archive-route="archiveRoute"
+                                 @restore-route="restoreRoute"
+                                 @stock-card-route="stockCardRoute"
+                                 @logs-route="logsRoute"
+                                 @remarks-route="remarksRoute"
+                                 @open-remarks-modal="openRemarksModal"
+                                 @refresh-products="fetchProducts">
                               </actions-dropdown>
                            </template>
                         </td>
                      </tr>
-                     <tr v-if="!filteredRows.length">
+                     <tr v-if="!rows.length">
                         <td :colspan="visibleColumns.length" class="vgt-center-align vgt-text-disabled">
                            No data for table
                         </td>
@@ -339,7 +420,7 @@
                      <header class="modal-header">
                         <h5 class="modal-title" id="remarksModalLabel">Remarks</h5>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
+                           <span aria-hidden="true">&times;</span>
                         </button>
                      </header>
                      <div class="modal-body">
@@ -347,19 +428,19 @@
                            @csrf
                            <input type="hidden" id="remarksItemId" value="{{ $product->id ?? '' }}">
                            <fieldset class="form-group">
-                              <textarea 
-                                 name="remarks" 
+                              <textarea
+                                 name="remarks"
                                  id="remarksText"
-                                 placeholder="Type your message" 
-                                 rows="3" 
-                                 class="form-control" 
+                                 placeholder="Type your message"
+                                 rows="3"
+                                 class="form-control"
                                  cols="30">
                                  </textarea>
                               <div class="invalid-feedback">This field is required</div>
                            </fieldset>
                            <div class="d-flex justify-content-end">
                               <button type="submit" class="btn btn-primary btn-icon btn-rounded">
-                              <i class="i-Yes me-2 font-weight-bold"></i> Submit
+                                 <i class="i-Yes me-2 font-weight-bold"></i> Submit
                               </button>
                            </div>
                         </form>
@@ -369,7 +450,7 @@
                               <div class="d-flex align-items-center">
                                  <i class="i-User me-2"></i>
                                  <span class="text-primary fw-bold">
-                                 {{ Auth::check() ? Auth::user()->name : 'Guest User' }}
+                                    {{ Auth::check() ? Auth::user()->name : 'Guest User' }}
                                  </span>
                               </div>
                            </div>
@@ -392,21 +473,21 @@
                   <div class="footer__navigation__page-info me-3">
                      <div>@{{ pageFrom }} - @{{ pageTo }} of @{{ pagination.total }}</div>
                   </div>
-                  <button 
-                     class="footer__navigation__page-btn" 
-                     :class="{ disabled: pagination.current_page === 1 }" 
-                     @click="fetchProducts(pagination.current_page - 1)" 
+                  <button
+                     class="footer__navigation__page-btn"
+                     :class="{ disabled: pagination.current_page === 1 }"
+                     @click="fetchProducts(pagination.current_page - 1)"
                      :disabled="pagination.current_page === 1">
-                  <span class="chevron left"></span>
-                  <span>prev</span>
+                     <span class="chevron left"></span>
+                     <span>prev</span>
                   </button>
-                  <button 
-                     class="footer__navigation__page-btn" 
-                     :class="{ disabled: pagination.current_page === pagination.last_page }" 
-                     @click="fetchProducts(pagination.current_page + 1)" 
+                  <button
+                     class="footer__navigation__page-btn"
+                     :class="{ disabled: pagination.current_page === pagination.last_page }"
+                     @click="fetchProducts(pagination.current_page + 1)"
                      :disabled="pagination.current_page === pagination.last_page">
-                  <span>next</span>
-                  <span class="chevron right"></span>
+                     <span>next</span>
+                     <span class="chevron right"></span>
                   </button>
                </div>
             </div>
@@ -416,17 +497,15 @@
                   id="sidebar-right"
                   tabindex="-1"
                   class="b-sidebar shadow b-sidebar-right bg-white text-dark sidebar-open"
-                  v-show="showFilterSidebar"
-                  >
+                  v-show="showFilterSidebar">
                   <!-- Header -->
                   <header class="b-sidebar-header">
                      <button
                         type="button"
                         aria-label="Close"
                         class="close text-dark"
-                        @click="showFilterSidebar = false"
-                        >
-                     ✕
+                        @click="showFilterSidebar = false">
+                        ✕
                      </button>
                      <strong id="sidebar-right___title__">Filter</strong>
                   </header>
@@ -444,8 +523,7 @@
                                     type="text"
                                     class="form-control"
                                     placeholder="Search by product code"
-                                    v-model="filters.code"
-                                    >
+                                    v-model="filters.code">
                               </fieldset>
                            </div>
                            <!-- Product Name -->
@@ -458,8 +536,7 @@
                                     type="text"
                                     class="form-control"
                                     placeholder="Search by product name"
-                                    v-model="filters.name"
-                                    >
+                                    v-model="filters.name">
                               </fieldset>
                            </div>
                            <!-- Category -->
@@ -474,8 +551,7 @@
                                     :reduce="c => c.id"
                                     v-model="filters.category"
                                     placeholder="Select category"
-                                    clearable
-                                    />
+                                    clearable />
                               </fieldset>
                            </div>
                            <!-- Subcategory -->
@@ -491,8 +567,7 @@
                                     v-model="filters.subcategory"
                                     placeholder="Select subcategory"
                                     :disabled="!filters.category"
-                                    clearable
-                                    />
+                                    clearable />
                               </fieldset>
                            </div>
                            <!-- Quantity Range -->
@@ -506,13 +581,11 @@
                                        type="number"
                                        class="form-control"
                                        placeholder="From"
-                                       v-model.number="filters.quantity_from"
-                                       >
+                                       v-model.number="filters.quantity_from">
                                     <input
                                        class="form-control"
                                        placeholder="To"
-                                       v-model.number="filters.quantity_to"
-                                       >
+                                       v-model.number="filters.quantity_to">
                                  </div>
                               </fieldset>
                            </div>
@@ -527,14 +600,12 @@
                                        type="number"
                                        class="form-control"
                                        placeholder="From"
-                                       v-model.number="filters.price_from"
-                                       >
+                                       v-model.number="filters.price_from">
                                     <input
                                        type="number"
                                        class="form-control"
                                        placeholder="To"
-                                       v-model.number="filters.price_to"
-                                       >
+                                       v-model.number="filters.price_to">
                                  </div>
                               </fieldset>
                            </div>
@@ -548,8 +619,7 @@
                                     type="text"
                                     class="form-control"
                                     placeholder="Search by product unit"
-                                    v-model="filters.unit"
-                                    >
+                                    v-model="filters.unit">
                               </fieldset>
                            </div>
                            <!-- Buttons -->
@@ -557,20 +627,18 @@
                               <button
                                  type="button"
                                  class="btn btn-primary btn-sm btn-block"
-                                 @click="applyFilter"
-                                 >
-                              <i class="i-Filter-2"></i>
-                              Filter
+                                 @click="applyFilter">
+                                 <i class="i-Filter-2"></i>
+                                 Filter
                               </button>
                            </div>
                            <div class="col-sm-12 col-md-6">
                               <button
                                  type="button"
                                  class="btn btn-danger btn-sm btn-block"
-                                 @click="resetFilter"
-                                 >
-                              <i class="i-Power-2"></i>
-                              Reset
+                                 @click="resetFilter">
+                                 <i class="i-Power-2"></i>
+                                 Reset
                               </button>
                            </div>
                         </div>
@@ -590,7 +658,7 @@
 
 @section('scripts')
 <script type="text/x-template" id="actions-dropdown-template">
-<div class="dropdown btn-group" ref="dropdown">
+   <div class="dropdown btn-group" ref="dropdown">
     <!-- 3 Dots Button -->
     <button type="button" 
             class="btn dropdown-toggle btn-link btn-lg text-decoration-none dropdown-toggle-no-caret"
@@ -664,92 +732,128 @@
 
 
 <script>
-Vue.component("actions-dropdown", {
-    template: "#actions-dropdown-template",
-    props: {
-        row: { type: Object, required: true }
-    },
-    data() {
-        return {
-            isOpen: false
-        };
-    },
-    methods: {
-      archiveProduct(productId) {
-            Swal.fire({
-                title: 'Are you sure?',
-                text: "You are about to move this unit to archive!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Yes, archive it!',
-            }).then((result) => {
-               if (result.isConfirmed) {
-                     axios.put(`/products/${productId}/archive`)
-                        .then(res => {
-                           Swal.fire('Archived!', res.data.message, 'success')
-                                 .then(() => {
-                                    // Reload after user clicks Okay
-                                    window.location.reload();
-                                 });
-                        })
-                        .catch(err => {
-                            console.error(err);
-                            Swal.fire('Failed!', 'Could not archive product.', 'error');
-                        });
-                }
-            });
-        },
-        restoreProduct(productId) {
-            Swal.fire({
-                title: 'Are you sure?',
-                text: "You are about to restore this product!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Yes, restore it!',
-            }).then((result) => {
-               if (result.isConfirmed) {
-                     axios.put(`/products/${productId}/restore`)
-                        .then(res => {
-                           Swal.fire('Restored!', res.data.message, 'success')
-                                 .then(() => {
-                                    // Reload after user clicks Okay
-                                    window.location.reload();
-                                 });
-                        })
-                        .catch(err => {
-                            console.error(err);
-                            Swal.fire('Failed!', 'Could not restore product.', 'error');
-                        });
-                }
-            });
-        },
-        toggleDropdown() { this.isOpen = !this.isOpen; },
-        handleClickOutside(event) {
-            if (!this.$refs.dropdown?.contains(event.target)) this.isOpen = false;
-        }
-    },
-    mounted() {
-        document.addEventListener("click", this.handleClickOutside);
-    },
-    beforeDestroy() {
-        document.removeEventListener("click", this.handleClickOutside);
-    }
-});
+   Vue.component("actions-dropdown", {
 
+      template: "#actions-dropdown-template",
+
+      props: {
+         row: {
+            type: Object,
+            required: true
+         }
+      },
+
+      data() {
+         return {
+            isOpen: false
+         };
+      },
+
+      methods: {
+
+         archiveProduct(productId) {
+
+            Swal.fire({
+               title: 'Are you sure?',
+               text: "You are about to move this unit to archive!",
+               icon: 'warning',
+               showCancelButton: true,
+               confirmButtonText: 'Yes, archive it!',
+            }).then((result) => {
+
+               if (result.isConfirmed) {
+
+                  axios.put(`/products/${productId}/archive`)
+                     .then(res => {
+
+                        showToast(res.data.message);
+
+                        this.$emit('refresh-products');
+
+                        this.isOpen = false;
+
+                     })
+                     .catch(err => {
+
+                        console.error(err);
+
+                        showToast('Could not archive product.', 'error');
+
+                     });
+               }
+            });
+         },
+
+         restoreProduct(productId) {
+
+            Swal.fire({
+               title: 'Are you sure?',
+               text: "You are about to restore this product!",
+               icon: 'warning',
+               showCancelButton: true,
+               confirmButtonText: 'Yes, restore it!',
+            }).then((result) => {
+
+               if (result.isConfirmed) {
+
+                  axios.put(`/products/${productId}/restore`)
+                     .then(res => {
+
+                        showToast(res.data.message);
+
+                        this.$emit('refresh-products');
+
+                        this.isOpen = false;
+
+                     })
+                     .catch(err => {
+
+                        console.error(err);
+
+                        showToast('Could not restore product.', 'error');
+
+                     });
+               }
+            });
+         },
+
+         toggleDropdown() {
+            this.isOpen = !this.isOpen;
+         },
+
+         handleClickOutside(event) {
+
+            if (!this.$refs.dropdown?.contains(event.target)) {
+               this.isOpen = false;
+            }
+
+         }
+
+      },
+
+      mounted() {
+         document.addEventListener("click", this.handleClickOutside);
+      },
+
+      beforeDestroy() {
+         document.removeEventListener("click", this.handleClickOutside);
+      }
+
+   });
 </script>
 
 <script>
-   document.addEventListener("DOMContentLoaded", function () {
-   const table = document.querySelector("#vgt-table");
-   if (!table) return;
+   document.addEventListener("DOMContentLoaded", function() {
+      const table = document.querySelector("#vgt-table");
+      if (!table) return;
 
-   const headers = table.querySelectorAll("thead th");
+      const headers = table.querySelectorAll("thead th");
 
-   headers.forEach((header, index) => {
-      // Make header visually clickable
-      header.style.cursor = "pointer";
+      headers.forEach((header, index) => {
+         // Make header visually clickable
+         header.style.cursor = "pointer";
 
-      header.addEventListener("click", function () {
+         header.addEventListener("click", function() {
             const tbody = table.querySelector("tbody");
             const rows = Array.from(tbody.querySelectorAll("tr"));
             const isAsc = header.classList.toggle("asc");
@@ -771,56 +875,56 @@ Vue.component("actions-dropdown", {
                if (bothNumbers) {
                   return isAsc ? aNum - bNum : bNum - aNum;
                } else {
-                  return isAsc
-                        ? aText.localeCompare(bText)
-                        : bText.localeCompare(aText);
+                  return isAsc ?
+                     aText.localeCompare(bText) :
+                     bText.localeCompare(aText);
                }
             });
 
             // Reattach sorted rows
             rows.forEach(row => tbody.appendChild(row));
+         });
       });
    });
-});
 </script>
 <script>
-function openRemarksModal(productId) {
-    // Set the hidden input
-    document.getElementById('remarksItemId').value = productId;
+   function openRemarksModal(productId) {
+      // Set the hidden input
+      document.getElementById('remarksItemId').value = productId;
 
-    // Clear previous remarks
-    document.getElementById('remarksText').value = '';
+      // Clear previous remarks
+      document.getElementById('remarksText').value = '';
 
-    // Fetch existing remarks via /remarks?product_id=ID
-    fetch(`/remarks?product_id=${productId}`)
-        .then(res => res.json())
-        .then(data => {
+      // Fetch existing remarks via /remarks?product_id=ID
+      fetch(`/remarks?product_id=${productId}`)
+         .then(res => res.json())
+         .then(data => {
             const timeline = document.getElementById('remarksTimeline');
             timeline.innerHTML = '';
 
             const filteredRemarks = data.filter(remark => remark.product_id == productId);
 
             if (filteredRemarks.length === 0) {
-                timeline.innerHTML = '<li>No remarks yet for this product.</li>';
+               timeline.innerHTML = '<li>No remarks yet for this product.</li>';
             } else {
-                filteredRemarks.forEach(remark => {
-                    const li = document.createElement('li');
-                    li.classList.add('mb-3', 'p-2', 'border-start', 'border-3', 'border-primary');
+               filteredRemarks.forEach(remark => {
+                  const li = document.createElement('li');
+                  li.classList.add('mb-3', 'p-2', 'border-start', 'border-3', 'border-primary');
 
-                    // Format timestamp
-                    const date = new Date(remark.created_at);
-                    const formattedDate = date.toLocaleString('en-US', {
-                        month: '2-digit',
-                        day: '2-digit',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit',
-                        hour12: true
-                    });
+                  // Format timestamp
+                  const date = new Date(remark.created_at);
+                  const formattedDate = date.toLocaleString('en-US', {
+                     month: '2-digit',
+                     day: '2-digit',
+                     year: 'numeric',
+                     hour: '2-digit',
+                     minute: '2-digit',
+                     second: '2-digit',
+                     hour12: true
+                  });
 
-                    // HTML layout
-                    li.innerHTML = `
+                  // HTML layout
+                  li.innerHTML = `
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <span class="fw-bold text-primary">
                             </span>
@@ -835,76 +939,76 @@ function openRemarksModal(productId) {
                         </div>
                     `;
 
-                    timeline.appendChild(li);
-                });
+                  timeline.appendChild(li);
+               });
             }
-        })
-        .catch(err => console.error(err));
+         })
+         .catch(err => console.error(err));
 
-    // Show modal
-    const modal = new bootstrap.Modal(document.getElementById('remarksModal'));
-    modal.show();
-}
+      // Show modal
+      const modal = new bootstrap.Modal(document.getElementById('remarksModal'));
+      modal.show();
+   }
 
-        function showRemarksBadge(productId) {
-    const badge = document.getElementById(`remarksBadge-${productId}`);
-    if (badge) badge.classList.remove('d-none');
-}
+   function showRemarksBadge(productId) {
+      const badge = document.getElementById(`remarksBadge-${productId}`);
+      if (badge) badge.classList.remove('d-none');
+   }
 
-function hideRemarksBadge(productId) {
-    const badge = document.getElementById(`remarksBadge-${productId}`);
-    if (badge) badge.classList.add('d-none');
-}
+   function hideRemarksBadge(productId) {
+      const badge = document.getElementById(`remarksBadge-${productId}`);
+      if (badge) badge.classList.add('d-none');
+   }
 
-function markAsRead(remarkId, productId) {
-    fetch(`/remarks/${remarkId}/mark-read`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-        }
-    })
-    .then(res => res.json())
-    .then(() => {
-        hideRemarksBadge(productId);
-        alert('✅ Marked as Read');
-    })
-    .catch(err => console.error('Error marking as read:', err));
-}
+   function markAsRead(remarkId, productId) {
+      fetch(`/remarks/${remarkId}/mark-read`, {
+            method: 'PUT',
+            headers: {
+               'Content-Type': 'application/json',
+               'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
+         })
+         .then(res => res.json())
+         .then(() => {
+            hideRemarksBadge(productId);
+            showToast('✅ Marked as Read');
+         })
+         .catch(err => console.error('Error marking as read:', err));
+   }
 
-function markAsUnread(remarkId, productId) {
-    fetch(`/remarks/${remarkId}/mark-unread`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-        }
-    })
-    .then(res => res.json())
-    .then(() => {
-        showRemarksBadge(productId);
-        alert('🔔 Marked as Unread');
-    })
-    .catch(err => console.error('Error marking as unread:', err));
-}
+   function markAsUnread(remarkId, productId) {
+      fetch(`/remarks/${remarkId}/mark-unread`, {
+            method: 'PUT',
+            headers: {
+               'Content-Type': 'application/json',
+               'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
+         })
+         .then(res => res.json())
+         .then(() => {
+            showRemarksBadge(productId);
+            showToast('🔔 Marked as Unread');
+         })
+         .catch(err => console.error('Error marking as unread:', err));
+   }
 
-         document.addEventListener('DOMContentLoaded', () => {
-            fetch('/remarks')
-               .then(res => res.json())
-               .then(data => {
-                     // only show badge for products that have UNREAD remarks
-                     const unreadRemarks = data.filter(r => r.status === 'unread');
-                     unreadRemarks.forEach(remark => {
-                        if (remark.product_id) {
-                           showRemarksBadge(remark.product_id);
-                        }
-                     });
-               })
-               .catch(err => console.error('Error fetching remarks:', err));
-         });
+   document.addEventListener('DOMContentLoaded', () => {
+      fetch('/remarks')
+         .then(res => res.json())
+         .then(data => {
+            // only show badge for products that have UNREAD remarks
+            const unreadRemarks = data.filter(r => r.status === 'unread');
+            unreadRemarks.forEach(remark => {
+               if (remark.product_id) {
+                  showRemarksBadge(remark.product_id);
+               }
+            });
+         })
+         .catch(err => console.error('Error fetching remarks:', err));
+   });
 
-// Handle form submission
-   document.addEventListener('DOMContentLoaded', function () {
+   // Handle form submission
+   document.addEventListener('DOMContentLoaded', function() {
       const remarksForm = document.getElementById('remarksForm');
       const remarksText = document.getElementById('remarksText');
       const timeline = document.getElementById('remarksTimeline');
@@ -915,15 +1019,15 @@ function markAsUnread(remarkId, productId) {
       alertBox.textContent = '✅ Remark added successfully!';
       remarksForm.appendChild(alertBox);
 
-      remarksForm.addEventListener('submit', function (e) {
+      remarksForm.addEventListener('submit', function(e) {
          e.preventDefault();
 
          const remarks = remarksText.value.trim();
          const productId = document.getElementById('remarksItemId').value;
 
          if (!remarks || !productId) {
-               alert('Please enter a remark.');
-               return;
+            showToast('Please enter a remark.', 'error');
+            return;
          }
 
          fetch(`/remarks/store`, {
@@ -936,9 +1040,9 @@ function markAsUnread(remarkId, productId) {
                   product_id: productId,
                   remarks: remarks
                })
-         })
-         .then(res => res.json())
-         .then(data => {
+            })
+            .then(res => res.json())
+            .then(data => {
                // Show success message
                alertBox.classList.remove('d-none');
 
@@ -953,13 +1057,13 @@ function markAsUnread(remarkId, productId) {
                      const filteredRemarks = updatedData.filter(r => r.product_id == productId);
 
                      if (filteredRemarks.length === 0) {
-                           timeline.innerHTML = '<li>No remarks yet for this product.</li>';
+                        timeline.innerHTML = '<li>No remarks yet for this product.</li>';
                      } else {
-                           filteredRemarks.forEach(r => {
-                              const li = document.createElement('li');
-                              li.textContent = `${r.remarks}`;
-                              timeline.appendChild(li);
-                           });
+                        filteredRemarks.forEach(r => {
+                           const li = document.createElement('li');
+                           li.textContent = `${r.remarks}`;
+                           timeline.appendChild(li);
+                        });
                      }
 
                      // Show badge for product
@@ -968,582 +1072,708 @@ function markAsUnread(remarkId, productId) {
                      // Hide alert after 2s
                      setTimeout(() => alertBox.classList.add('d-none'), 2000);
                   });
-         })
-         .catch(err => {
+            })
+            .catch(err => {
                console.error('Error:', err);
-               alert('❌ Failed to add remark');
-         });
+               showToast('❌ Failed to add remark', 'error');
+            });
       });
    });
 </script>
-    <script>
-        window.currentPage = "{{ request()->is('components*') ? 'components' : 'products' }}";
-    </script>
-
-    <script src="{{ asset('js/tableFunctions.js') }}"></script>
 <script>
-      Vue.component('v-select', VueSelect.VueSelect);
-      new Vue({
-    el: '#app',
-    data() {
-        return {
-         importFile: null,
-         importRows: [],
-         importFileName: '',
-         importPreview: [],
-         importVerified: false,
-         statusList: [
-            { label: 'Active', value: 'active' },
-            { label: 'Archived', value: 'archived' }
-        ],
-         statusFilter: 'active',
-         selectedType: 'products',
-         types: [
-         { label: 'Products', value: 'products', url: '/products' },
-         { label: 'Components', value: 'components', url: '/components' },
-         { label: 'Bundled Items', value: 'bundled_items', url: '/bundled-items' },
-         ],
-         showColumnDropdown: false,
-         showFilterSidebar: false,
-         filters: {
-            code: '',
-            name: '',
-            category: null,
-            subcategory: null,
-            quantity_from: null,
-            quantity_to: null,
-            price_from: null,
-            price_to: null,
-            for_sale: null,
-         },
-         columns: [
-            { label: 'SKU', field: 'product_sku', hidden: false },
-            { label: 'Product Name', field: 'product_name', hidden: false },
-            { label: 'Category', field: 'category', hidden: false },
-            { label: 'Sub Category', field: 'subcategory', hidden: false },
-            { label: 'Quantity', field: 'product_quantity', hidden: false },
-            { label: 'Price', field: 'product_price', hidden: false },
-            { label: 'Unit', field: 'product_unit', hidden: false },
-            { label: 'Action', field: 'action', hidden: false },
-         ],
-          rows: [],
-          search: '',
-          perPage: 10,
-          status: 'active',
-          loading: false,
-          categories: [],
-          subcategories: [],
+   window.currentPage = "{{ request()->is('components*') ? 'components' : 'products' }}";
+</script>
 
-          pagination: {
-            current_page: 1,
-            per_page: 10,
-            total: 0,
-            last_page: 1,
+<script src="{{ asset('js/tableFunctions.js') }}"></script>
+<script>
+   Vue.component('v-select', VueSelect.VueSelect);
+   new Vue({
+      el: '#app',
+      data() {
+         return {
+            importFile: null,
+            importRows: [],
+            importFileName: '',
+            importPreview: [],
+            importVerified: false,
+            statusList: [{
+                  label: 'Active',
+                  value: 'active'
+               },
+               {
+                  label: 'Archived',
+                  value: 'archived'
+               }
+            ],
+            statusFilter: 'active',
+            selectedType: 'products',
+            types: [{
+                  label: 'Products',
+                  value: 'products',
+                  url: '/products'
+               },
+               {
+                  label: 'Components',
+                  value: 'components',
+                  url: '/components'
+               },
+               {
+                  label: 'Bundled Items',
+                  value: 'bundled_items',
+                  url: '/bundled-items'
+               },
+            ],
+            showColumnDropdown: false,
+            showFilterSidebar: false,
+            filters: {
+               code: '',
+               name: '',
+               category: null,
+               subcategory: null,
+               quantity_from: null,
+               quantity_to: null,
+               price_from: null,
+               price_to: null,
+               for_sale: null,
+            },
+            columns: [{
+                  label: 'SKU',
+                  field: 'product_sku',
+                  hidden: false
+               },
+               {
+                  label: 'Product Name',
+                  field: 'product_name',
+                  hidden: false
+               },
+               {
+                  label: 'Category',
+                  field: 'category',
+                  hidden: false
+               },
+               {
+                  label: 'Sub Category',
+                  field: 'subcategory',
+                  hidden: false
+               },
+               {
+                  label: 'Quantity',
+                  field: 'product_quantity',
+                  hidden: false
+               },
+               {
+                  label: 'Price',
+                  field: 'product_price',
+                  hidden: false
+               },
+               {
+                  label: 'Unit',
+                  field: 'product_unit',
+                  hidden: false
+               },
+               {
+                  label: 'Action',
+                  field: 'action',
+                  hidden: false
+               },
+            ],
+            rows: [],
+            search: '',
+            perPage: 10,
+            status: 'active',
+            loading: false,
+            categories: [],
+            subcategories: [],
+            sortField: '',
+            sortDirection: 'asc',
+
+            pagination: {
+               current_page: 1,
+               per_page: 10,
+               total: 0,
+               last_page: 1,
+            }
          }
-      }
-   },
-   computed: {
-      canSubmit() {
-    if (!this.importVerified) return false
-    if (!this.importRows.length) return false
-    return !this.importRows.some(r => r.status !== 'ready')
-  },
-  visibleColumns() {
-    return this.columns.filter(col => !col.hidden);
-  },
-  pageFrom() {
-    if (!this.pagination.total) return 0;
-    return (this.pagination.current_page - 1) * this.pagination.per_page + 1;
-  },
-  pageTo() {
-    return Math.min(
-      this.pageFrom + this.rows.length - 1,
-      this.pagination.total
-    );
-  },
-  filteredRows() {
-    return this.rows.filter(row => {
-       if (this.filters.code &&
-        !row.code?.toLowerCase().includes(this.filters.code.toLowerCase())
-      ) return false;
-
-      if (this.filters.name &&
-        !row.name?.toLowerCase().includes(this.filters.name.toLowerCase())
-      ) return false;
-
-      // Category filter
-      if (
-        this.filters.category &&
-        (!row.category || row.category.id !== this.filters.category)
-      ) {
-        return false;
-      }
-
-      // Subcategory filter
-      if (
-        this.filters.subcategory &&
-        (!row.subcategory || row.subcategory.id !== this.filters.subcategory)
-      ) {
-        return false;
-      }
-
-      if (this.filters.cost_from !== null &&
-        Number(row.cost) < this.filters.cost_from
-      ) return false;
-
-      if (this.filters.cost_to !== null &&
-        Number(row.cost) > this.filters.cost_to
-      ) return false;
-
-      if (this.filters.price_from !== null &&
-        Number(row.price) < this.filters.price_from
-      ) return false;
-
-      if (this.filters.price_to !== null &&
-        Number(row.price) > this.filters.price_to
-      ) return false;
-
-      if (this.filters.for_sale !== null &&
-        row.for_sale !== this.filters.for_sale
-      ) return false;
-
-      return true;
-    });
-  },
-   filteredSubcategories() {
-      if (!this.filters.category) return [];
-
-      return this.subcategories.filter(
-         s => Number(s.category_id) === Number(this.filters.category)
-      );
-   },
-},
-   mounted() {
-      this.fetchProducts();
-      document.addEventListener('click', this.handleClickOutside);
-     document.addEventListener('click', this.handleOutside)
-   },
-   beforeUnmount() {
-    document.removeEventListener('click', this.handleClickOutside);
-  },
-   methods: {
-       openRemarksModal(productId) {
-        // call the OLD global function
-        window.openRemarksModal(productId);
-    },
-      openImportModal() {
-    const modalEl = document.getElementById('importModal');
-    const modal = new bootstrap.Modal(modalEl);
-    modal.show();
-  },
-      handleFileChange(e) {
-    this.importFile = e.target.files[0]
-    this.importFileName = this.importFile?.name || ''
-    this.importVerified = false
-    this.importPreview = []
-    this.importRows = []
-
-    if (!this.importFile) return
-
-    const reader = new FileReader()
-    reader.onload = (evt) => {
-      const text = evt.target.result
-      this.importPreview = text
-  .split('\n')
-  .filter(row => row.trim() !== '')
-        .slice(0, 10) // preview first 10 rows
-    }
-    reader.readAsText(this.importFile)
-  },
-
- // Upload & auto-display
-handleFileUpload(event) {
-  this.importFile = event.target.files[0]
-  if (!this.importFile) return
-
-  const reader = new FileReader()
-  const isCSV = this.importFile.name.endsWith('.csv')
-
-  reader.onload = async (e) => {
-    let jsonData = []
-
-    if (isCSV) {
-      const text = e.target.result
-      const delimiter = text.includes('\t') ? '\t' : ','
-      const lines = text.trim().split(/\r?\n/)
-
-      const headers = lines.shift()
-        .split(delimiter)
-        .map(h => h.trim().toLowerCase().replace(/\s+/g, '_'))
-
-      jsonData = lines.map(line => {
-        const values = line.split(delimiter)
-        const obj = {}
-        headers.forEach((h, i) => obj[h] = values[i] ? values[i].trim() : '')
-        return obj
-      })
-
-    } else {
-      const data = new Uint8Array(e.target.result)
-      const workbook = XLSX.read(data, { type: 'array' })
-      const sheetName = workbook.SheetNames[0]
-      const worksheet = workbook.Sheets[sheetName]
-
-      const rawData = XLSX.utils.sheet_to_json(worksheet, { defval: '' })
-
-      jsonData = rawData.map(row => {
-        const normalizedRow = {}
-        Object.keys(row).forEach(key => {
-          const newKey = key.trim().toLowerCase().replace(/\s+/g, '_')
-          normalizedRow[newKey] = row[key]
-        })
-        return normalizedRow
-      })
-    }
-
-    this.importRows = jsonData.map(row => ({
-      code: row.sku || '',
-      name: row.product_name || row.name || '',
-      category: row.category ? { name: row.category } : null,
-      subcategory: row.sub_category || row.subcategory
-        ? { name: row.sub_category || row.subcategory }
-        : null,
-      quantity: Number(row.quantity || 1),
-      price: Number(row.price || 0),
-      unit: row.unit && row.unit.toString().toLowerCase() !== 'n/a'
-        ? { name: row.unit }
-        : { name: 'pcs' },
-      status: 'pending',
-      errors: []
-    }))
-
-    this.importVerified = false
-  }
-
-  if (isCSV) reader.readAsText(this.importFile)
-  else reader.readAsArrayBuffer(this.importFile)
-},
-
-// Remove row (prevent form submit)
-removeRow(event, index) {
-  if (event) event.preventDefault()
-
-  this.importRows.splice(index, 1)
-},
-
-// Verify against database
-async verifyImport() {
-  if (!this.importRows.length) return
-
-  Swal.fire({
-    title: 'Verifying...',
-    allowOutsideClick: false,
-    didOpen: () => Swal.showLoading()
-  })
-
-  try {
-    const response = await fetch('/products/verify-import', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
       },
-      body: JSON.stringify({ rows: this.importRows })
-    })
+      computed: {
+         canSubmit() {
+            if (!this.importVerified) return false
+            if (!this.importRows.length) return false
+            return !this.importRows.some(r => r.status !== 'ready')
+         },
 
-    const result = await response.json()
+         sortedRows() {
+            if (!this.sortField) {
+               return this.filteredRows;
+            }
 
-    this.importRows = this.importRows.map((row, index) => {
-      if (result.errors && result.errors[index]) {
-        row.status = 'duplicate'
-      } else {
-        row.status = 'ready'
-      }
-      return row
-    })
+            return [...this.filteredRows].sort((a, b) => {
 
-    this.importVerified = true
+               let aValue = this.getCellValue(a, this.sortField);
+               let bValue = this.getCellValue(b, this.sortField);
 
-    Swal.close()
+               // Handle null
+               aValue = aValue ?? '';
+               bValue = bValue ?? '';
 
-  } catch (error) {
-    Swal.close()
-    console.error(error)
-    Swal.fire('Error', 'Verification failed.', 'error')
-  }
-},
+               // Number sorting
+               if (!isNaN(aValue) && !isNaN(bValue)) {
+                  aValue = Number(aValue);
+                  bValue = Number(bValue);
+               } else {
+                  aValue = String(aValue).toLowerCase();
+                  bValue = String(bValue).toLowerCase();
+               }
 
-async submitImport() {
+               if (aValue < bValue) {
+                  return this.sortDirection === 'asc' ? -1 : 1;
+               }
 
-  const validRows = this.importRows.filter(r => r.status === 'ready')
+               if (aValue > bValue) {
+                  return this.sortDirection === 'asc' ? 1 : -1;
+               }
 
-  if (!validRows.length) {
-    Swal.fire('No Data', 'There are no ready rows to import.', 'warning')
-    return
-  }
+               return 0;
+            });
+         },
 
-  const formData = new FormData()
-  formData.append('rows', JSON.stringify(validRows))
+         visibleColumns() {
+            return this.columns.filter(col => !col.hidden);
+         },
+         pageFrom() {
+            if (!this.pagination.total) return 0;
+            return (this.pagination.current_page - 1) * this.pagination.per_page + 1;
+         },
+         pageTo() {
+            return Math.min(
+               this.pageFrom + this.rows.length - 1,
+               this.pagination.total
+            );
+         },
+         filteredRows() {
+            return this.rows.filter(row => {
+               if (this.filters.code &&
+                  !row.code?.toLowerCase().includes(this.filters.code.toLowerCase())
+               ) return false;
 
-  Swal.fire({
-    title: 'Importing...',
-    text: 'Please wait while we save your data.',
-    allowOutsideClick: false,
-    didOpen: () => Swal.showLoading()
-  })
+               if (this.filters.name &&
+                  !row.name?.toLowerCase().includes(this.filters.name.toLowerCase())
+               ) return false;
 
-  try {
-    const response = await fetch('/products/import', {
-      method: 'POST',
-      headers: {
-        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+               // Category filter
+               if (
+                  this.filters.category &&
+                  (!row.category || row.category.id !== this.filters.category)
+               ) {
+                  return false;
+               }
+
+               // Subcategory filter
+               if (
+                  this.filters.subcategory &&
+                  (!row.subcategory || row.subcategory.id !== this.filters.subcategory)
+               ) {
+                  return false;
+               }
+
+               if (this.filters.cost_from !== null &&
+                  Number(row.cost) < this.filters.cost_from
+               ) return false;
+
+               if (this.filters.cost_to !== null &&
+                  Number(row.cost) > this.filters.cost_to
+               ) return false;
+
+               if (this.filters.price_from !== null &&
+                  Number(row.price) < this.filters.price_from
+               ) return false;
+
+               if (this.filters.price_to !== null &&
+                  Number(row.price) > this.filters.price_to
+               ) return false;
+
+               if (this.filters.for_sale !== null &&
+                  row.for_sale !== this.filters.for_sale
+               ) return false;
+
+               return true;
+            });
+         },
+         filteredSubcategories() {
+            if (!this.filters.category) return [];
+
+            return this.subcategories.filter(
+               s => Number(s.category_id) === Number(this.filters.category)
+            );
+         },
       },
-      body: formData
-    })
+      mounted() {
+         this.fetchProducts();
+         document.addEventListener('click', this.handleClickOutside);
+         document.addEventListener('click', this.handleOutside)
+      },
+      beforeUnmount() {
+         document.removeEventListener('click', this.handleClickOutside);
+      },
+      methods: {
+         openRemarksModal(productId) {
+            // call the OLD global function
+            window.openRemarksModal(productId);
+         },
 
-    const result = await response.json()
+         sortBy(field) {
 
-    Swal.close()
+            if (field === 'action') return;
 
-if (result.success) {
-  // Show success Swal and refresh page after user clicks OK
-  Swal.fire({
-    icon: 'success',
-    title: 'Import Successful',
-    text: 'Products have been imported successfully!'
-  }).then(() => {
-    // Reset import (optional, since page reloads)
-    this.resetImport(false)
-    // Refresh the page
-    window.location.reload()
-  })
+            if (this.sortField === field) {
 
-} else {
-  Swal.fire('Error', result.message || 'Import failed.', 'error')
-}
+               this.sortDirection =
+                  this.sortDirection === 'asc' ?
+                  'desc' :
+                  'asc';
 
-  } catch (error) {
-    Swal.close()
-    Swal.fire('Error', 'Something went wrong during import.', 'error')
-    console.error(error)
-  }
-},
+            } else {
 
-// Reset Import
-resetImport(showModal = false) {
-  this.importFile = null
-  this.importRows = []
-  this.importVerified = false
+               this.sortField = field;
+               this.sortDirection = 'asc';
 
-  if (this.$refs.importFile) {
-    this.$refs.importFile.value = null
-  }
+            }
+         },
 
-  this.importFileName = ''
-  this.importPreview = []
+         openImportModal() {
+            const modalEl = document.getElementById('importModal');
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+         },
+         handleFileChange(e) {
+            this.importFile = e.target.files[0]
+            this.importFileName = this.importFile?.name || ''
+            this.importVerified = false
+            this.importPreview = []
+            this.importRows = []
 
-  if (showModal) {
-    Swal.fire({
-      icon: 'info',
-      title: 'Reset Complete',
-      text: 'Import table and uploaded file have been cleared.'
-    })
-  }
-},
-      setStatus(status) {
-         console.log("Status filter changed to:", status);
+            if (!this.importFile) return
+
+            const reader = new FileReader()
+            reader.onload = (evt) => {
+               const text = evt.target.result
+               this.importPreview = text
+                  .split('\n')
+                  .filter(row => row.trim() !== '')
+                  .slice(0, 10) // preview first 10 rows
+            }
+            reader.readAsText(this.importFile)
+         },
+
+         // Upload & auto-display
+         handleFileUpload(event) {
+            this.importFile = event.target.files[0]
+            if (!this.importFile) return
+
+            const reader = new FileReader()
+            const isCSV = this.importFile.name.endsWith('.csv')
+
+            reader.onload = async (e) => {
+               let jsonData = []
+
+               if (isCSV) {
+                  const text = e.target.result
+                  const delimiter = text.includes('\t') ? '\t' : ','
+                  const lines = text.trim().split(/\r?\n/)
+
+                  const headers = lines.shift()
+                     .split(delimiter)
+                     .map(h => h.trim().toLowerCase().replace(/\s+/g, '_'))
+
+                  jsonData = lines.map(line => {
+                     const values = line.split(delimiter)
+                     const obj = {}
+                     headers.forEach((h, i) => obj[h] = values[i] ? values[i].trim() : '')
+                     return obj
+                  })
+
+               } else {
+                  const data = new Uint8Array(e.target.result)
+                  const workbook = XLSX.read(data, {
+                     type: 'array'
+                  })
+                  const sheetName = workbook.SheetNames[0]
+                  const worksheet = workbook.Sheets[sheetName]
+
+                  const rawData = XLSX.utils.sheet_to_json(worksheet, {
+                     defval: ''
+                  })
+
+                  jsonData = rawData.map(row => {
+                     const normalizedRow = {}
+                     Object.keys(row).forEach(key => {
+                        const newKey = key.trim().toLowerCase().replace(/\s+/g, '_')
+                        normalizedRow[newKey] = row[key]
+                     })
+                     return normalizedRow
+                  })
+               }
+
+               this.importRows = jsonData.map(row => ({
+                  code: row.sku || '',
+                  name: row.product_name || row.name || '',
+                  category: row.category ? {
+                     name: row.category
+                  } : null,
+                  subcategory: row.sub_category || row.subcategory ? {
+                     name: row.sub_category || row.subcategory
+                  } : null,
+                  quantity: Number(row.quantity || 1),
+                  price: Number(row.price || 0),
+                  unit: row.unit && row.unit.toString().toLowerCase() !== 'n/a' ? {
+                     name: row.unit
+                  } : {
+                     name: 'pcs'
+                  },
+                  status: 'pending',
+                  errors: []
+               }))
+
+               this.importVerified = false
+            }
+
+            if (isCSV) reader.readAsText(this.importFile)
+            else reader.readAsArrayBuffer(this.importFile)
+         },
+
+         // Remove row (prevent form submit)
+         removeRow(event, index) {
+            if (event) event.preventDefault()
+
+            this.importRows.splice(index, 1)
+         },
+
+         // Verify against database
+         async verifyImport() {
+            if (!this.importRows.length) return
+
+            Swal.fire({
+               title: 'Verifying...',
+               allowOutsideClick: false,
+               didOpen: () => Swal.showLoading()
+            })
+
+            try {
+               const response = await fetch('/products/verify-import', {
+                  method: 'POST',
+                  headers: {
+                     'Content-Type': 'application/json',
+                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                  },
+                  body: JSON.stringify({
+                     rows: this.importRows
+                  })
+               })
+
+               const result = await response.json()
+
+               this.importRows = this.importRows.map((row, index) => {
+                  if (result.errors && result.errors[index]) {
+                     row.status = 'duplicate'
+                  } else {
+                     row.status = 'ready'
+                  }
+                  return row
+               })
+
+               this.importVerified = true
+
+               Swal.close()
+
+            } catch (error) {
+               Swal.close()
+               console.error(error)
+               Swal.fire('Error', 'Verification failed.', 'error')
+            }
+         },
+
+         async submitImport() {
+
+            const validRows = this.importRows.filter(r => r.status === 'ready')
+
+            if (!validRows.length) {
+               Swal.fire('No Data', 'There are no ready rows to import.', 'warning')
+               return
+            }
+
+            const formData = new FormData()
+            formData.append('rows', JSON.stringify(validRows))
+
+            Swal.fire({
+               title: 'Importing...',
+               text: 'Please wait while we save your data.',
+               allowOutsideClick: false,
+               didOpen: () => Swal.showLoading()
+            })
+
+            try {
+               const response = await fetch('/products/import', {
+                  method: 'POST',
+                  headers: {
+                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                  },
+                  body: formData
+               })
+
+               const result = await response.json()
+
+               Swal.close()
+
+               if (result.success) {
+                  // Show success Swal and refresh page after user clicks OK
+                  Swal.fire({
+                     icon: 'success',
+                     title: 'Import Successful',
+                     text: 'Products have been imported successfully!'
+                  }).then(() => {
+                     // Reset import (optional, since page reloads)
+                     this.resetImport(false)
+                     // Refresh the page
+                     window.location.reload()
+                  })
+
+               } else {
+                  Swal.fire('Error', result.message || 'Import failed.', 'error')
+               }
+
+            } catch (error) {
+               Swal.close()
+               Swal.fire('Error', 'Something went wrong during import.', 'error')
+               console.error(error)
+            }
+         },
+
+         // Reset Import
+         resetImport(showModal = false) {
+            this.importFile = null
+            this.importRows = []
+            this.importVerified = false
+
+            if (this.$refs.importFile) {
+               this.$refs.importFile.value = null
+            }
+
+            this.importFileName = ''
+            this.importPreview = []
+
+            if (showModal) {
+               Swal.fire({
+                  icon: 'info',
+                  title: 'Reset Complete',
+                  text: 'Import table and uploaded file have been cleared.'
+               })
+            }
+         },
+         setStatus(status) {
+            console.log("Status filter changed to:", status);
             this.statusFilter = status;
             this.fetchProducts();
-        },
-      getCellValue(row, field) {
-    switch (field) {
-      case 'product_sku':
-        return row.code;
+         },
+         getCellValue(row, field) {
+            switch (field) {
+               case 'product_sku':
+                  return row.code;
 
-      case 'product_name':
-        return row.name;
+               case 'product_name':
+                  return row.name;
 
-      case 'category':
-        return row.category?.name || 'N/A';
+               case 'category':
+                  return row.category?.name || 'N/A';
 
-      case 'subcategory':
-        return row.subcategory?.name || 'N/A';
+               case 'subcategory':
+                  return row.subcategory?.name || 'N/A';
 
-      case 'product_quantity':
-        return Number(row.quantity || 0);
+               case 'product_quantity':
+                  return Number(row.quantity || 0);
 
-      case 'product_price':
-        return Number(row.price || 0);
+               case 'product_price':
+                  return Number(row.price || 0);
 
-      case 'product_unit':
-        return row.unit?.name || 'N/A ';
+               case 'product_unit':
+                  return row.unit?.name || 'N/A ';
 
-      default:
-        return '';
-    }
-   },
-     exportExcel() {
-    if (!this.filteredRows.length) {
-      alert('No data to export');
-      return;
-    }
+               default:
+                  return '';
+            }
+         },
+         exportExcel() {
+            if (!this.filteredRows.length) {
+               showToast('No data to export', 'error');
+               return;
+            }
 
-    // only visible columns (gear dropdown)
-    const visibleCols = this.columns.filter(col => !col.hidden && col.field !== 'action');
+            // only visible columns (gear dropdown)
+            const visibleCols = this.columns.filter(col => !col.hidden && col.field !== 'action');
 
-    const data = this.filteredRows.map(row => {
-      const obj = {};
+            const data = this.filteredRows.map(row => {
+               const obj = {};
 
-      visibleCols.forEach(col => {
-        obj[col.label] = this.getCellValue(row, col.field);
-      });
+               visibleCols.forEach(col => {
+                  obj[col.label] = this.getCellValue(row, col.field);
+               });
 
-      return obj;
-    });
+               return obj;
+            });
 
-    const worksheet = XLSX.utils.json_to_sheet(data);
-    const workbook  = XLSX.utils.book_new();
+            const worksheet = XLSX.utils.json_to_sheet(data);
+            const workbook = XLSX.utils.book_new();
 
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Products');
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Products');
 
-    const filename = `products_${new Date().toISOString().slice(0, 10)}.xlsx`;
+            const filename = `products_${new Date().toISOString().slice(0, 10)}.xlsx`;
 
-    XLSX.writeFile(workbook, filename);
-  },
-   goToPage(value) {
-      const selected = this.types.find(t => t.value === value)
-      if (selected) {
-        window.location.href = selected.url
-      }
-    },
-   openSidebar() {
-      this.showFilterSidebar = true;
-      console.log("Button clicked! showFilterSidebar =", this.showFilterSidebar);
-    },
-    closeSidebar() {
-      this.showFilterSidebar = false;
-      console.log("Closed sidebar:", this.showFilterSidebar);
-    },
-    buildCategoryLists() {
-  const categoryMap = {};
-  const subcategoryMap = {};
+            XLSX.writeFile(workbook, filename);
+         },
+         goToPage(value) {
+            const selected = this.types.find(t => t.value === value)
+            if (selected) {
+               window.location.href = selected.url
+            }
+         },
+         openSidebar() {
+            this.showFilterSidebar = true;
+            console.log("Button clicked! showFilterSidebar =", this.showFilterSidebar);
+         },
+         closeSidebar() {
+            this.showFilterSidebar = false;
+            console.log("Closed sidebar:", this.showFilterSidebar);
+         },
+         buildCategoryLists() {
+            const categoryMap = {};
+            const subcategoryMap = {};
 
-  this.rows.forEach(c => {
-    if (c.category) {
-      categoryMap[c.category.id] = c.category;
-    }
+            this.rows.forEach(c => {
+               if (c.category) {
+                  categoryMap[c.category.id] = c.category;
+               }
 
-    if (c.subcategory) {
-      subcategoryMap[c.subcategory.id] = {
-        ...c.subcategory,
-        category_id: c.category?.id,
-      };
-    }
-  });
+               if (c.subcategory) {
+                  subcategoryMap[c.subcategory.id] = {
+                     ...c.subcategory,
+                     category_id: c.category?.id,
+                  };
+               }
+            });
 
-  this.categories = Object.values(categoryMap);
-  this.subcategories = Object.values(subcategoryMap);
-},
+            this.categories = Object.values(categoryMap);
+            this.subcategories = Object.values(subcategoryMap);
+         },
 
 
 
-  toggleDropdown() {
-    this.showColumnDropdown = !this.showColumnDropdown;
-  },
+         toggleDropdown() {
+            this.showColumnDropdown = !this.showColumnDropdown;
+         },
 
-  handleClickOutside(event) {
-    const dropdown = this.$refs.dropdownWrapper;
-    if (dropdown && !dropdown.contains(event.target)) {
-      this.showColumnDropdown = false;
-    }
-  },
-  resetFilter() {
-    this.filters = {
-      name: '',
-      category: '',
-      subcategory: '',
-      cost_from: null,
-      cost_to: null,
-      price_from: null,
-      price_to: null,
-      for_sale: null,
-    };
-  },
+         handleClickOutside(event) {
+            const dropdown = this.$refs.dropdownWrapper;
+            if (dropdown && !dropdown.contains(event.target)) {
+               this.showColumnDropdown = false;
+            }
+         },
+         resetFilter() {
+            this.filters = {
+               name: '',
+               category: '',
+               subcategory: '',
+               cost_from: null,
+               cost_to: null,
+               price_from: null,
+               price_to: null,
+               for_sale: null,
+            };
+         },
 
-  toggleColumn(field) {
-    const col = this.columns.find(c => c.field === field);
-    if (col) col.hidden = !col.hidden;
-  },
+         toggleColumn(field) {
+            const col = this.columns.find(c => c.field === field);
+            if (col) col.hidden = !col.hidden;
+         },
 
-  isColumnVisible(field) {
-    const col = this.columns.find(c => c.field === field);
-    return col && !col.hidden;
-  },
+         isColumnVisible(field) {
+            const col = this.columns.find(c => c.field === field);
+            return col && !col.hidden;
+         },
 
-  applyFilter() {
-  this.fetchProducts(1);
-  this.showFilterSidebar = false;
-},
-    
-    fetchProducts(page = 1) {
-   this.loading = true;
+         applyFilter() {
+            this.fetchProducts(1);
+            this.showFilterSidebar = false;
+         },
 
-   axios.get('/products/fetch', {
-      params: {
-         search: this.search,
-         perPage: this.perPage,
-         status: this.statusFilter,
-         page: page,
-         type: 'simple',
+         fetchProducts(page = 1) {
+            this.loading = true;
 
-         // 🔹 filters
-         category: this.filters.category,
-         subcategory: this.filters.subcategory,
-      }
-   })
-   .then(res => {
-      // table rows
-      this.rows = res.data.data;
+            axios.get('/products/fetch', {
+                  params: {
+                     page: page,
+                     perPage: this.perPage,
 
-      // pagination
-      this.pagination.current_page = res.data.current_page;
-      this.pagination.per_page    = res.data.per_page;
-      this.pagination.total       = res.data.total;
-      this.pagination.last_page   = res.data.last_page;
+                     search: this.search,
 
-      // 🔹 build dropdown lists
-      this.buildCategoryLists();
-   })
-   .finally(() => {
-      this.loading = false;
+                     status: this.statusFilter,
+
+                     type: 'simple',
+
+                     category: this.filters.category,
+                     subcategory: this.filters.subcategory,
+
+                     quantity_from: this.filters.quantity_from,
+                     quantity_to: this.filters.quantity_to,
+
+                     price_from: this.filters.price_from,
+                     price_to: this.filters.price_to,
+                  }
+               })
+               .then(res => {
+
+                  this.rows = res.data.data;
+
+                  this.pagination = {
+                     current_page: res.data.current_page,
+                     per_page: res.data.per_page,
+                     total: res.data.total,
+                     last_page: res.data.last_page,
+                  };
+
+                  this.buildCategoryLists();
+               })
+               .catch(err => {
+                  console.error(err);
+               })
+               .finally(() => {
+                  this.loading = false;
+               });
+         },
+         buildCategoryLists() {
+            const categoryMap = {};
+            const subcategoryMap = {};
+
+            this.rows.forEach(c => {
+               if (c.category) {
+                  categoryMap[c.category.id] = c.category;
+               }
+
+               if (c.subcategory) {
+                  subcategoryMap[c.subcategory.id] = {
+                     ...c.subcategory,
+                     category_id: c.category?.id,
+                  };
+               }
+            });
+
+            this.categories = Object.values(categoryMap);
+            this.subcategories = Object.values(subcategoryMap);
+         },
+      },
+      watch: {
+         'filters.category'() {
+            this.filters.subcategory = null;
+         },
+      },
    });
-   },
-   buildCategoryLists() {
-  const categoryMap = {};
-  const subcategoryMap = {};
-
-  this.rows.forEach(c => {
-    if (c.category) {
-      categoryMap[c.category.id] = c.category;
-    }
-
-    if (c.subcategory) {
-      subcategoryMap[c.subcategory.id] = {
-        ...c.subcategory,
-        category_id: c.category?.id,
-      };
-    }
-  });
-
-  this.categories = Object.values(categoryMap);
-  this.subcategories = Object.values(subcategoryMap);
-},
-   },
-   watch: {
-  'filters.category'() {
-    this.filters.subcategory = null;
-  },
-},
-});
 </script>
 @endsection

@@ -1,8 +1,66 @@
 @extends('layouts.app')
 @section('content')
 <style>
-     .dropdown-menu {
-        position: relative;
+    .dropdown {
+    position: relative;
+    }
+
+    .dropdown-menu {
+        position: absolute !important;
+        top: 100%;
+        right: 0;
+        z-index: 9999;
+
+        min-width: 260px;
+        padding: 8px;
+
+        border: 1px solid #edf2f7;
+        border-radius: 14px;
+
+        background: #fff;
+
+        box-shadow:
+            0 10px 25px rgba(0,0,0,0.12),
+            0 4px 10px rgba(0,0,0,0.06);
+
+        animation: dropdownFade .18s ease;
+    }
+
+    .dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        padding: 11px 14px;
+
+        border-radius: 10px;
+
+        font-size: 14px;
+        font-weight: 500;
+
+        transition: all .15s ease;
+    }
+
+    .dropdown-item:hover {
+        background: #f8fafc;
+        transform: translateX(2px);
+    }
+
+    .dropdown-item i {
+        font-size: 15px;
+        color: #64748b;
+    }
+
+    @keyframes dropdownFade {
+        from {
+            opacity: 0;
+            transform: translateY(-6px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 </style>
 <div class="main-content" id="app">
@@ -172,9 +230,9 @@
                                     <th class="vgt-checkbox-col"><input type="checkbox" /></th>
                                     <td class="vgt-left-align text-left">@{{ audit.entry_datetime }}</td>
                                     <td class="vgt-left-align text-left">@{{ audit.audit_datetime }}</td>
-                          <td class="vgt-left-align text-left">
-    @{{ audit.auditor ? audit.auditor.name : '-' }}
-</td>
+                                    <td class="vgt-left-align text-left">
+                                        @{{ audit.auditor ? audit.auditor.name : '-' }}
+                                    </td>
                                     <td class="vgt-left-align text-left">@{{ audit.reference_no }}</td>
                                     <td class="vgt-left-align text-left">@{{ audit.warehouse }}</td>
                                     <td class="vgt-left-align text-right">
