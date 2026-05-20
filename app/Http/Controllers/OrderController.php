@@ -125,7 +125,7 @@ class OrderController extends Controller
                 'pos_sn'        => $branch?->pos_sn,
                 'min_number'    => $branch?->min_number,
             ],
-            'currentUserId' => auth()->id(),
+            'currentUserId' => auth()->id(),    
         ]);
     }
 

@@ -1120,7 +1120,7 @@
             ],
             rows: [],
             search: '',
-            perPage: 10,
+            perPage: 50,
             status: 'active',
             loading: false,
             categories: [],
@@ -1128,7 +1128,7 @@
 
             pagination: {
                current_page: 1,
-               per_page: 10,
+               per_page: 50,
                total: 0,
                last_page: 1,
             }
