@@ -155,7 +155,6 @@ Route::post('/kitchen/push-item', [KitchenController::class, 'pushItem']);
 
 
 
-Route::post('/orders/{order}/payment', [OrderController::class, 'payment'])->name('orders.payment');
 Route::get('/get-all-payments', [OrderController::class, 'getAllStatusPayments'])->name('orders.getAllPayments');
 Route::get('/check-unpaid-orders', [OrderController::class, 'checkUnpaidOrders'])->name('orders.checkUnpaidOrders');
 
