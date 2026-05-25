@@ -23,4 +23,8 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 restaurant_pos.sql
+RESTAURANT_POS.sql
 compose.yaml
+.gstack/
+/public/js/bundle/
+/public/css/master.css
